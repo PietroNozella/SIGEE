@@ -1,82 +1,74 @@
 <div align="center">
-  
+
   # SIGEE
-  
+
   **Sistema Integrado de Gestão de Equipamentos Escolares**
-  
-  Uma plataforma web para controle, reserva e manutenção de equipamentos tecnológicos em instituições de ensino — desenvolvido como Projeto de Conclusão de Curso (PFC) em Engenharia de Software.
-  
-  [![Python 3.12.0](https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-  [![Django](https://img.shields.io/badge/Django_5.2_LTS-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
+
+  Aplicação web desenvolvida como Projeto de Conclusão de Curso (PFC) em Engenharia de Software na Universidade de Mogi das Cruzes (UMC).
+
+  [![Python 3.12](https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+  [![Django 5.2](https://img.shields.io/badge/Django_5.2-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
   [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
   [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
-  [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-  [![Bootstrap](https://img.shields.io/badge/Bootstrap_5.3-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
-  
+  [![Bootstrap 5.3](https://img.shields.io/badge/Bootstrap_5.3-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
+
 </div>
 
-<br/>
+## Sobre o projeto
 
-## 📖 Índice
-- [Sobre o Projeto](#-sobre-o-projeto)
-- [Objetivos](#-objetivos)
-- [Tecnologias](#-tecnologias)
-- [Funcionalidades Principais](#-funcionalidades-principais)
-- [Autores](#-autores)
-- [Orientadores](#-orientadores)
- 
-## 🏫 Sobre o Projeto
+O SIGEE centraliza o controle de equipamentos escolares, sua disponibilidade, reservas, retiradas, devoluções e manutenções. A proposta busca melhorar a rastreabilidade dos ativos e apoiar a organização do uso de recursos tecnológicos em instituições de ensino.
 
-**Problema abordado:** Instituições de ensino frequentemente apresentam baixo nível de controle sobre os equipamentos tecnológico (computadores, notebooks, tablets), gerando indisponibilidade, manutenção reativa e desperdício de recursos, o que afeta diretamente a qualidade do ensino.
+## Escopo da entrega final
 
-**Motivação:** Como PFC em Engenharia de Software, o SIGEE propõe uma solução prática e replicável para aumentar a disponibilidade e rastreabilidade de ativos, aplicando princípios de usabilidade, engenharia de software e métricas de qualidade.
+Ao final do projeto, o sistema deverá entregar:
 
-## 🎯 Objetivos
+- Autenticação e autorização por perfis: **Administrador**, **Operador** e **Professor**.
+- Cadastro e consulta do inventário, com número patrimonial único, categoria, localização e situação do equipamento.
+- Pesquisa e filtros para localizar equipamentos.
+- Reserva por período, com validação de conflitos de disponibilidade.
+- Registro de retirada e devolução de equipamentos.
+- Histórico de movimentações, com data e hora, responsável, destinatário e tipo de movimentação.
+- Registro e consulta do histórico de manutenção, com indisponibilidade temporária quando necessário.
+- Painel resumido com totais por situação do inventário e movimentações recentes.
 
-**Objetivo Geral**
-Projetar e implementar um sistema web para controle, reserva e manutenção de equipamentos escolares com foco em rastreabilidade e facilidade de uso.
+Equipamentos que possuírem histórico relacionado serão inativados, em vez de excluídos definitivamente, preservando a rastreabilidade das informações.
 
-**Objetivos Específicos**
-- Implementar fluxo de reservas por período e local.
-- Registrar histórico de manutenção e estado operacional por equipamento.
-- Fornecer um *dashboard* com indicadores essenciais (disponibilidade, uso, pendências).
-- Definir papéis e permissões seguras (Administrador, Técnico, Professor).
+### Fora do escopo
 
-## 🛠️ Tecnologias
+Não fazem parte da entrega final: leitura por código de barras ou QR Code, integrações externas, suporte a múltiplas unidades escolares, relatórios avançados e notificações automáticas.
 
-A base tecnológica definida para o desenvolvimento do projeto é composta por:
+## Tecnologias e arquitetura
 
-**Back-end & Banco de Dados**
-- Python 3.12 / 3.13
-- Django 5.2 LTS
-- PostgreSQL (via Supabase)
+O SIGEE será uma aplicação monolítica web, com renderização no servidor.
 
-**Front-end**
-- Django Templates
-- JavaScript puro
-- Bootstrap 5.3
+- **Back-end:** Python 3.12, Django 5.2, Django ORM, Django Authentication, Groups e Permissions.
+- **Banco de dados:** PostgreSQL hospedado no Supabase.
+- **Front-end:** Django Templates, HTML, CSS, JavaScript e Bootstrap 5.3.
+- **Implantação:** Vercel.
+- **Ferramentas de apoio:** Git, GitHub, Figma, Notion e Microsoft Teams.
 
-**Ferramentas de Apoio**
-- Git e GitHub
-- Figma
-- Notion
+O Supabase será utilizado como serviço de banco de dados. A autenticação, os perfis e as permissões serão controlados pelos recursos nativos do Django; não será utilizado Supabase Auth nem políticas RLS.
 
-## 🚀 Funcionalidades Principais
+## Qualidade, segurança e validação
 
-- **Reserva de Equipamentos:** Calendário de disponibilidade por item e por local, com bloqueio e verificação de conflitos de período.
-- **Gestão de Inventário:** Cadastro completo (CRUD) de equipamentos (modelo, número de série, localização, estado atual).
-- **Controle de Manutenção:** Geração de ordens de serviço, registro de intervenções e histórico por equipamento.
-- **Dashboard e Relatórios:** Indicadores de taxa de utilização, lista de itens indisponíveis e pendências de manutenção.
-- **Autenticação e Perfis:** Acesso restrito baseado em papéis de usuário com registro de auditoria simples.
+- O acesso às funcionalidades será restrito conforme o perfil do usuário.
+- Serão mantidos apenas dados básicos de identificação, como nome, e-mail e perfil; não haverá tratamento de dados sensíveis.
+- Testes e demonstrações utilizarão dados sintéticos.
+- Os requisitos funcionais, as regras de negócio e os critérios de aceite serão validados, priorizando os fluxos críticos de reserva, retirada, devolução, manutenção e controle de acesso.
+- A interface deverá ser responsiva, oferecer navegação por teclado e contraste adequado. As consultas deverão responder em até três segundos na base de testes.
 
-## 👨‍💻 Autores
+## Processo de desenvolvimento
 
-Projeto desenvolvido em dupla para o Projeto de Conclusão de Curso (PFC) de Engenharia de Software da Universidade de Mogi das Cruzes (UMC):
+O trabalho será organizado em Kanban, com acompanhamento no Notion e comunicação no Microsoft Teams. A documentação do projeto incluirá requisitos, diagramas UML, diagrama entidade-relacionamento, protótipos no Figma e evidências de testes, garantindo rastreabilidade entre o que foi definido, implementado e validado.
+
+## Autores
+
+Projeto desenvolvido em dupla para o PFC de Engenharia de Software da UMC:
 
 - **Diego Alves da Silva Fagundes** — [GitHub](https://github.com/Diego251Fagundes)
-- **Pietro Lopes Nozella Sousa** — [GitHub](https://github.com/PietroNozella) 
+- **Pietro Lopes Nozella Sousa** — [GitHub](https://github.com/PietroNozella)
 
-## 🎓 Orientadores
+## Orientadores
 
-- **Orientador(a):** a ser definido 
+- **Orientador(a):** a ser definido
 - **Coorientador(a):** Alessandro Aparecido da Silva Horas
