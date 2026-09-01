@@ -21,6 +21,21 @@ O projeto está na etapa de **planejamento e modelagem**. No estado atual deste 
 
 As funcionalidades e tecnologias descritas abaixo representam o **escopo aprovado para a entrega final**, e não funcionalidades já concluídas. O código, os testes e as evidências de execução serão registrados no repositório conforme o desenvolvimento avançar.
 
+## Preparação do ambiente local
+
+O projeto utiliza Python 3.12, Django 5.2 e PostgreSQL. Para preparar o ambiente:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+python manage.py migrate
+python manage.py runserver
+```
+
+Preencha `DATABASE_URL` no arquivo `.env` com a conexão do PostgreSQL no Supabase. Enquanto a variável não estiver disponível, o projeto utiliza SQLite somente para desenvolvimento local. O arquivo `.env` não deve ser versionado.
+
 ## Sobre o projeto
 
 O SIGEE tem como objetivo centralizar a gestão de equipamentos tecnológicos de uma instituição de ensino. A solução deverá controlar inventário, disponibilidade, reservas, movimentações, manutenções e utilização pedagógica, preservando a rastreabilidade das operações.
