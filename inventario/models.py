@@ -56,5 +56,20 @@ class Equipamento(models.Model):
         verbose_name = "equipamento"
         verbose_name_plural = "equipamentos"
 
+    def possui_registros_relacionados(self):
+        return self.movimentacoes.exists()
+
+    def delete(self, using=None, keep_parents=False):
+        if self.possui_registros_relacionados():
+            if self.ativo:
+                self.ativo = False
+                self.save(
+                    using=using,
+                    update_fields=["ativo", "data_atualizacao"],
+                )
+            return 0, {}
+
+        return super().delete(using=using, keep_parents=keep_parents)
+
     def __str__(self):
         return f"{self.numero_patrimonio} - {self.nome}"
