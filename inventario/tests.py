@@ -31,10 +31,11 @@ class ExclusaoEquipamentoTest(TestCase):
 
     def test_exclui_definitivamente_equipamento_sem_historico(self):
         equipamento = self.criar_equipamento("PAT-001")
+        equipamento_id = equipamento.pk
 
         equipamento.delete()
 
-        self.assertFalse(Equipamento.objects.filter(pk=equipamento.pk).exists())
+        self.assertFalse(Equipamento.objects.filter(pk=equipamento_id).exists())
 
     def test_inativa_equipamento_com_movimentacao(self):
         equipamento = self.criar_equipamento("PAT-002")
