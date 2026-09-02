@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Equipamentos | SIGEE{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    <header class="page-header">
+        <div>
+            <h1>Equipamentos</h1>
+            <p>Cadastre, consulte e filtre os equipamentos do inventário.</p>
+        </div>
+        <a class="btn btn-primary-sigee" href="{% url 'inventario:equipamento_novo' %}">
+            <img src="{% static 'inventario/icons/add.svg' %}" alt="" aria-hidden="true">
+            Novo equipamento
+        </a>
+    </header>
+
+    <section class="kpi-grid" aria-label="Resumo do inventário">
+        <article class="kpi-card">
+            <span class="kpi-label">Total</span>
+            <strong class="kpi-value">{{ indicadores.total }}</strong>
+        </article>
+        <article class="kpi-card">
+            <span class="kpi-label">Disponíveis</span>
+            <strong class="kpi-value kpi-available">{{ indicadores.disponiveis }}</strong>
+        </article>
+        <article class="kpi-card">
+            <span class="kpi-label">Em uso</span>
+            <strong class="kpi-value kpi-in-use">{{ indicadores.em_uso }}</strong>
+        </article>
+        <article class="kpi-card">
+            <span class="kpi-label">Em manutenção</span>
+            <strong class="kpi-value kpi-maintenance">{{ indicadores.manutencao }}</strong>
+        </article>
+    </section>
+
+    <section class="inventory-card" aria-labelledby="inventory-heading">
+        <h2 class="visually-hidden" id="inventory-heading">Lista de equipamentos</h2>
+
+        <form class="filter-toolbar" method="get" role="search">
+            <div class="filter-search">
+                <label class="visually-hidden" for="busca">Buscar por patrimônio ou nome</label>
+                <img src="{% static 'inventario/icons/search.svg' %}" alt="" aria-hidden="true">
+                <input class="form-control" id="busca" name="busca" type="search" value="{{ filtros.busca }}" placeholder="Buscar por patrimônio ou nome">
+            </div>
+
+            <div>
+                <label class="visually-hidden" for="categoria">Categoria</label>
+                <select class="form-select" id="categoria" name="categoria">
+                    <option value="">Categoria</option>
+                    {% for item in categorias %}
+                        <option value="{{ item.pk }}"{% if filtros.categoria == item.pk|stringformat:'s' %} selected{% endif %}>{{ item.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="visually-hidden" for="local">Local</label>
+                <select class="form-select" id="local" name="local">
+                    <option value="">Local</option>
+                    {% for item in locais %}
+                        <option value="{{ item.pk }}"{% if filtros.local == item.pk|stringformat:'s' %} selected{% endif %}>{{ item.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="visually-hidden" for="situacao">Situação</label>
+                <select class="form-select" id="situacao" name="situacao">
+                    <option value="">Situação</option>
+                    {% for valor, rotulo in situacoes %}
+                        <option value="{{ valor }}"{% if filtros.situacao == valor %} selected{% endif %}>{{ rotulo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button class="btn btn-primary-sigee" type="submit">Filtrar</button>
+                {% if ha_filtros %}
+                    <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_lista' %}">Limpar</a>
+                {% endif %}
+            </div>
+        </form>
+
+        {% if pagina.object_list %}
+            <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Tabela de equipamentos; use rolagem horizontal em telas pequenas">
+                <table class="table inventory-table mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Patrimônio</th>
+                            <th scope="col">Nome</th>
+                            <th scope="col">Categoria</th>
+                            <th scope="col">Local</th>
+                            <th scope="col">Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipamento in pagina %}
+                            <tr>
+                                <td><strong>{{ equipamento.numero_patrimonio }}</strong></td>
+                                <td>
+                                    {{ equipamento.nome }}
+                                    {% if not equipamento.ativo %}<span class="inactive-label">Inativo</span>{% endif %}
+                                </td>
+                                <td>{{ equipamento.categoria.nome }}</td>
+                                <td>{{ equipamento.local.nome }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ equipamento.situacao|lower }}">
+                                        {{ equipamento.get_situacao_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <footer class="inventory-pagination">
+                <p>
+                    Mostrando {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }} equipamentos
+                </p>
+                {% if pagina.paginator.num_pages > 1 %}
+                    <nav aria-label="Paginação de equipamentos">
+                        <ul class="pagination mb-0">
+                            <li class="page-item{% if not pagina.has_previous %} disabled{% endif %}">
+                                {% if pagina.has_previous %}
+                                    <a class="page-link" href="?{% if parametros_paginacao %}{{ parametros_paginacao }}&amp;{% endif %}pagina={{ pagina.previous_page_number }}">Anterior</a>
+                                {% else %}
+                                    <span class="page-link" aria-disabled="true">Anterior</span>
+                                {% endif %}
+                            </li>
+                            <li class="page-item{% if not pagina.has_next %} disabled{% endif %}">
+                                {% if pagina.has_next %}
+                                    <a class="page-link" href="?{% if parametros_paginacao %}{{ parametros_paginacao }}&amp;{% endif %}pagina={{ pagina.next_page_number }}">Próxima</a>
+                                {% else %}
+                                    <span class="page-link" aria-disabled="true">Próxima</span>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </nav>
+                {% endif %}
+            </footer>
+        {% else %}
+            <div class="empty-state" role="status">
+                {% if total_equipamentos == 0 %}
+                    <h2>Nenhum equipamento cadastrado</h2>
+                    <p>Cadastre o primeiro equipamento para iniciar o inventário.</p>
+                    <a class="btn btn-primary-sigee" href="{% url 'inventario:equipamento_novo' %}">Cadastrar equipamento</a>
+                {% else %}
+                    <h2>Nenhum equipamento encontrado</h2>
+                    <p>Revise os filtros informados e tente novamente.</p>
+                    <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_lista' %}">Limpar filtros</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

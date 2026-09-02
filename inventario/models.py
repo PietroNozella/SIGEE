@@ -32,12 +32,21 @@ class Local(models.Model):
 
 
 class Equipamento(models.Model):
+    MENSAGEM_PATRIMONIO_DUPLICADO = (
+        "Já existe um equipamento cadastrado com este número de patrimônio."
+    )
+
     class Situacao(models.TextChoices):
         DISPONIVEL = "DISPONIVEL", "Disponível"
         EM_USO = "EM_USO", "Em uso"
         MANUTENCAO = "MANUTENCAO", "Manutenção"
 
-    numero_patrimonio = models.CharField(max_length=50, unique=True)
+    numero_patrimonio = models.CharField(
+        "número de patrimônio",
+        max_length=50,
+        unique=True,
+        error_messages={"unique": MENSAGEM_PATRIMONIO_DUPLICADO},
+    )
     nome = models.CharField(max_length=150)
     descricao = models.TextField(blank=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT)

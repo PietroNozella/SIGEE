@@ -1,141 +1,175 @@
-<div align="center">
+# SIGEE — Sistema Integrado de Gestão de Equipamentos Escolares
 
-# SIGEE
+![Status](https://img.shields.io/badge/status-em%20desenvolvimento-F59E0B?style=for-the-badge)
 
-**Sistema Integrado de Gestão de Equipamentos Escolares**
+**Tecnologias atuais**
 
-Aplicação web acadêmica desenvolvida como Projeto de Conclusão de Curso (PFC) em Engenharia de Software na Universidade de Mogi das Cruzes (UMC).
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Django](https://img.shields.io/badge/Django-5.2-092E20?style=for-the-badge&logo=django&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
+![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+![Figma](https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white)
 
-[![Status](https://img.shields.io/badge/status-planejamento_e_modelagem-F0AD4E?style=for-the-badge)](#estado-atual)
-[![Python 3.12](https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Django 5.2 LTS](https://img.shields.io/badge/Django_5.2_LTS-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
-[![Bootstrap 5](https://img.shields.io/badge/Bootstrap_5-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
+**Tecnologias previstas**
 
-</div>
+![Django Templates](https://img.shields.io/badge/Django%20Templates-092E20?style=for-the-badge&logo=django&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![Bootstrap](https://img.shields.io/badge/Bootstrap%205-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![BrasilAPI](https://img.shields.io/badge/BrasilAPI-009C3B?style=for-the-badge)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 
-## Estado atual
+O SIGEE é uma aplicação web desenvolvida como Projeto Final de Curso (PFC) do Bacharelado em Engenharia de Software da Universidade de Mogi das Cruzes (UMC).
 
-O projeto está na etapa de **planejamento e modelagem**. No estado atual deste repositório, ainda não existem aplicação Django, modelos, migrations ou testes implementados.
+## Identificação acadêmica
 
-As funcionalidades e tecnologias descritas abaixo representam o **escopo aprovado para a entrega final**, e não funcionalidades já concluídas. O código, os testes e as evidências de execução serão registrados no repositório conforme o desenvolvimento avançar.
+- **Instituição:** Universidade de Mogi das Cruzes — UMC
+- **Curso:** Bacharelado em Engenharia de Software
+- **Turma:** 8ºA ES — Matutino
+- **Projeto:** Projeto Final de Curso — PFC
+- **Local e ano:** Mogi das Cruzes — SP, 2026
+- **Autores:** Diego Alves da Silva Fagundes e Pietro Lopes Nozella Sousa
+- **Orientador:** Pedro Henrique Miho de Souza
+- **Coorientador:** Alessandro Aparecido da Silva Horas
 
-## Preparação do ambiente local
+## Problema e contexto
 
-O projeto utiliza Python 3.12, Django 5.2 e PostgreSQL. Para preparar o ambiente:
+Em instituições de ensino, o registro descentralizado de reservas, localização, manutenção e utilização de equipamentos pode dificultar a consulta da disponibilidade, a rastreabilidade dos itens e a identificação de como esses recursos tecnológicos são empregados nas atividades de ensino. Esse cenário pode gerar conflitos de uso, atrasos nas atividades e dificuldade no acompanhamento da utilização pedagógica.
+
+O SIGEE propõe centralizar o controle dos equipamentos, reservas, movimentações e manutenções, permitindo também relacionar sua utilização a turmas, disciplinas e atividades pedagógicas.
+
+## Objetivos
+
+### Objetivo geral
+
+Desenvolver uma plataforma web para auxiliar instituições de ensino no gerenciamento de equipamentos tecnológicos, centralizando informações e processos de controle, disponibilidade, reserva, retirada, devolução e manutenção, além de permitir o acompanhamento de sua utilização no contexto educacional.
+
+### Objetivos específicos
+
+1. Organizar as informações dos equipamentos tecnológicos.
+2. Permitir a consulta da situação e da disponibilidade dos equipamentos.
+3. Implementar reserva, retirada e devolução com controle das movimentações.
+4. Registrar e acompanhar manutenções.
+5. Centralizar a gestão e a consulta em uma aplicação web.
+6. Vincular a utilização dos equipamentos a turmas, disciplinas e atividades pedagógicas.
+
+## Público e perfis de acesso
+
+- **Administrador:** gerencia o sistema, o inventário, os usuários e o painel resumido com indicadores.
+- **Operador:** registra retiradas, devoluções e demais movimentações autorizadas.
+- **Professor:** consulta a disponibilidade, realiza reservas e associa a utilização dos equipamentos ao contexto pedagógico.
+
+Não haverá cadastro público. A primeira conta administrativa funcional será configurada por meio de uma conta técnica de Django Superuser; depois disso, usuários autorizados com perfil Administrador poderão cadastrar as demais contas.
+
+## Escopo planejado
+
+O escopo final do PFC contempla:
+
+- autenticação e autorização por perfil;
+- gestão e consulta do inventário;
+- categorias, locais, patrimônio único e situação dos equipamentos;
+- reservas por período com bloqueio de conflitos e indisponibilidade;
+- consulta informativa de feriados nacionais pela BrasilAPI durante a reserva;
+- retirada, devolução e histórico de movimentações;
+- manutenção e histórico de intervenções;
+- vinculação da utilização a turma, disciplina e atividade pedagógica;
+- painel resumido do inventário;
+- indicadores de utilização pedagógica;
+- auditoria básica de acessos e ações relevantes.
+
+### Fora do escopo
+
+- identificação por código de barras ou QR Code;
+- integrações externas além da BrasilAPI e dos serviços de infraestrutura previstos;
+- gerenciamento simultâneo de múltiplas unidades escolares;
+- relatórios avançados;
+- notificações automáticas.
+
+## Funcionalidades planejadas
+
+O baseline aprovado contém 11 requisitos funcionais:
+
+- **RF-01:** autenticação e autorização por perfil;
+- **RF-02:** cadastro e gerenciamento do inventário;
+- **RF-03:** consulta e filtragem de equipamentos;
+- **RF-04:** reserva de equipamentos;
+- **RF-05:** retirada e devolução;
+- **RF-06:** histórico de movimentações;
+- **RF-07:** gerenciamento de manutenção;
+- **RF-08:** painel resumido do inventário;
+- **RF-09:** consulta de feriados nacionais durante a reserva;
+- **RF-10:** vinculação da utilização ao contexto pedagógico;
+- **RF-11:** indicadores de utilização pedagógica.
+
+Os critérios de aceite estão em [Requisitos funcionais](docs/requisitos-funcionais.md).
+
+## Arquitetura e tecnologias
+
+O SIGEE adota uma arquitetura web monolítica com Django e renderização no servidor. As regras de negócio, autenticação, autorização, acesso aos dados e renderização das páginas permanecem integrados na mesma aplicação.
+
+| Área | Tecnologias e decisões |
+|---|---|
+| Interface | Django Templates, HTML5, CSS3, Bootstrap 5 e JavaScript pontual |
+| Aplicação | Python 3.12, Django 5.2 LTS, Django ORM, Authentication e Groups/Permissions |
+| Banco de dados | PostgreSQL com hospedagem prevista no Supabase; SQLite para desenvolvimento local |
+| Integração externa | BrasilAPI para consulta não bloqueante de feriados nacionais |
+| Implantação | Vercel, condicionada à validação da aplicação, conexão com o banco e migrations |
+| Versionamento | Git e GitHub, com integração das alterações por Pull Request |
+| Prototipação | Figma |
+
+## Organização do desenvolvimento
+
+- **Método de trabalho:** Kanban.
+- **Gestão e acompanhamento:** Notion e Microsoft Teams.
+- **Requisitos:** levantamento incremental, com identificação, prioridade e critério de aceite verificável.
+- **Modelagem:** UML para fluxos e arquitetura, DER para dados e Figma para validação da interface.
+- **Validação:** execução dos requisitos e fluxos críticos de ponta a ponta, com registro do resultado esperado, resultado obtido e evidências.
+
+O [protótipo do SIGEE no Figma](https://www.figma.com/design/cBCn1GfruefHTGZZqTTvDU/Sem-t%C3%ADtulo?node-id=0-1&t=Oi1tT0KLAXj8Yo2G-1) integra os materiais de apoio do projeto.
+
+## Segurança e privacidade
+
+O planejamento prevê autenticação por sessão, autorização aplicada no servidor, proteção CSRF, validação de entrada, segredos em variáveis de ambiente, comunicação HTTPS no ambiente publicado, minimização dos dados pessoais e auditoria das ações relevantes. Os requisitos completos e os itens ainda candidatos estão em [Requisitos não funcionais e de segurança](docs/requisitos-nao-funcionais.md).
+
+## Estado atual do desenvolvimento
+
+O código disponível atualmente possui:
+
+- estrutura inicial em Django;
+- apps `inventario` e `movimentacoes`;
+- modelos e migrations de Categoria, Local, Equipamento e Movimentação;
+- restrição de unicidade do número patrimonial dos equipamentos;
+- registros desses modelos no Django Admin;
+- configuração por variáveis de ambiente;
+- SQLite para desenvolvimento local e suporte a PostgreSQL por `DATABASE_URL`.
+
+Ainda não existem telas ou rotas da aplicação além de `/admin/`, nem testes automatizados implementados. Reservas, manutenção, perfis funcionais, contexto pedagógico, indicadores, BrasilAPI e deploy permanecem como escopo planejado, não como funcionalidades concluídas.
+
+## Execução local
 
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env
+```
+
+No arquivo `.env`, substitua `DJANGO_SECRET_KEY` por uma chave local. Para utilizar SQLite, remova ou deixe vazia a variável `DATABASE_URL`. Para utilizar PostgreSQL, substitua o valor de exemplo por uma conexão válida.
+
+Depois, prepare o banco, crie o usuário técnico do Django Admin e inicie a aplicação:
+
+```powershell
 python manage.py migrate
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Preencha `DATABASE_URL` no arquivo `.env` com a conexão do PostgreSQL no Supabase. Enquanto a variável não estiver disponível, o projeto utiliza SQLite somente para desenvolvimento local. O arquivo `.env` não deve ser versionado.
+## Documentação versionada
 
-## Sobre o projeto
-
-O SIGEE tem como objetivo centralizar a gestão de equipamentos tecnológicos de uma instituição de ensino. A solução deverá controlar inventário, disponibilidade, reservas, movimentações, manutenções e utilização pedagógica, preservando a rastreabilidade das operações.
-
-## Perfis de acesso
-
-- **Administrador:** gerencia o sistema e o inventário e consulta o painel com indicadores.
-- **Operador:** registra retiradas, devoluções, movimentações e operações autorizadas de manutenção.
-- **Professor:** consulta a disponibilidade, realiza reservas e associa a utilização dos equipamentos a turmas, disciplinas e atividades pedagógicas.
-
-A autenticação e a autorização serão implementadas no servidor com Django Authentication, Groups e Permissions, seguindo controle de acesso baseado em papéis (RBAC).
-
-## Escopo aprovado
-
-A entrega final deverá contemplar os 11 requisitos funcionais aprovados:
-
-- **RF-01 — Autenticação e autorização:** autenticar usuários e limitar as ações conforme o perfil.
-- **RF-02 — Inventário:** cadastrar e gerenciar equipamentos com patrimônio único, categoria, local e situação.
-- **RF-03 — Consulta:** pesquisar e filtrar equipamentos por texto, categoria, local e situação.
-- **RF-04 — Reservas:** reservar equipamentos por período, bloqueando conflitos e indisponibilidade.
-- **RF-05 — Retirada e devolução:** registrar as movimentações físicas, com ou sem reserva prévia quando permitido.
-- **RF-06 — Histórico:** consultar movimentações com data, hora, responsável, destinatário e tipo.
-- **RF-07 — Manutenção:** registrar e acompanhar intervenções, mantendo o equipamento indisponível durante a manutenção.
-- **RF-08 — Painel do inventário:** apresentar indicadores numéricos, totais por situação, movimentações recentes e representações gráficas.
-- **RF-09 — Feriados nacionais:** consultar a BrasilAPI durante o processo de reserva sem tornar a integração bloqueante.
-- **RF-10 — Contexto pedagógico:** vincular a utilização a turma, disciplina e atividade pedagógica.
-- **RF-11 — Indicadores pedagógicos:** apresentar ao administrador informações consolidadas sobre a utilização dos equipamentos.
-
-A auditoria básica de acessos e ações relevantes integra os requisitos transversais de segurança da entrega.
-
-Equipamentos com registros relacionados deverão ser **inativados**, em vez de excluídos definitivamente, para preservar os históricos de movimentação, manutenção e utilização pedagógica.
-
-### Fora do escopo
-
-- leitura por código de barras ou QR Code;
-- APIs ou integrações externas adicionais além da BrasilAPI e dos serviços de infraestrutura previstos;
-- suporte a múltiplas unidades escolares;
-- relatórios avançados;
-- notificações automáticas.
-
-## Arquitetura e tecnologias previstas
-
-O SIGEE adotará uma arquitetura web **monolítica com Django** e renderização no servidor. Não haverá frontend SPA separado nem API própria desacoplada.
-
-- **Aplicação:** Python 3.12 e Django 5.2 LTS.
-- **Autenticação e autorização:** Django Authentication, Groups e Permissions.
-- **Persistência:** Django ORM e migrations.
-- **Banco de dados:** PostgreSQL hospedado no Supabase.
-- **Interface:** Django Templates, HTML5, CSS3, JavaScript pontual e Bootstrap 5.
-- **Integração externa:** BrasilAPI — API de Feriados Nacionais.
-- **Implantação prevista:** Vercel para a aplicação Django e Supabase para o PostgreSQL.
-- **Versionamento:** Git e GitHub, com revisão por Pull Request.
-- **Organização e documentação:** Notion, Figma e Microsoft Teams.
-
-O Supabase será utilizado somente para hospedar o PostgreSQL. A autenticação e as permissões permanecerão nos recursos nativos do Django; Supabase Auth e políticas RLS não fazem parte do escopo aprovado.
-
-A implantação na Vercel depende de prova técnica de compatibilidade com a aplicação Django, a conexão segura com o banco e a execução das migrations.
-
-## Integração com a BrasilAPI
-
-Durante a criação de uma reserva, o backend consultará a BrasilAPI por HTTPS para identificar feriados nacionais no período selecionado. Essa integração terá caráter informativo e **não bloqueará a reserva** caso o serviço esteja indisponível ou exceda o tempo limite configurado.
-
-## Qualidade, segurança e validação
-
-- Permissões serão aplicadas no servidor conforme os perfis Administrador, Operador e Professor.
-- Sessões, cookies seguros, proteção CSRF e validação de entrada utilizarão os mecanismos consolidados do Django.
-- Credenciais, `DJANGO_SECRET_KEY` e `DATABASE_URL` permanecerão em variáveis de ambiente, fora do código-fonte.
-- O ambiente publicado deverá utilizar HTTPS, inclusive na conexão com o PostgreSQL.
-- Serão tratados apenas os dados pessoais básicos necessários, como nome, e-mail e perfil de acesso.
-- Testes e demonstrações utilizarão dados sintéticos.
-- Ações relevantes deverão registrar usuário, ação, data/hora e entidade afetada.
-- Os fluxos críticos deverão funcionar em desktop e dispositivos móveis, com navegação por teclado e contraste adequado.
-- As consultas principais deverão responder em até três segundos na base de testes.
-- As principais regras, modelos e serviços deverão possuir testes automatizados, com cobertura mínima de 50% e validação dos fluxos críticos.
-
-Os controles relacionados à proteção contra tentativas abusivas de login, recuperação segura de senha e publicação de Termo de Uso e Política de Privacidade permanecem candidatos sujeitos à validação acadêmica; não compõem o baseline obrigatório até essa confirmação.
-
-## Critérios de conclusão
-
-O escopo será considerado concluído quando:
-
-- os requisitos funcionais aprovados estiverem implementados, testados e demonstrados;
-- conflitos de reserva e ações sem permissão forem bloqueados no servidor;
-- a indisponibilidade da BrasilAPI não impedir a conclusão de uma reserva;
-- movimentações, manutenções, utilizações pedagógicas e ações auditáveis preservarem a rastreabilidade;
-- o painel apresentar indicadores numéricos e gráficos coerentes com os dados cadastrados;
-- os testes automatizados atingirem a cobertura mínima definida para a entrega.
-
-## Processo de desenvolvimento
-
-O trabalho será organizado em Kanban, com acompanhamento no Notion e comunicação no Microsoft Teams. Requisitos, regras de negócio, decisões de arquitetura, diagramas, protótipos e evidências de testes deverão manter rastreabilidade com a implementação registrada no repositório durante o desenvolvimento.
-
-## Autores
-
-Projeto desenvolvido em dupla para o PFC de Engenharia de Software da UMC:
-
-- **Diego Alves da Silva Fagundes** — [GitHub](https://github.com/Diego251Fagundes)
-- **Pietro Lopes Nozella Sousa** — [GitHub](https://github.com/PietroNozella)
-
-## Orientação acadêmica
-
-- **Orientador(a):** a confirmar
-- **Coorientador(a):** a confirmar
+- [Requisitos funcionais](docs/requisitos-funcionais.md)
+- [Requisitos não funcionais e de segurança](docs/requisitos-nao-funcionais.md)
+- [Regras de negócio](docs/regras-de-negocio.md)
