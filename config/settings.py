@@ -34,9 +34,12 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
 
+DEFAULT_ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sigee-psi.vercel.app"]
+configured_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    for host in [*DEFAULT_ALLOWED_HOSTS, *configured_hosts]
     if host.strip()
 ]
 
