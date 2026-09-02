@@ -1,6 +1,21 @@
 from django.db import models
 
 
+class EquipamentoQuerySet(models.QuerySet):
+    def delete(self):
+        total_excluido = 0
+        detalhes_exclusao = {}
+
+        for equipamento in self:
+            quantidade, detalhes = equipamento.delete()
+            total_excluido += quantidade
+
+            for modelo, total in detalhes.items():
+                detalhes_exclusao[modelo] = detalhes_exclusao.get(modelo, 0) + total
+
+        return total_excluido, detalhes_exclusao
+
+
 class Categoria(models.Model):
     nome = models.CharField(max_length=100, unique=True)
     descricao = models.CharField(max_length=255, blank=True)
@@ -60,10 +75,27 @@ class Equipamento(models.Model):
     data_cadastro = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
 
+    objects = EquipamentoQuerySet.as_manager()
+
     class Meta:
         ordering = ["numero_patrimonio"]
         verbose_name = "equipamento"
         verbose_name_plural = "equipamentos"
+
+    def possui_registros_relacionados(self):
+        return self.movimentacoes.exists()
+
+    def delete(self, using=None, keep_parents=False):
+        if self.possui_registros_relacionados():
+            if self.ativo:
+                self.ativo = False
+                self.save(
+                    using=using,
+                    update_fields=["ativo", "data_atualizacao"],
+                )
+            return 0, {}
+
+        return super().delete(using=using, keep_parents=keep_parents)
 
     def __str__(self):
         return f"{self.numero_patrimonio} - {self.nome}"

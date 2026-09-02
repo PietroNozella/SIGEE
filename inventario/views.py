@@ -2,7 +2,8 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Q
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from .forms import EquipamentoForm
 from .models import Categoria, Equipamento, Local
@@ -87,3 +88,21 @@ def equipamento_novo(request):
         "inventario/equipamento_form.html",
         {"form": form},
     )
+
+
+@require_POST
+def equipamento_excluir(request, equipamento_id):
+    equipamento = get_object_or_404(Equipamento, pk=equipamento_id)
+    possui_historico = equipamento.possui_registros_relacionados()
+
+    equipamento.delete()
+
+    if possui_historico:
+        messages.success(
+            request,
+            "Equipamento inativado e histórico de movimentações preservado.",
+        )
+    else:
+        messages.success(request, "Equipamento excluído com sucesso.")
+
+    return redirect("inventario:equipamento_lista")

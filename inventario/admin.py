@@ -29,3 +29,7 @@ class EquipamentoAdmin(admin.ModelAdmin):
     )
     list_filter = ("ativo", "situacao", "categoria", "local")
     search_fields = ("numero_patrimonio", "nome")
+
+    def delete_queryset(self, request, queryset):
+        for equipamento in queryset:
+            equipamento.delete()
