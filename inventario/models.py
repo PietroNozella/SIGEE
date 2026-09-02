@@ -1,6 +1,21 @@
 from django.db import models
 
 
+class EquipamentoQuerySet(models.QuerySet):
+    def delete(self):
+        total_excluido = 0
+        detalhes_exclusao = {}
+
+        for equipamento in self:
+            quantidade, detalhes = equipamento.delete()
+            total_excluido += quantidade
+
+            for modelo, total in detalhes.items():
+                detalhes_exclusao[modelo] = detalhes_exclusao.get(modelo, 0) + total
+
+        return total_excluido, detalhes_exclusao
+
+
 class Categoria(models.Model):
     nome = models.CharField(max_length=100, unique=True)
     descricao = models.CharField(max_length=255, blank=True)
@@ -59,6 +74,8 @@ class Equipamento(models.Model):
     ativo = models.BooleanField(default=True)
     data_cadastro = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
+
+    objects = EquipamentoQuerySet.as_manager()
 
     class Meta:
         ordering = ["numero_patrimonio"]

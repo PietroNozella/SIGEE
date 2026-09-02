@@ -144,3 +144,41 @@ class ExclusaoEquipamentoTest(TestCase):
         com_historico.refresh_from_db()
         self.assertFalse(com_historico.ativo)
         self.assertEqual(com_historico.movimentacoes.count(), 1)
+
+    def test_exclusao_por_queryset_aplica_a_regra(self):
+        equipamento = self.criar_equipamento("PAT-006")
+        movimentacao = Movimentacao.objects.create(equipamento=equipamento, operador=self.operador, destinatario=self.destinatario, tipo="RETIRADA")
+
+        Equipamento.objects.filter(pk=equipamento.pk).delete()
+
+        equipamento.refresh_from_db()
+        self.assertFalse(equipamento.ativo)
+        self.assertTrue(Movimentacao.objects.filter(pk=movimentacao.pk).exists())
+
+    def test_post_exclui_equipamento_sem_historico(self):
+        equipamento = self.criar_equipamento("PAT-007")
+
+        resposta = self.client.post(reverse("inventario:equipamento_excluir", args=[equipamento.pk]), follow=True)
+
+        self.assertRedirects(resposta, reverse("inventario:equipamento_lista"))
+        self.assertContains(resposta, "Equipamento excluído com sucesso.")
+        self.assertFalse(Equipamento.objects.filter(pk=equipamento.pk).exists())
+
+    def test_post_inativa_equipamento_com_historico_e_exibe_estado(self):
+        equipamento = self.criar_equipamento("PAT-008")
+        Movimentacao.objects.create(equipamento=equipamento, operador=self.operador, destinatario=self.destinatario, tipo="RETIRADA")
+
+        resposta = self.client.post(reverse("inventario:equipamento_excluir", args=[equipamento.pk]), follow=True)
+
+        equipamento.refresh_from_db()
+        self.assertFalse(equipamento.ativo)
+        self.assertContains(resposta, "histórico de movimentações preservado")
+        self.assertContains(resposta, "Inativo")
+
+    def test_exclusao_por_get_nao_e_permitida(self):
+        equipamento = self.criar_equipamento("PAT-009")
+
+        resposta = self.client.get(reverse("inventario:equipamento_excluir", args=[equipamento.pk]))
+
+        self.assertEqual(resposta.status_code, 405)
+        self.assertTrue(Equipamento.objects.filter(pk=equipamento.pk).exists())
