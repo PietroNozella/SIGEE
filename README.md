@@ -1,65 +1,53 @@
-# SIGEE — Sistema Integrado de Gestão de Equipamentos Escolares
+# SIGEE
 
-Aplicação web acadêmica desenvolvida como Projeto de Conclusão de Curso (PFC) em Engenharia de Software na Universidade de Mogi das Cruzes (UMC).
+**Sistema Integrado de Gestão de Equipamentos Escolares**
+
+Projeto Final de Curso (PFC) do Bacharelado em Engenharia de Software da Universidade de Mogi das Cruzes (UMC).
 
 ## Sobre o projeto
 
-O SIGEE é uma aplicação web para a gestão de equipamentos tecnológicos de uma instituição de ensino.
+O SIGEE é uma aplicação web em desenvolvimento para apoiar a gestão de equipamentos tecnológicos em instituições de ensino. O escopo planejado contempla inventário, disponibilidade, reservas, movimentações, manutenção e rastreabilidade de utilização.
 
-## Problema e objetivo
+## Estado atual
 
-O projeto parte da necessidade de centralizar a gestão desses equipamentos. Seu objetivo é controlar inventário, disponibilidade, reservas, movimentações, manutenções e utilização pedagógica, preservando a rastreabilidade das operações.
+Atualmente, o projeto possui:
 
-## Principais funcionalidades
+- estrutura inicial em Django;
+- modelos e migrations de Categoria, Local, Equipamento e Movimentação;
+- restrição de unicidade do número patrimonial dos equipamentos;
+- registros desses modelos no Django Admin;
+- configuração por variáveis de ambiente, com SQLite local e suporte a PostgreSQL.
 
-O escopo aprovado prevê:
+Ainda não há telas ou rotas da aplicação além de `/admin/`, nem testes automatizados implementados.
 
-- Gestão e consulta do inventário.
-- Reservas de equipamentos.
-- Registro de retirada, devolução e demais movimentações.
-- Acompanhamento de manutenções.
-- Associação da utilização a turma, disciplina e atividade pedagógica.
-- Indicadores administrativos e pedagógicos.
+## Tecnologias atuais
 
-## Perfis
+- Python 3.12
+- Django 5.2
+- Django ORM e migrations
+- SQLite para desenvolvimento local
+- PostgreSQL por `DATABASE_URL`
 
-- **Administrador:** gerencia o sistema e o inventário e consulta o painel com indicadores.
-- **Operador:** registra retiradas, devoluções, movimentações e operações autorizadas de manutenção.
-- **Professor:** consulta a disponibilidade, realiza reservas e associa a utilização dos equipamentos a turmas, disciplinas e atividades pedagógicas.
-
-## Arquitetura resumida
-
-O SIGEE adota uma arquitetura web monolítica com Django e renderização no servidor por meio de Django Templates. A autenticação e a autorização utilizarão Django Authentication, Groups e Permissions. O PostgreSQL será hospedado no Supabase, e a implantação da aplicação na Vercel está prevista e depende de prova técnica de compatibilidade.
-
-## Tecnologias principais
-
-- Python 3.12 e Django 5.2 LTS.
-- Django Templates, HTML5, CSS3, JavaScript pontual e Bootstrap 5.
-- PostgreSQL hospedado no Supabase.
-- BrasilAPI para consulta informativa de feriados nacionais.
-
-## Estado atual do desenvolvimento
-
-O projeto possui a estrutura inicial em Django, com configuração por variáveis de ambiente, suporte a PostgreSQL ou SQLite local, apps `inventario` e `movimentacoes`, modelos e migrations iniciais e registros no Django Admin. Ainda não existem telas ou rotas da aplicação além da administração, nem casos de teste automatizados implementados.
-
-## Como executar localmente
+## Execução local
 
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env
+```
+
+No arquivo `.env`, substitua `DJANGO_SECRET_KEY` por uma chave local. Para utilizar SQLite, remova ou deixe vazia a variável `DATABASE_URL`. Para utilizar PostgreSQL, substitua o valor de exemplo por uma conexão válida.
+
+Depois, prepare o banco, crie o usuário do Django Admin e inicie a aplicação:
+
+```powershell
 python manage.py migrate
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Após copiar o arquivo, substitua `DATABASE_URL` no `.env` por uma conexão válida do Supabase. Para utilizar SQLite localmente, deixe a variável vazia ou remova a linha. O arquivo `.env` não deve ser versionado.
-
-## Documentação
-
-A documentação técnica e funcional está disponível no [índice da documentação](docs/README.md).
-
 ## Autores
 
-- **Diego Alves da Silva Fagundes** — [GitHub](https://github.com/Diego251Fagundes)
-- **Pietro Lopes Nozella Sousa** — [GitHub](https://github.com/PietroNozella)
+- Diego Alves da Silva Fagundes
+- Pietro Lopes Nozella Sousa
