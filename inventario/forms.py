@@ -1,4 +1,5 @@
 from django import forms
+from django.core.validators import FileExtensionValidator
 
 from .models import Equipamento
 
@@ -65,3 +66,27 @@ class EquipamentoForm(forms.ModelForm):
             "local",
             "situacao",
         )
+
+
+class ImportacaoEquipamentosCSVForm(forms.Form):
+    """Valida o arquivo enviado para o cadastro em lote de equipamentos."""
+
+    TAMANHO_MAXIMO_ARQUIVO = 2 * 1024 * 1024
+
+    arquivo = forms.FileField(
+        label="Arquivo CSV",
+        validators=[FileExtensionValidator(allowed_extensions=["csv"])],
+        widget=forms.ClearableFileInput(
+            attrs={"class": "form-control", "accept": ".csv,text/csv"}
+        ),
+    )
+
+    def clean_arquivo(self):
+        arquivo = self.cleaned_data["arquivo"]
+
+        if arquivo.size > self.TAMANHO_MAXIMO_ARQUIVO:
+            raise forms.ValidationError(
+                "O arquivo CSV deve ter no máximo 2 MB.",
+            )
+
+        return arquivo

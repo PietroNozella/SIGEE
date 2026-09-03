@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Importar equipamentos | SIGEE{% endblock %}
+
+{% block content %}
+<div class="page-content form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">
+        <a href="{% url 'inventario:equipamento_lista' %}">Equipamentos</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Importar CSV</span>
+    </nav>
+
+    <header class="page-header form-page-header">
+        <div>
+            <h1>Importar equipamentos</h1>
+            <p>Cadastre vários equipamentos de uma vez a partir de um arquivo CSV.</p>
+        </div>
+    </header>
+
+    <section class="form-card" aria-labelledby="importacao-section-title">
+        <div class="form-card-header">
+            <h2 id="importacao-section-title">Arquivo de equipamentos</h2>
+            <p>O arquivo completo é validado antes do cadastro. Se houver erro, nenhum equipamento será importado.</p>
+        </div>
+
+        {% if form.errors or erros_importacao %}
+            <div class="validation-summary" id="form-errors" role="alert" tabindex="-1" data-focus-on-load>
+                <h3>Revise o arquivo enviado</h3>
+                <ul>
+                    {% for error in form.arquivo.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                    {% for erro in erros_importacao %}
+                        <li>{{ erro }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <div class="form-help mb-4">
+            <p class="mb-2">Use as colunas <code>numero_patrimonio</code>, <code>nome</code>, <code>descricao</code>, <code>categoria</code>, <code>local</code> e <code>situacao</code>. A descrição pode ficar vazia.</p>
+            <p class="mb-2">Categoria e local precisam estar cadastrados. Para situação, use <code>DISPONIVEL</code>, <code>EM_USO</code> ou <code>MANUTENCAO</code>.</p>
+            <p class="mb-0">O limite é de 1.000 equipamentos e 2 MB por arquivo. <a href="{% url 'inventario:equipamento_modelo_csv' %}">Baixar modelo CSV</a>.</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <div class="form-field form-field-full">
+                <label class="form-label" for="{{ form.arquivo.id_for_label }}">
+                    {{ form.arquivo.label }}
+                    <span class="required-mark" aria-hidden="true">*</span>
+                    <span class="visually-hidden">(obrigatório)</span>
+                </label>
+                {{ form.arquivo }}
+            </div>
+
+            <div class="form-actions">
+                <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_lista' %}">Cancelar</a>
+                <button class="btn btn-primary-sigee" type="submit">Importar equipamentos</button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}
