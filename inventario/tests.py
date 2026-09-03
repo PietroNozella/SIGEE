@@ -165,6 +165,17 @@ class ExclusaoEquipamentoTest(TestCase):
         self.assertContains(resposta, "Equipamento excluído com sucesso.")
         self.assertFalse(Equipamento.objects.filter(pk=equipamento.pk).exists())
 
+    def test_lista_solicita_confirmacao_antes_da_exclusao(self):
+        equipamento = self.criar_equipamento("PAT-CONF-001")
+
+        resposta = self.client.get(reverse("inventario:equipamento_lista"))
+
+        self.assertContains(
+            resposta,
+            "Tem certeza de que deseja excluir o equipamento Notebook educacional",
+        )
+        self.assertContains(resposta, "PAT\\u002DCONF\\u002D001")
+
     def test_post_inativa_equipamento_com_historico_e_exibe_estado(self):
         equipamento = self.criar_equipamento("PAT-008")
         Movimentacao.objects.create(equipamento=equipamento, operador=self.operador, destinatario=self.destinatario, tipo="RETIRADA")

@@ -118,7 +118,7 @@
                                     {% if equipamento.ativo %}
                                         <form method="post" action="{% url 'inventario:equipamento_excluir' equipamento.pk %}">
                                             {% csrf_token %}
-                                            <button class="btn btn-secondary-sigee" type="submit">Excluir</button>
+                                            <button class="btn btn-secondary-sigee" type="submit" onclick="return confirm('Tem certeza de que deseja excluir o equipamento {{ equipamento.nome|escapejs }} (patrimônio {{ equipamento.numero_patrimonio|escapejs }})?');">Excluir</button>
                                         </form>
                                     {% endif %}
                                 </td>
