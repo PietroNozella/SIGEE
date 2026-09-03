@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
@@ -182,3 +183,204 @@ class ExclusaoEquipamentoTest(TestCase):
 
         self.assertEqual(resposta.status_code, 405)
         self.assertTrue(Equipamento.objects.filter(pk=equipamento.pk).exists())
+
+
+class ImportacaoEquipamentosCSVTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.categoria = Categoria.objects.get(nome="Notebook")
+        cls.local = Local.objects.get(nome="Laboratório de informática")
+
+    def arquivo_csv(self, conteudo, nome="equipamentos.csv"):
+        return SimpleUploadedFile(
+            nome,
+            conteudo.encode("utf-8"),
+            content_type="text/csv",
+        )
+
+    def cabecalho(self, delimitador=";"):
+        return delimitador.join(
+            (
+                "numero_patrimonio",
+                "nome",
+                "descricao",
+                "categoria",
+                "local",
+                "situacao",
+            )
+        )
+
+    def linha_valida(self, patrimonio, delimitador=";"):
+        return delimitador.join(
+            (
+                patrimonio,
+                "Notebook educacional",
+                "Uso em sala de aula",
+                self.categoria.nome,
+                self.local.nome,
+                Equipamento.Situacao.DISPONIVEL,
+            )
+        )
+
+    def importar(self, conteudo, nome="equipamentos.csv"):
+        return self.client.post(
+            reverse("inventario:equipamento_importar"),
+            {"arquivo": self.arquivo_csv(conteudo, nome)},
+        )
+
+    def test_listagem_exibe_acao_de_importacao(self):
+        resposta = self.client.get(reverse("inventario:equipamento_lista"))
+
+        self.assertContains(resposta, "Importar CSV")
+        self.assertContains(resposta, reverse("inventario:equipamento_importar"))
+
+    def test_tela_de_importacao_exibe_instrucoes_e_modelo(self):
+        resposta = self.client.get(reverse("inventario:equipamento_importar"))
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Importar equipamentos")
+        self.assertContains(resposta, "multipart/form-data")
+        self.assertContains(resposta, "Baixar modelo CSV")
+
+    def test_modelo_csv_contem_cabecalhos_esperados(self):
+        resposta = self.client.get(reverse("inventario:equipamento_modelo_csv"))
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(resposta["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("attachment;", resposta["Content-Disposition"])
+        self.assertEqual(
+            resposta.content.decode("utf-8-sig"),
+            self.cabecalho() + "\n",
+        )
+
+    def test_importa_lote_valido_separado_por_ponto_e_virgula(self):
+        conteudo = "\n".join(
+            (
+                self.cabecalho(),
+                self.linha_valida("PAT-CSV-001"),
+                self.linha_valida("PAT-CSV-002"),
+            )
+        )
+
+        resposta = self.importar(conteudo, nome="equipamentos.CSV")
+
+        self.assertRedirects(resposta, reverse("inventario:equipamento_lista"))
+        self.assertEqual(Equipamento.objects.count(), 2)
+        self.assertTrue(
+            Equipamento.objects.filter(numero_patrimonio="PAT-CSV-001").exists()
+        )
+
+    def test_importa_lote_valido_separado_por_virgula(self):
+        conteudo = "\n".join(
+            (
+                self.cabecalho(","),
+                self.linha_valida("PAT-CSV-003", ","),
+            )
+        )
+
+        resposta = self.importar(conteudo)
+
+        self.assertRedirects(resposta, reverse("inventario:equipamento_lista"))
+        self.assertTrue(
+            Equipamento.objects.filter(numero_patrimonio="PAT-CSV-003").exists()
+        )
+
+    def test_erro_em_uma_linha_impede_importacao_do_lote(self):
+        linha_invalida = self.linha_valida("PAT-CSV-005").replace(
+            self.categoria.nome,
+            "Categoria inexistente",
+        )
+        conteudo = "\n".join(
+            (
+                self.cabecalho(),
+                self.linha_valida("PAT-CSV-004"),
+                linha_invalida,
+            )
+        )
+
+        resposta = self.importar(conteudo)
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Linha 3: Categoria não encontrada.")
+        self.assertEqual(Equipamento.objects.count(), 0)
+
+    def test_rejeita_patrimonio_duplicado_no_banco_sem_salvar_lote(self):
+        Equipamento.objects.create(
+            numero_patrimonio="PAT-CSV-006",
+            nome="Equipamento existente",
+            categoria=self.categoria,
+            local=self.local,
+        )
+        conteudo = "\n".join(
+            (
+                self.cabecalho(),
+                self.linha_valida("PAT-CSV-006"),
+                self.linha_valida("PAT-CSV-007"),
+            )
+        )
+
+        resposta = self.importar(conteudo)
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, Equipamento.MENSAGEM_PATRIMONIO_DUPLICADO)
+        self.assertFalse(
+            Equipamento.objects.filter(numero_patrimonio="PAT-CSV-007").exists()
+        )
+
+    def test_rejeita_patrimonio_duplicado_no_arquivo(self):
+        conteudo = "\n".join(
+            (
+                self.cabecalho(),
+                self.linha_valida("PAT-CSV-008"),
+                self.linha_valida("PAT-CSV-008"),
+            )
+        )
+
+        resposta = self.importar(conteudo)
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Linha 3: Número de patrimônio duplicado no arquivo.")
+        self.assertEqual(Equipamento.objects.count(), 0)
+
+    def test_rejeita_situacao_invalida_sem_salvar_lote(self):
+        linha_invalida = self.linha_valida("PAT-CSV-009").replace(
+            Equipamento.Situacao.DISPONIVEL,
+            "INDISPONIVEL",
+        )
+        conteudo = "\n".join(
+            (
+                self.cabecalho(),
+                self.linha_valida("PAT-CSV-010"),
+                linha_invalida,
+            )
+        )
+
+        resposta = self.importar(conteudo)
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Linha 3: Situação:")
+        self.assertEqual(Equipamento.objects.count(), 0)
+
+    def test_rejeita_cabecalhos_invalidos(self):
+        conteudo = "patrimonio;nome\nPAT-CSV-011;Notebook"
+
+        resposta = self.importar(conteudo)
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Os cabeçalhos devem ser:")
+        self.assertEqual(Equipamento.objects.count(), 0)
+
+    def test_rejeita_arquivo_com_mais_de_mil_equipamentos(self):
+        conteudo = "\n".join(
+            [self.cabecalho()]
+            + [self.linha_valida(f"PAT-LIMITE-{indice}") for indice in range(1001)]
+        )
+
+        resposta = self.importar(conteudo)
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(
+            resposta,
+            "O arquivo CSV pode conter no máximo 1.000 equipamentos.",
+        )
+        self.assertEqual(Equipamento.objects.count(), 0)

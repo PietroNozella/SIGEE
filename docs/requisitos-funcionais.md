@@ -5,7 +5,7 @@ Este documento registra o baseline aprovado de requisitos funcionais do SIGEE. A
 | ID | Requisito | Critério de aceite |
 |---|---|---|
 | RF-01 | Autenticar usuários e aplicar autorização por perfil. | Usuários válidos acessam o sistema e cada perfil executa somente as ações permitidas. |
-| RF-02 | Cadastrar e gerenciar o inventário. | Equipamentos possuem patrimônio único, categoria, local e situação válidos. |
+| RF-02 | Cadastrar e gerenciar o inventário. | Equipamentos possuem patrimônio único, categoria, local e situação válidos. O cadastro pode ser unitário ou por CSV; na importação, o lote só é salvo se todas as linhas forem válidas. |
 | RF-03 | Consultar e filtrar equipamentos. | Filtros por texto, categoria, local e situação retornam resultados coerentes. |
 | RF-04 | Reservar equipamentos. | Professor autenticado reserva equipamento disponível para um período definido; conflitos e indisponibilidade são bloqueados. |
 | RF-05 | Registrar retirada e devolução. | Operador autorizado registra as movimentações e a situação do equipamento é atualizada corretamente. |

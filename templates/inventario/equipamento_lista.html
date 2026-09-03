@@ -10,10 +10,13 @@
             <h1>Equipamentos</h1>
             <p>Cadastre, consulte e filtre os equipamentos do inventário.</p>
         </div>
-        <a class="btn btn-primary-sigee" href="{% url 'inventario:equipamento_novo' %}">
-            <img src="{% static 'inventario/icons/add.svg' %}" alt="" aria-hidden="true">
-            Novo equipamento
-        </a>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_importar' %}">Importar CSV</a>
+            <a class="btn btn-primary-sigee" href="{% url 'inventario:equipamento_novo' %}">
+                <img src="{% static 'inventario/icons/add.svg' %}" alt="" aria-hidden="true">
+                Novo equipamento
+            </a>
+        </div>
     </header>
 
     <section class="kpi-grid" aria-label="Resumo do inventário">

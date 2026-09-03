@@ -1,11 +1,13 @@
 from django.contrib import messages
+from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from .forms import EquipamentoForm
+from .forms import EquipamentoForm, ImportacaoEquipamentosCSVForm
+from .importacao_csv import CABECALHOS_CSV, validar_equipamentos_csv
 from .models import Categoria, Equipamento, Local
 
 
@@ -88,6 +90,49 @@ def equipamento_novo(request):
         "inventario/equipamento_form.html",
         {"form": form},
     )
+
+
+def equipamento_importar(request):
+    form = ImportacaoEquipamentosCSVForm(request.POST or None, request.FILES or None)
+    erros_importacao = []
+
+    if request.method == "POST" and form.is_valid():
+        formularios_validos, erros_importacao = validar_equipamentos_csv(
+            form.cleaned_data["arquivo"]
+        )
+
+        if not erros_importacao:
+            try:
+                with transaction.atomic():
+                    for formulario in formularios_validos:
+                        formulario.save()
+            except IntegrityError:
+                erros_importacao = [
+                    "Não foi possível concluir a importação porque um número de "
+                    "patrimônio já foi cadastrado. Corrija o arquivo e tente novamente."
+                ]
+            else:
+                quantidade = len(formularios_validos)
+                messages.success(
+                    request,
+                    f"{quantidade} equipamento(s) cadastrado(s) com sucesso.",
+                )
+                return redirect("inventario:equipamento_lista")
+
+    return render(
+        request,
+        "inventario/equipamento_importar.html",
+        {"form": form, "erros_importacao": erros_importacao},
+    )
+
+
+def equipamento_modelo_csv(request):
+    resposta = HttpResponse(
+        "\ufeff" + ";".join(CABECALHOS_CSV) + "\n",
+        content_type="text/csv; charset=utf-8",
+    )
+    resposta["Content-Disposition"] = 'attachment; filename="modelo-equipamentos.csv"'
+    return resposta
 
 
 @require_POST
