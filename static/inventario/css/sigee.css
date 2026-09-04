@@ -15,6 +15,7 @@
     --sigee-in-use: #4d25b6;
     --sigee-in-use-soft: #f0ebff;
     --sigee-error: #a31212;
+    --sigee-error-hover: #841010;
     --sigee-error-soft: #ffebe8;
     --sigee-sidebar-width: 260px;
     --sigee-topbar-height: 72px;
@@ -299,7 +300,8 @@ textarea:focus-visible,
 }
 
 .btn-primary-sigee,
-.btn-secondary-sigee {
+.btn-secondary-sigee,
+.btn-danger-sigee {
     display: inline-flex;
     min-height: 40px;
     align-items: center;
@@ -341,6 +343,24 @@ textarea:focus-visible,
     border-color: var(--sigee-primary);
     color: var(--sigee-primary);
     background: var(--sigee-primary-soft);
+}
+
+.btn-danger-sigee {
+    border: 1px solid var(--sigee-error);
+    color: #fff;
+    background: var(--sigee-error);
+}
+
+.btn-danger-sigee:hover,
+.btn-danger-sigee:focus {
+    border-color: var(--sigee-error-hover);
+    color: #fff;
+    background: var(--sigee-error-hover);
+}
+
+.btn-danger-sigee svg {
+    width: 16px;
+    height: 16px;
 }
 
 .kpi-grid {
@@ -662,6 +682,124 @@ textarea:focus-visible,
     border-top: 1px solid var(--sigee-border);
 }
 
+.modal-exclusao {
+    width: min(calc(100% - 32px), 456px);
+    max-width: calc(100% - 32px);
+    margin: auto;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--sigee-border);
+    border-radius: 8px;
+    color: var(--sigee-on-surface);
+    background: var(--sigee-surface);
+    box-shadow: 0 16px 32px rgba(18, 27, 46, 0.2);
+}
+
+.modal-exclusao::backdrop {
+    background: rgba(18, 27, 46, 0.48);
+}
+
+.modal-exclusao-conteudo {
+    padding: 16px 24px 20px;
+}
+
+.modal-exclusao-cabecalho {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) 32px;
+    gap: 8px;
+    align-items: start;
+}
+
+.modal-exclusao-icone {
+    display: inline-flex;
+    width: 56px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    color: var(--sigee-error);
+    background: #fff5f5;
+}
+
+.modal-exclusao-icone svg {
+    width: 22px;
+    height: 22px;
+}
+
+.modal-exclusao-titulo-grupo h2 {
+    margin: 8px 0 12px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 24px;
+}
+
+.modal-exclusao-titulo-grupo p {
+    margin: 0;
+    color: var(--sigee-on-surface-variant);
+    font-size: 13px;
+    line-height: 19px;
+}
+
+.modal-exclusao-titulo-grupo strong {
+    color: var(--sigee-on-surface);
+    font-weight: 600;
+}
+
+.modal-exclusao-fechar {
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    color: #98a2b3;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.modal-exclusao-fechar:hover,
+.modal-exclusao-fechar:focus {
+    color: var(--sigee-on-surface);
+    background: var(--sigee-surface-soft);
+}
+
+.modal-exclusao-aviso {
+    display: flex;
+    gap: 10px;
+    margin: 16px 0 0 56px;
+    padding: 12px;
+    border: 1px solid #ffd5d1;
+    border-radius: 4px;
+    color: var(--sigee-error);
+    background: var(--sigee-error-soft);
+}
+
+.modal-exclusao-aviso svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    margin-top: 2px;
+}
+
+.modal-exclusao-aviso p {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 16px;
+}
+
+.modal-exclusao-acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--sigee-border);
+    background: #f7f8fc;
+}
+
 @media (max-width: 1199.98px) {
     .filter-toolbar {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -793,6 +931,33 @@ textarea:focus-visible,
     }
 
     .form-actions .btn {
+        width: 100%;
+    }
+
+    .modal-exclusao-conteudo {
+        padding: 16px;
+    }
+
+    .modal-exclusao-cabecalho {
+        grid-template-columns: 48px minmax(0, 1fr) 32px;
+    }
+
+    .modal-exclusao-icone {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+    }
+
+    .modal-exclusao-aviso {
+        margin-left: 0;
+    }
+
+    .modal-exclusao-acoes {
+        flex-direction: column-reverse;
+        padding: 16px;
+    }
+
+    .modal-exclusao-acoes .btn {
         width: 100%;
     }
 }

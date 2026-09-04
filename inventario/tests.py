@@ -165,16 +165,30 @@ class ExclusaoEquipamentoTest(TestCase):
         self.assertContains(resposta, "Equipamento excluído com sucesso.")
         self.assertFalse(Equipamento.objects.filter(pk=equipamento.pk).exists())
 
-    def test_lista_solicita_confirmacao_antes_da_exclusao(self):
+    def test_lista_renderiza_modal_para_exclusao_sem_historico(self):
         equipamento = self.criar_equipamento("PAT-CONF-001")
 
         resposta = self.client.get(reverse("inventario:equipamento_lista"))
 
-        self.assertContains(
-            resposta,
-            "Tem certeza de que deseja excluir o equipamento Notebook educacional",
+        self.assertContains(resposta, 'id="modal-exclusao"')
+        self.assertContains(resposta, 'data-delete-trigger')
+        self.assertContains(resposta, 'data-equipamento-nome="Notebook educacional"')
+        self.assertContains(resposta, 'data-equipamento-patrimonio="PAT-CONF-001"')
+        self.assertContains(resposta, 'data-possui-historico="false"')
+        self.assertNotContains(resposta, 'onclick="return confirm(')
+
+    def test_lista_indica_historico_para_modal_de_exclusao(self):
+        equipamento = self.criar_equipamento("PAT-CONF-002")
+        Movimentacao.objects.create(
+            equipamento=equipamento,
+            operador=self.operador,
+            destinatario=self.destinatario,
+            tipo="RETIRADA",
         )
-        self.assertContains(resposta, "PAT\\u002DCONF\\u002D001")
+
+        resposta = self.client.get(reverse("inventario:equipamento_lista"))
+
+        self.assertContains(resposta, 'data-possui-historico="true"')
 
     def test_post_inativa_equipamento_com_historico_e_exibe_estado(self):
         equipamento = self.criar_equipamento("PAT-008")

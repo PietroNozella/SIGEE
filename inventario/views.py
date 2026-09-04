@@ -2,9 +2,11 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+
+from movimentacoes.models import Movimentacao
 
 from .forms import EquipamentoForm, ImportacaoEquipamentosCSVForm
 from .importacao_csv import CABECALHOS_CSV, validar_equipamentos_csv
@@ -12,7 +14,11 @@ from .models import Categoria, Equipamento, Local
 
 
 def equipamento_lista(request):
-    equipamentos = Equipamento.objects.select_related("categoria", "local")
+    equipamentos = Equipamento.objects.select_related("categoria", "local").annotate(
+        possui_historico=Exists(
+            Movimentacao.objects.filter(equipamento_id=OuterRef("pk"))
+        )
+    )
 
     total_equipamentos = equipamentos.count()
     indicadores = {

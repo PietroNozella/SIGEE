@@ -118,7 +118,16 @@
                                     {% if equipamento.ativo %}
                                         <form method="post" action="{% url 'inventario:equipamento_excluir' equipamento.pk %}">
                                             {% csrf_token %}
-                                            <button class="btn btn-secondary-sigee" type="submit" onclick="return confirm('Tem certeza de que deseja excluir o equipamento {{ equipamento.nome|escapejs }} (patrimônio {{ equipamento.numero_patrimonio|escapejs }})?');">Excluir</button>
+                                            <button
+                                                class="btn btn-secondary-sigee"
+                                                type="button"
+                                                data-delete-trigger
+                                                data-equipamento-nome="{{ equipamento.nome }}"
+                                                data-equipamento-patrimonio="{{ equipamento.numero_patrimonio }}"
+                                                data-possui-historico="{{ equipamento.possui_historico|yesno:'true,false' }}"
+                                                aria-haspopup="dialog"
+                                                aria-controls="modal-exclusao"
+                                            >Excluir</button>
                                         </form>
                                     {% endif %}
                                 </td>
@@ -167,5 +176,61 @@
             </div>
         {% endif %}
     </section>
+
+    <dialog
+        class="modal-exclusao"
+        id="modal-exclusao"
+        aria-labelledby="modal-exclusao-titulo"
+        aria-describedby="modal-exclusao-descricao modal-exclusao-aviso"
+        aria-modal="true"
+        data-delete-dialog
+    >
+        <div class="modal-exclusao-conteudo">
+            <header class="modal-exclusao-cabecalho">
+                <span class="modal-exclusao-icone" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M8 6V4h8v2"></path>
+                        <path d="M19 6l-1 14H6L5 6"></path>
+                        <path d="M10 11v4"></path>
+                        <path d="M14 11v4"></path>
+                    </svg>
+                </span>
+                <div class="modal-exclusao-titulo-grupo">
+                    <h2 id="modal-exclusao-titulo">Excluir equipamento</h2>
+                    <p id="modal-exclusao-descricao">
+                        Tem certeza de que deseja excluir o equipamento
+                        <strong><span data-delete-name></span> (patrimônio: <span data-delete-patrimonio></span>)?</strong>
+                    </p>
+                </div>
+                <button class="modal-exclusao-fechar" type="button" aria-label="Fechar confirmação de exclusão" data-delete-close>
+                    <span aria-hidden="true">×</span>
+                </button>
+            </header>
+
+            <div class="modal-exclusao-aviso" id="modal-exclusao-aviso" role="alert">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3 3 20h18L12 3Z"></path>
+                    <path d="M12 9v4"></path>
+                    <path d="M12 17h.01"></path>
+                </svg>
+                <p data-delete-warning></p>
+            </div>
+        </div>
+
+        <footer class="modal-exclusao-acoes">
+            <button class="btn btn-secondary-sigee" type="button" data-delete-close>Cancelar</button>
+            <button class="btn btn-danger-sigee" type="button" data-delete-confirm>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 6h18"></path>
+                    <path d="M8 6V4h8v2"></path>
+                    <path d="M19 6l-1 14H6L5 6"></path>
+                    <path d="M10 11v4"></path>
+                    <path d="M14 11v4"></path>
+                </svg>
+                <span data-delete-confirm-label>Sim, excluir equipamento</span>
+            </button>
+        </footer>
+    </dialog>
 </div>
 {% endblock %}
