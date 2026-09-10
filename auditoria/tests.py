@@ -1,11 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.models import AnonymousUser, Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
-from django.test import RequestFactory, TestCase
-from django.urls import reverse
+from django.http import HttpResponse, HttpResponseForbidden
+from django.test import RequestFactory, TestCase, override_settings
+from django.urls import path, reverse
 
 from inventario.models import Categoria, Equipamento, Local
 from movimentacoes.models import Movimentacao
@@ -14,6 +16,21 @@ from .admin import RegistroAuditoriaAdmin
 from .eventos import AcaoAuditoria
 from .models import RegistroAuditoria
 from .services import registrar_evento
+
+
+@permission_required("inventario.change_equipamento", raise_exception=True)
+def view_protegida_para_teste(request):
+    return HttpResponse("Acesso permitido")
+
+
+def view_proibida_para_teste(request):
+    return HttpResponseForbidden("Acesso negado")
+
+
+urlpatterns = [
+    path("teste/permissao/", view_protegida_para_teste, name="teste_permissao"),
+    path("teste/proibido/", view_proibida_para_teste, name="teste_proibido"),
+]
 
 
 class RegistroAuditoriaTests(TestCase):
@@ -275,3 +292,53 @@ class AuditoriaAutenticacaoTests(TestCase):
         )
         self.assertEqual(registro.usuario, self.usuario)
         self.assertEqual(registro.resultado, RegistroAuditoria.Resultado.SUCESSO)
+
+
+@override_settings(ROOT_URLCONF=__name__)
+class AuditoriaAcessoNegadoTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.usuario = get_user_model().objects.create_user(
+            username="usuario_sem_permissao",
+            password="senha-segura-123",
+        )
+
+    def setUp(self):
+        self.client.force_login(self.usuario)
+
+    def test_resposta_403_de_usuario_autenticado_registra_acesso_negado(self):
+        resposta = self.client.get(reverse("teste_permissao"))
+
+        registro = RegistroAuditoria.objects.get(
+            acao=AcaoAuditoria.ACESSO_NEGADO
+        )
+        self.assertEqual(resposta.status_code, 403)
+        self.assertEqual(registro.usuario, self.usuario)
+        self.assertEqual(
+            registro.resultado,
+            RegistroAuditoria.Resultado.ACESSO_NEGADO,
+        )
+        self.assertEqual(registro.entidade, "")
+        self.assertEqual(registro.entidade_id, "")
+
+    def test_acesso_permitido_nao_registra_negacao(self):
+        permissao = Permission.objects.get(codename="change_equipamento")
+        self.usuario.user_permissions.add(permissao)
+
+        resposta = self.client.get(reverse("teste_permissao"))
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertFalse(
+            RegistroAuditoria.objects.filter(
+                acao=AcaoAuditoria.ACESSO_NEGADO
+            ).exists()
+        )
+
+    def test_resposta_403_anonima_nao_cria_registro_de_acesso_negado(self):
+        self.client.logout()
+        RegistroAuditoria.objects.all().delete()
+
+        resposta = self.client.get(reverse("teste_proibido"))
+
+        self.assertEqual(resposta.status_code, 403)
+        self.assertFalse(RegistroAuditoria.objects.exists())
