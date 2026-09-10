@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'inventario',
     'movimentacoes',
+    'usuarios',
 ]
 
 MIDDLEWARE = [
@@ -79,6 +80,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'usuarios.context_processors.permissoes_funcionais',
             ],
         },
     },
@@ -139,6 +141,10 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "inventario:equipamento_lista"
+LOGOUT_REDIRECT_URL = "login"
 
 
 # Internationalization

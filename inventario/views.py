@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required, permission_required
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
@@ -13,6 +14,8 @@ from .importacao_csv import CABECALHOS_CSV, validar_equipamentos_csv
 from .models import Categoria, Equipamento, Local
 
 
+@login_required
+@permission_required("inventario.view_equipamento", raise_exception=True)
 def equipamento_lista(request):
     equipamentos = Equipamento.objects.select_related("categoria", "local").annotate(
         possui_historico=Exists(
@@ -21,18 +24,20 @@ def equipamento_lista(request):
     )
 
     total_equipamentos = equipamentos.count()
-    indicadores = {
-        "total": total_equipamentos,
-        "disponiveis": equipamentos.filter(
-            situacao=Equipamento.Situacao.DISPONIVEL
-        ).count(),
-        "em_uso": equipamentos.filter(
-            situacao=Equipamento.Situacao.EM_USO
-        ).count(),
-        "manutencao": equipamentos.filter(
-            situacao=Equipamento.Situacao.MANUTENCAO
-        ).count(),
-    }
+    indicadores = None
+    if request.user.has_perm("inventario.view_resumo_inventario"):
+        indicadores = {
+            "total": total_equipamentos,
+            "disponiveis": equipamentos.filter(
+                situacao=Equipamento.Situacao.DISPONIVEL
+            ).count(),
+            "em_uso": equipamentos.filter(
+                situacao=Equipamento.Situacao.EM_USO
+            ).count(),
+            "manutencao": equipamentos.filter(
+                situacao=Equipamento.Situacao.MANUTENCAO
+            ).count(),
+        }
 
     busca = request.GET.get("busca", "").strip()
     categoria = request.GET.get("categoria", "").strip()
@@ -75,6 +80,8 @@ def equipamento_lista(request):
     return render(request, "inventario/equipamento_lista.html", context)
 
 
+@login_required
+@permission_required("inventario.add_equipamento", raise_exception=True)
 def equipamento_novo(request):
     form = EquipamentoForm(request.POST or None)
 
@@ -98,6 +105,8 @@ def equipamento_novo(request):
     )
 
 
+@login_required
+@permission_required("inventario.add_equipamento", raise_exception=True)
 def equipamento_importar(request):
     form = ImportacaoEquipamentosCSVForm(request.POST or None, request.FILES or None)
     erros_importacao = []
@@ -132,6 +141,8 @@ def equipamento_importar(request):
     )
 
 
+@login_required
+@permission_required("inventario.add_equipamento", raise_exception=True)
 def equipamento_modelo_csv(request):
     resposta = HttpResponse(
         "\ufeff" + ";".join(CABECALHOS_CSV) + "\n",
@@ -141,6 +152,8 @@ def equipamento_modelo_csv(request):
     return resposta
 
 
+@login_required
+@permission_required("inventario.delete_equipamento", raise_exception=True)
 @require_POST
 def equipamento_excluir(request, equipamento_id):
     equipamento = get_object_or_404(Equipamento, pk=equipamento_id)

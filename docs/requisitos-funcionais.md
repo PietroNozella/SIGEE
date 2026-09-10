@@ -15,3 +15,9 @@ Este documento registra o baseline aprovado de requisitos funcionais do SIGEE. A
 | RF-09 | Consultar feriados nacionais durante a reserva. | O sistema informa quando o período selecionado coincide com feriado nacional por meio da BrasilAPI; a indisponibilidade da API não impede a conclusão da reserva. |
 | RF-10 | Vincular a utilização ao contexto pedagógico. | O Professor associa a utilização do equipamento a turma, disciplina e atividade pedagógica, preservando essas informações no respectivo registro. |
 | RF-11 | Exibir indicadores de utilização pedagógica. | O Administrador visualiza informações consolidadas sobre a utilização por turma, disciplina e atividade pedagógica. |
+
+## Estado do RF-09
+
+> **RF-09 projetado e ainda não implementado.**
+
+O contrato externo, o fluxo informativo e a contingência estão definidos no [projeto lógico da consulta de feriados](projeto-logico-brasilapi.md). A implementação depende do futuro incremento de reservas.

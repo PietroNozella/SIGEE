@@ -27,6 +27,9 @@ Este documento registra as 18 regras de negócio confirmadas para o SIGEE. Elas 
 - O Django Superuser é uma conta técnica e não representa o perfil funcional Administrador do SIGEE.
 - O perfil é atribuído por um Administrador e não pode ser escolhido livremente pelo usuário.
 - O sistema pode possuir mais de um Administrador funcional sem conceder privilégios de superuser.
+- Cada conta funcional pertence a exatamente um grupo: Administrador, Operador ou Professor.
+
+As ações permitidas para cada grupo estão consolidadas na [Matriz de acesso](matriz-de-acesso.md).
 
 ## Pendência de detalhamento
 

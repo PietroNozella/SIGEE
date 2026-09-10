@@ -176,6 +176,24 @@ textarea:focus-visible,
     border-top: 1px solid var(--sigee-border);
 }
 
+.logout-form {
+    margin: 0;
+}
+
+.logout-button {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+}
+
+.logout-button:hover {
+    color: var(--sigee-primary-hover);
+    background: var(--sigee-primary-soft);
+}
+
 .app-topbar {
     position: fixed;
     z-index: 1020;
@@ -343,6 +361,108 @@ textarea:focus-visible,
     border-color: var(--sigee-primary);
     color: var(--sigee-primary);
     background: var(--sigee-primary-soft);
+}
+
+.login-page {
+    background:
+        radial-gradient(circle at top left, rgba(32, 64, 191, 0.12), transparent 38%),
+        var(--sigee-background);
+}
+
+.login-main {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    padding: 24px;
+}
+
+.login-container {
+    width: min(100%, 440px);
+}
+
+.login-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.login-brand-name {
+    display: block;
+    color: var(--sigee-primary);
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    line-height: 30px;
+}
+
+.login-brand small {
+    display: block;
+    color: var(--sigee-on-surface-variant);
+    font-size: 12px;
+}
+
+.login-card {
+    padding: 32px;
+    border: 1px solid var(--sigee-border);
+    border-radius: 12px;
+    background: var(--sigee-surface);
+    box-shadow: 0 16px 40px rgba(18, 27, 46, 0.08);
+}
+
+.login-header {
+    margin-bottom: 24px;
+}
+
+.login-header h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.7px;
+}
+
+.login-header p {
+    margin: 0;
+    color: var(--sigee-on-surface-variant);
+}
+
+.login-error {
+    margin-bottom: 20px;
+    padding: 12px 14px;
+    border: 1px solid #e3a19a;
+    border-radius: 6px;
+    color: var(--sigee-error);
+    background: var(--sigee-error-soft);
+}
+
+.login-form {
+    display: grid;
+    gap: 20px;
+}
+
+.login-field {
+    display: grid;
+    gap: 8px;
+}
+
+.login-field label {
+    font-weight: 500;
+}
+
+.login-field input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--sigee-control-border);
+    border-radius: 4px;
+    color: var(--sigee-on-surface);
+    background: var(--sigee-surface);
+}
+
+.login-submit {
+    width: 100%;
+    min-height: 44px;
 }
 
 .btn-danger-sigee {

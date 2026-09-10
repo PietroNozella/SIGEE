@@ -1,12 +1,17 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.models import AnonymousUser, Group
+from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
 
 from movimentacoes.models import Movimentacao
+from usuarios.permissoes import GRUPO_ADMINISTRADOR
 
 from .forms import EquipamentoForm
 from .models import Categoria, Equipamento, Local
@@ -15,8 +20,17 @@ from .models import Categoria, Equipamento, Local
 class EquipamentoRN01Tests(TestCase):
     @classmethod
     def setUpTestData(cls):
+        call_command("configurar_perfis", verbosity=0)
         cls.categoria = Categoria.objects.get(nome="Notebook")
         cls.local = Local.objects.get(nome="Laboratório de informática")
+        cls.usuario = get_user_model().objects.create_user(
+            username="usuario-inventario",
+            password="senha-segura-123",
+        )
+        cls.usuario.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
+
+    def setUp(self):
+        self.client.force_login(self.usuario)
 
     def dados_equipamento(self, patrimonio):
         return {"numero_patrimonio": patrimonio, "nome": "Notebook Dell", "descricao": "Equipamento para uso pedagógico.", "categoria": self.categoria.pk, "local": self.local.pk, "situacao": Equipamento.Situacao.DISPONIVEL}
@@ -101,10 +115,16 @@ class EquipamentoRN01Tests(TestCase):
 class ExclusaoEquipamentoTest(TestCase):
     @classmethod
     def setUpTestData(cls):
+        call_command("configurar_perfis", verbosity=0)
         cls.categoria = Categoria.objects.get(nome="Notebook")
         cls.local = Local.objects.create(nome="Sala de tecnologia")
+        cls.administrador = get_user_model().objects.create_user(username="administrador-inventario", password="senha-segura-123")
+        cls.administrador.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
         cls.operador = get_user_model().objects.create_user(username="operador", password="senha-segura-123")
         cls.destinatario = get_user_model().objects.create_user(username="professor", password="senha-segura-123")
+
+    def setUp(self):
+        self.client.force_login(self.administrador)
 
     def criar_equipamento(self, patrimonio):
         return Equipamento.objects.create(numero_patrimonio=patrimonio, nome="Notebook educacional", categoria=self.categoria, local=self.local)
@@ -213,8 +233,17 @@ class ExclusaoEquipamentoTest(TestCase):
 class ImportacaoEquipamentosCSVTests(TestCase):
     @classmethod
     def setUpTestData(cls):
+        call_command("configurar_perfis", verbosity=0)
         cls.categoria = Categoria.objects.get(nome="Notebook")
         cls.local = Local.objects.get(nome="Laboratório de informática")
+        cls.usuario = get_user_model().objects.create_user(
+            username="usuario-importacao",
+            password="senha-segura-123",
+        )
+        cls.usuario.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
+
+    def setUp(self):
+        self.client.force_login(self.usuario)
 
     def arquivo_csv(self, conteudo, nome="equipamentos.csv"):
         return SimpleUploadedFile(
@@ -409,3 +438,155 @@ class ImportacaoEquipamentosCSVTests(TestCase):
             "O arquivo CSV pode conter no máximo 1.000 equipamentos.",
         )
         self.assertEqual(Equipamento.objects.count(), 0)
+
+
+class AutenticacaoTests(TestCase):
+    SENHA = "senha-segura-123"
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command("configurar_perfis", verbosity=0)
+        cls.usuario = get_user_model().objects.create_user(
+            username="administrador",
+            password=cls.SENHA,
+            first_name="Administrador",
+            last_name="SIGEE",
+        )
+        cls.usuario.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
+
+    def test_tela_de_login_usa_formulario_do_django_e_csrf(self):
+        resposta = self.client.get(reverse("login"))
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIsInstance(resposta.context["view"], LoginView)
+        self.assertIsInstance(resposta.context["form"], AuthenticationForm)
+        self.assertContains(resposta, 'name="username"')
+        self.assertContains(resposta, 'name="password"')
+        self.assertContains(resposta, 'name="csrfmiddlewaretoken"')
+
+    def test_senha_e_armazenada_com_hash_do_django(self):
+        self.assertNotEqual(self.usuario.password, self.SENHA)
+        self.assertTrue(self.usuario.check_password(self.SENHA))
+
+    def test_login_correto_inicia_sessao_e_redireciona_para_listagem(self):
+        resposta = self.client.post(
+            reverse("login"),
+            {"username": self.usuario.username, "password": self.SENHA},
+        )
+
+        self.assertRedirects(
+            resposta,
+            reverse("inventario:equipamento_lista"),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(
+            int(self.client.session["_auth_user_id"]),
+            self.usuario.pk,
+        )
+
+    def test_credenciais_invalidas_exibem_a_mesma_mensagem_neutra(self):
+        tentativas = (
+            {"username": self.usuario.username, "password": "senha-incorreta"},
+            {"username": "usuario-inexistente", "password": "senha-incorreta"},
+        )
+
+        for credenciais in tentativas:
+            with self.subTest(username=credenciais["username"]):
+                resposta = self.client.post(reverse("login"), credenciais)
+
+                self.assertEqual(resposta.status_code, 200)
+                self.assertContains(
+                    resposta,
+                    "Nome de usuário ou senha inválidos.",
+                    count=1,
+                )
+                self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_todas_as_paginas_do_inventario_exigem_autenticacao(self):
+        rotas = (
+            ("get", reverse("inventario:equipamento_lista")),
+            ("get", reverse("inventario:equipamento_novo")),
+            ("get", reverse("inventario:equipamento_importar")),
+            ("get", reverse("inventario:equipamento_modelo_csv")),
+            ("post", reverse("inventario:equipamento_excluir", args=[999])),
+        )
+
+        for metodo, rota in rotas:
+            with self.subTest(rota=rota):
+                resposta = getattr(self.client, metodo)(rota)
+                destino = f'{reverse("login")}?next={rota}'
+
+                self.assertRedirects(
+                    resposta,
+                    destino,
+                    fetch_redirect_response=False,
+                )
+                self.assertIsInstance(resposta.wsgi_request.user, AnonymousUser)
+
+    def test_login_preserva_next_e_retorna_a_pagina_solicitada(self):
+        destino = reverse("inventario:equipamento_importar")
+        resposta_restrita = self.client.get(destino)
+
+        self.assertEqual(
+            resposta_restrita.url,
+            f'{reverse("login")}?next={destino}',
+        )
+        resposta_login = self.client.get(resposta_restrita.url)
+        self.assertContains(
+            resposta_login,
+            f'<input type="hidden" name="next" value="{destino}">',
+            html=True,
+        )
+
+        resposta_login = self.client.post(
+            reverse("login"),
+            {
+                "username": self.usuario.username,
+                "password": self.SENHA,
+                "next": destino,
+            },
+        )
+
+        self.assertRedirects(
+            resposta_login,
+            destino,
+            fetch_redirect_response=False,
+        )
+
+    def test_base_exibe_usuario_autenticado_e_logout_por_post(self):
+        self.client.force_login(self.usuario)
+
+        resposta = self.client.get(reverse("inventario:equipamento_lista"))
+
+        self.assertContains(resposta, "Administrador SIGEE")
+        self.assertContains(resposta, self.usuario.username)
+        self.assertContains(
+            resposta,
+            f'<form class="logout-form" method="post" action="{reverse("logout")}">',
+            html=False,
+        )
+
+    def test_logout_aceita_somente_post_e_impede_retorno_direto(self):
+        self.client.force_login(self.usuario)
+
+        resposta_get = self.client.get(reverse("logout"))
+        self.assertEqual(resposta_get.status_code, 405)
+        self.assertIn("_auth_user_id", self.client.session)
+
+        resposta_post = self.client.post(reverse("logout"))
+        self.assertIs(resposta_post.resolver_match.func.view_class, LogoutView)
+        self.assertRedirects(
+            resposta_post,
+            reverse("login"),
+            fetch_redirect_response=False,
+        )
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+        rota_protegida = reverse("inventario:equipamento_lista")
+        resposta_retorno = self.client.get(rota_protegida)
+        destino = f'{reverse("login")}?next={rota_protegida}'
+        self.assertRedirects(
+            resposta_retorno,
+            destino,
+            fetch_redirect_response=False,
+        )
