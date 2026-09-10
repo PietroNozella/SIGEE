@@ -1,6 +1,6 @@
 # Matriz de acesso
 
-Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permissões referentes às rotas atuais do inventário e ao cadastro de usuários já estão implementadas; as demais ações continuam planejadas.
+Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permissões referentes às rotas atuais do inventário, ao cadastro de usuários e à consulta de auditoria já estão implementadas; as demais ações continuam planejadas.
 
 ## Princípios
 
@@ -18,6 +18,7 @@ Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permiss�
 | Consultar equipamentos e disponibilidade | Sim | Sim | Sim |
 | Cadastrar, importar, alterar, excluir ou inativar equipamentos | Sim | Não | Não |
 | Cadastrar usuários e atribuir o grupo funcional | Sim | Não | Não |
+| Consultar registros de auditoria | Sim | Não | Não |
 | Visualizar o painel resumido e os indicadores pedagógicos | Sim | Não | Não |
 | Criar reserva | Não | Não | Sim |
 | Consultar e cancelar reserva própria | Não | Não | Sim |
@@ -36,6 +37,7 @@ Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permiss�
 | Retirada e devolução por Operador | RN-08 e RN-13 |
 | Encaminhamento para manutenção na devolução | RN-14 |
 | Cadastro controlado de contas e separação do Superuser técnico | RN-18 |
+| Consulta controlada dos registros de auditoria | RS-09 e RS-11 |
 | Indicadores e uso pedagógico | RF-08, RF-10 e RF-11 |
 
 ## Configuração executável atual
@@ -44,7 +46,7 @@ O comando `python manage.py configurar_perfis`, executado depois de `migrate`, a
 
 | Grupo | Permissões atuais |
 |---|---|
-| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user` |
+| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auditoria.view_registroauditoria` |
 | Operador | `view_equipamento` |
 | Professor | `view_equipamento` |
 

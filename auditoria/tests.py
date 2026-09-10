@@ -1,7 +1,10 @@
+from io import StringIO
+
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import permission_required
-from django.contrib.auth.models import AnonymousUser, Permission
+from django.contrib.auth.models import AnonymousUser, Group, Permission
+from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
@@ -11,6 +14,7 @@ from django.urls import path, reverse
 
 from inventario.models import Categoria, Equipamento, Local
 from movimentacoes.models import Movimentacao
+from usuarios.permissoes import GRUPO_ADMINISTRADOR
 
 from .admin import RegistroAuditoriaAdmin
 from .eventos import AcaoAuditoria
@@ -27,9 +31,14 @@ def view_proibida_para_teste(request):
     return HttpResponseForbidden("Acesso negado")
 
 
+def logout_para_teste(request):
+    return HttpResponse("Logout")
+
+
 urlpatterns = [
     path("teste/permissao/", view_protegida_para_teste, name="teste_permissao"),
     path("teste/proibido/", view_proibida_para_teste, name="teste_proibido"),
+    path("teste/logout/", logout_para_teste, name="logout"),
 ]
 
 
@@ -116,12 +125,14 @@ class RegistroAuditoriaAdminTests(TestCase):
 class AuditoriaInventarioTests(TestCase):
     @classmethod
     def setUpTestData(cls):
+        call_command("configurar_perfis", stdout=StringIO())
         cls.categoria = Categoria.objects.get(nome="Notebook")
         cls.local = Local.objects.get(nome="Laboratório de informática")
         cls.usuario = get_user_model().objects.create_user(
             username="operador_auditoria",
             password="senha-segura-123",
         )
+        cls.usuario.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
 
     def setUp(self):
         self.client.force_login(self.usuario)

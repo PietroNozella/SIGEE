@@ -9,6 +9,7 @@ GRUPOS_FUNCIONAIS = (
 )
 
 PERMISSAO_CADASTRAR_USUARIO = "auth.add_user"
+PERMISSAO_CONSULTAR_AUDITORIA = "auditoria.view_registroauditoria"
 
 PERMISSOES_POR_GRUPO = {
     GRUPO_ADMINISTRADOR: (
@@ -18,18 +19,28 @@ PERMISSOES_POR_GRUPO = {
         "inventario.delete_equipamento",
         "inventario.view_resumo_inventario",
         PERMISSAO_CADASTRAR_USUARIO,
+        PERMISSAO_CONSULTAR_AUDITORIA,
     ),
     GRUPO_OPERADOR: ("inventario.view_equipamento",),
     GRUPO_PROFESSOR: ("inventario.view_equipamento",),
 }
 
 
-def pode_cadastrar_usuario(user):
+def e_administrador_funcional(user):
     if not user.is_authenticated or user.is_superuser:
-        return False
-
-    if not user.has_perm(PERMISSAO_CADASTRAR_USUARIO):
         return False
 
     grupos_do_usuario = set(user.groups.values_list("name", flat=True))
     return grupos_do_usuario == {GRUPO_ADMINISTRADOR}
+
+
+def pode_cadastrar_usuario(user):
+    return e_administrador_funcional(user) and user.has_perm(
+        PERMISSAO_CADASTRAR_USUARIO
+    )
+
+
+def pode_consultar_auditoria(user):
+    return e_administrador_funcional(user) and user.has_perm(
+        PERMISSAO_CONSULTAR_AUDITORIA
+    )

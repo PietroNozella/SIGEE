@@ -40,3 +40,9 @@ class RegistroAuditoria(models.Model):
 
     def __str__(self):
         return f"{self.acao} - {self.get_resultado_display()}"
+
+    @property
+    def acao_exibicao(self):
+        from .eventos import rotulo_acao
+
+        return rotulo_acao(self.acao)

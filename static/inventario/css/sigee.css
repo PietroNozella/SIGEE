@@ -581,6 +581,66 @@ textarea:focus-visible,
     gap: 8px;
 }
 
+.audit-filter-toolbar {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.4fr) repeat(2, minmax(160px, 1fr)) repeat(2, minmax(145px, 0.8fr));
+    gap: 16px 12px;
+    align-items: end;
+    padding: 16px;
+    border-bottom: 1px solid var(--sigee-border);
+}
+
+.audit-filter-field label {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: 500;
+    line-height: 18px;
+}
+
+.audit-filter-field .errorlist {
+    margin: 6px 0 0;
+    padding: 0;
+    color: var(--sigee-error);
+    font-size: 12px;
+    list-style: none;
+}
+
+.audit-filter-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+}
+
+.audit-table {
+    min-width: 940px;
+}
+
+.audit-date {
+    white-space: nowrap;
+}
+
+.audit-metadata {
+    display: block;
+    margin-top: 2px;
+    color: var(--sigee-muted);
+    font-size: 12px;
+    line-height: 16px;
+}
+
+.audit-muted {
+    color: var(--sigee-muted);
+}
+
+.audit-result-sucesso {
+    color: #005c3b;
+    background: var(--sigee-success-soft);
+}
+
+.audit-result-falha,
+.audit-result-acesso_negado {
+    color: #8f1010;
+    background: var(--sigee-error-soft);
+}
+
 .inventory-table-wrapper:focus-visible {
     outline-offset: -3px;
 }
@@ -928,6 +988,10 @@ textarea:focus-visible,
     .filter-search {
         grid-column: 1 / -1;
     }
+
+    .audit-filter-toolbar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 991.98px) {
@@ -1004,6 +1068,14 @@ textarea:focus-visible,
 
     .filter-actions {
         flex-wrap: wrap;
+    }
+
+    .audit-filter-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .audit-filter-actions {
+        grid-column: auto;
     }
 
     .filter-actions .btn {

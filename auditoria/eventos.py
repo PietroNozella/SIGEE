@@ -9,3 +9,7 @@ class AcaoAuditoria:
     EQUIPAMENTOS_IMPORTADOS = "EQUIPAMENTOS_IMPORTADOS"
     EQUIPAMENTO_EXCLUIDO = "EQUIPAMENTO_EXCLUIDO"
     EQUIPAMENTO_INATIVADO = "EQUIPAMENTO_INATIVADO"
+
+
+def rotulo_acao(acao):
+    return acao.replace("_", " ").capitalize()
