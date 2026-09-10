@@ -7,6 +7,9 @@ from django.db.models import Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from auditoria.eventos import AcaoAuditoria
+from auditoria.models import RegistroAuditoria
+from auditoria.services import registrar_evento
 from movimentacoes.models import Movimentacao
 
 from .forms import EquipamentoForm, ImportacaoEquipamentosCSVForm
@@ -88,7 +91,14 @@ def equipamento_novo(request):
     if request.method == "POST" and form.is_valid():
         try:
             with transaction.atomic():
-                form.save()
+                equipamento = form.save()
+                registrar_evento(
+                    usuario=request.user,
+                    acao=AcaoAuditoria.EQUIPAMENTO_CADASTRADO,
+                    resultado=RegistroAuditoria.Resultado.SUCESSO,
+                    entidade="inventario.Equipamento",
+                    entidade_id=equipamento.pk,
+                )
         except IntegrityError:
             form.add_error(
                 "numero_patrimonio",
@@ -97,6 +107,14 @@ def equipamento_novo(request):
         else:
             messages.success(request, "Equipamento cadastrado com sucesso.")
             return redirect("inventario:equipamento_lista")
+
+    if request.method == "POST":
+        registrar_evento(
+            usuario=request.user,
+            acao=AcaoAuditoria.EQUIPAMENTO_CADASTRADO,
+            resultado=RegistroAuditoria.Resultado.FALHA,
+            entidade="inventario.Equipamento",
+        )
 
     return render(
         request,
@@ -121,6 +139,12 @@ def equipamento_importar(request):
                 with transaction.atomic():
                     for formulario in formularios_validos:
                         formulario.save()
+                    registrar_evento(
+                        usuario=request.user,
+                        acao=AcaoAuditoria.EQUIPAMENTOS_IMPORTADOS,
+                        resultado=RegistroAuditoria.Resultado.SUCESSO,
+                        entidade="inventario.Equipamento",
+                    )
             except IntegrityError:
                 erros_importacao = [
                     "Não foi possível concluir a importação porque um número de "
@@ -133,6 +157,14 @@ def equipamento_importar(request):
                     f"{quantidade} equipamento(s) cadastrado(s) com sucesso.",
                 )
                 return redirect("inventario:equipamento_lista")
+
+    if request.method == "POST":
+        registrar_evento(
+            usuario=request.user,
+            acao=AcaoAuditoria.EQUIPAMENTOS_IMPORTADOS,
+            resultado=RegistroAuditoria.Resultado.FALHA,
+            entidade="inventario.Equipamento",
+        )
 
     return render(
         request,
@@ -159,7 +191,21 @@ def equipamento_excluir(request, equipamento_id):
     equipamento = get_object_or_404(Equipamento, pk=equipamento_id)
     possui_historico = equipamento.possui_registros_relacionados()
 
-    equipamento.delete()
+    acao = (
+        AcaoAuditoria.EQUIPAMENTO_INATIVADO
+        if possui_historico
+        else AcaoAuditoria.EQUIPAMENTO_EXCLUIDO
+    )
+
+    with transaction.atomic():
+        equipamento.delete()
+        registrar_evento(
+            usuario=request.user,
+            acao=acao,
+            resultado=RegistroAuditoria.Resultado.SUCESSO,
+            entidade="inventario.Equipamento",
+            entidade_id=equipamento_id,
+        )
 
     if possui_historico:
         messages.success(
