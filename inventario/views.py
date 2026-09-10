@@ -58,6 +58,16 @@ def equipamento_lista(request):
     if situacao in Equipamento.Situacao.values:
         equipamentos = equipamentos.filter(situacao=situacao)
 
+    ha_filtros = any((busca, categoria, local, situacao))
+
+    if request.user.is_authenticated and ha_filtros:
+        registrar_evento(
+            usuario=request.user,
+            acao=AcaoAuditoria.INVENTARIO_CONSULTADO,
+            resultado=RegistroAuditoria.Resultado.SUCESSO,
+            entidade="inventario.Equipamento",
+        )
+
     paginator = Paginator(equipamentos, 5)
     pagina = paginator.get_page(request.GET.get("pagina"))
 
@@ -77,7 +87,7 @@ def equipamento_lista(request):
             "situacao": situacao,
         },
         "parametros_paginacao": parametros.urlencode(),
-        "ha_filtros": any((busca, categoria, local, situacao)),
+        "ha_filtros": ha_filtros,
         "total_equipamentos": total_equipamentos,
     }
     return render(request, "inventario/equipamento_lista.html", context)
@@ -181,6 +191,15 @@ def equipamento_modelo_csv(request):
         content_type="text/csv; charset=utf-8",
     )
     resposta["Content-Disposition"] = 'attachment; filename="modelo-equipamentos.csv"'
+
+    if request.user.is_authenticated:
+        registrar_evento(
+            usuario=request.user,
+            acao=AcaoAuditoria.MODELO_CSV_BAIXADO,
+            resultado=RegistroAuditoria.Resultado.SUCESSO,
+            entidade="inventario.Equipamento",
+        )
+
     return resposta
 
 

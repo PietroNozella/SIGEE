@@ -201,6 +201,42 @@ class AuditoriaInventarioTests(TestCase):
         self.assertEqual(registro.resultado, RegistroAuditoria.Resultado.SUCESSO)
         self.assertEqual(registro.entidade, "inventario.Equipamento")
 
+    def test_consulta_filtrada_registra_evento_sem_valores_pesquisados(self):
+        resposta = self.client.get(
+            reverse("inventario:equipamento_lista"),
+            {"busca": "termo que não deve ser armazenado"},
+        )
+
+        registro = RegistroAuditoria.objects.get(
+            acao=AcaoAuditoria.INVENTARIO_CONSULTADO
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(registro.usuario, self.usuario)
+        self.assertEqual(registro.entidade, "inventario.Equipamento")
+        self.assertEqual(registro.entidade_id, "")
+        self.assertFalse(hasattr(registro, "parametros"))
+
+    def test_abertura_do_inventario_sem_filtros_nao_gera_evento_de_consulta(self):
+        resposta = self.client.get(reverse("inventario:equipamento_lista"))
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertFalse(
+            RegistroAuditoria.objects.filter(
+                acao=AcaoAuditoria.INVENTARIO_CONSULTADO
+            ).exists()
+        )
+
+    def test_download_do_modelo_csv_registra_evento_sem_conteudo_do_arquivo(self):
+        resposta = self.client.get(reverse("inventario:equipamento_modelo_csv"))
+
+        registro = RegistroAuditoria.objects.get(
+            acao=AcaoAuditoria.MODELO_CSV_BAIXADO
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(registro.usuario, self.usuario)
+        self.assertEqual(registro.entidade, "inventario.Equipamento")
+        self.assertFalse(hasattr(registro, "conteudo_arquivo"))
+
     def test_exclusao_e_inativacao_geram_eventos_distintos(self):
         sem_historico = Equipamento.objects.create(
             numero_patrimonio="PAT-AUD-004",
