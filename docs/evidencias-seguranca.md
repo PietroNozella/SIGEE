@@ -77,4 +77,4 @@ O transporte HTTPS e a política HSTS foram confirmados. Entretanto, a rota reto
 - MFA não foi implementado e permanece fora do recorte atual.
 - Recuperação de senha não foi implementada.
 - Bloqueio ou atraso progressivo por tentativas de login não foi implementado; o requisito permanece candidato e ainda depende de confirmação.
-- A auditoria de ações foi integrada posteriormente em módulo próprio, com registro persistente e consulta restrita ao Administrador funcional.
+- A auditoria de ações foi integrada posteriormente em módulo próprio, com registro persistente e consulta restrita ao Administrador funcional, conforme as [evidências de auditoria](auditoria.md).

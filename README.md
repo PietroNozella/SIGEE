@@ -143,10 +143,12 @@ O planejamento prevê autenticação por sessão, autorização aplicada no serv
 O código disponível atualmente possui:
 
 - estrutura inicial em Django;
-- apps `inventario`, `movimentacoes` e `usuarios`;
+- apps `auditoria`, `inventario`, `movimentacoes` e `usuarios`;
 - login e logout por sessão usando a autenticação nativa do Django;
 - autorização do inventário com os grupos `Administrador`, `Operador` e `Professor` e permissões nativas do Django;
 - cadastro controlado de contas comuns por Administrador funcional;
+- auditoria persistente de autenticação, acessos negados e ações atuais do inventário;
+- consulta dos registros de auditoria, somente leitura e restrita ao Administrador funcional;
 - modelos e migrations de Categoria, Local, Equipamento e Movimentação;
 - telas de listagem e cadastro de equipamentos;
 - **RN-01:** restrição de unicidade do número patrimonial no formulário, no model e no banco de dados;
@@ -154,10 +156,10 @@ O código disponível atualmente possui:
 - registros desses modelos no Django Admin;
 - configuração por variáveis de ambiente;
 - SQLite para desenvolvimento local e PostgreSQL por `DATABASE_URL`;
-- 57 testes automatizados para os fluxos já implementados;
+- 85 testes automatizados para os fluxos já implementados;
 - hospedagem configurada na Vercel com HTTPS; a rota publicada precisa de novo deploy ou correção porque retornou `404` na verificação de 10 de setembro de 2026.
 
-Reservas, manutenção, contexto pedagógico, indicadores pedagógicos, auditoria e a integração com a BrasilAPI permanecem como escopo planejado, não como funcionalidades concluídas. As RN-01 e RN-06 ainda aguardam validação com o orientador.
+Reservas, manutenção, contexto pedagógico, indicadores pedagógicos e a integração executável com a BrasilAPI permanecem como escopo planejado, não como funcionalidades concluídas. As RN-01 e RN-06 ainda aguardam validação com o orientador.
 
 ## Execução local
 
@@ -189,4 +191,5 @@ No bootstrap, o Superuser entra no Django Admin, cria uma conta comum e atribui 
 - [Matriz de acesso](docs/matriz-de-acesso.md)
 - [Autenticação](docs/autenticacao.md)
 - [Evidências de segurança](docs/evidencias-seguranca.md)
+- [Auditoria de acessos e ações](docs/auditoria.md)
 - [Projeto lógico da BrasilAPI](docs/projeto-logico-brasilapi.md)
