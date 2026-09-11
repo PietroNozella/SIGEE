@@ -15,12 +15,12 @@ Este documento reúne os requisitos não funcionais prioritários e os requisito
 
 ## Requisitos de segurança e privacidade
 
-O baseline confirmado contempla `RS-01` a `RS-05` e `RS-08` a `RS-11`. `RS-06`, `RS-07` e `RS-12` permanecem candidatos sujeitos à validação acadêmica.
+O baseline confirmado contempla `RS-01` a `RS-05` e `RS-08` a `RS-11`. O `RS-12` foi incorporado ao MVP acadêmico por decisão da equipe e permanece sujeito à validação acadêmica final. `RS-06` e `RS-07` continuam como candidatos.
 
 | ID | Situação | Requisito | Critério de aceite |
 |---|---|---|---|
 | RS-01 | Confirmado | Autenticação e autorização | Áreas restritas exigem autenticação e cada perfil executa somente ações autorizadas pelo servidor. |
-| RS-02 | Confirmado | Dados e segredos | O sistema limita os dados pessoais a nome, e-mail e perfil; testes usam dados sintéticos; credenciais e segredos ficam fora do repositório. |
+| RS-02 | Confirmado | Dados e segredos | O sistema limita os dados pessoais às informações necessárias de conta, autenticação, perfil, sessão, movimentação, auditoria e aceite; testes usam dados sintéticos; senhas em texto puro, credenciais de infraestrutura e segredos não são persistidos no repositório. |
 | RS-03 | Confirmado | Integridade e rastreabilidade | Validações no Django e no banco protegem os dados; históricos são preservados e equipamentos relacionados são inativados. |
 | RS-04 | Confirmado | Comunicação segura | O ambiente publicado utiliza HTTPS e não expõe segredos em templates, JavaScript ou versionamento. |
 | RS-05 | Confirmado | Gerenciamento seguro de sessões | Sessões expiram e são invalidadas no logout. |
@@ -30,7 +30,7 @@ O baseline confirmado contempla `RS-01` a `RS-05` e `RS-08` a `RS-11`. `RS-06`, 
 | RS-09 | Confirmado | Registro de eventos de segurança | Eventos relevantes de autenticação são registrados para verificação posterior. |
 | RS-10 | Confirmado | Proteção e minimização de dados pessoais | A coleta e o armazenamento são limitados às informações necessárias às finalidades do SIGEE. |
 | RS-11 | Confirmado | Auditoria de ações dos usuários | Ações relevantes registram usuário, ação, data/hora e entidade afetada. |
-| RS-12 | Candidato | Transparência e informações de privacidade | Termo de Uso e Política de Privacidade informam os dados tratados e suas finalidades. |
+| RS-12 | Confirmado pela equipe | Transparência e informações de privacidade | Termo de Uso e Política de Privacidade são públicos e informam os dados tratados e suas finalidades; após o login, o usuário precisa aceitar os Termos e confirmar a leitura da Política para acessar as áreas internas; o sistema registra usuário, versões e data/hora e exige novo aceite quando uma versão muda. |
 
 ## Limites da entrega
 

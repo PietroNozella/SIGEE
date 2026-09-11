@@ -10,6 +10,7 @@ from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
 
+from legal.services import registrar_aceite_vigente
 from movimentacoes.models import Movimentacao
 from usuarios.permissoes import GRUPO_ADMINISTRADOR
 
@@ -28,6 +29,7 @@ class EquipamentoRN01Tests(TestCase):
             password="senha-segura-123",
         )
         cls.usuario.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
+        registrar_aceite_vigente(cls.usuario)
 
     def setUp(self):
         self.client.force_login(self.usuario)
@@ -122,6 +124,7 @@ class ExclusaoEquipamentoTest(TestCase):
         cls.administrador.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
         cls.operador = get_user_model().objects.create_user(username="operador", password="senha-segura-123")
         cls.destinatario = get_user_model().objects.create_user(username="professor", password="senha-segura-123")
+        registrar_aceite_vigente(cls.administrador)
 
     def setUp(self):
         self.client.force_login(self.administrador)
@@ -241,6 +244,7 @@ class ImportacaoEquipamentosCSVTests(TestCase):
             password="senha-segura-123",
         )
         cls.usuario.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
+        registrar_aceite_vigente(cls.usuario)
 
     def setUp(self):
         self.client.force_login(self.usuario)
@@ -453,6 +457,7 @@ class AutenticacaoTests(TestCase):
             last_name="SIGEE",
         )
         cls.usuario.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
+        registrar_aceite_vigente(cls.usuario)
 
     def test_tela_de_login_usa_formulario_do_django_e_csrf(self):
         resposta = self.client.get(reverse("login"))

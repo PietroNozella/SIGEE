@@ -83,6 +83,7 @@ O escopo final do PFC contempla:
 - painel resumido do inventário;
 - indicadores de utilização pedagógica;
 - auditoria básica de acessos e ações relevantes.
+- Termo de Uso e Política de Privacidade com aceite versionado.
 
 ### Fora do escopo
 
@@ -136,7 +137,7 @@ O [protótipo do SIGEE no Figma](https://www.figma.com/design/cBCn1GfruefHTGZZqT
 
 ## Segurança e privacidade
 
-O planejamento prevê autenticação por sessão, autorização aplicada no servidor, proteção CSRF, validação de entrada, segredos em variáveis de ambiente, comunicação HTTPS no ambiente publicado, minimização dos dados pessoais e auditoria das ações relevantes. Os requisitos completos e os itens ainda candidatos estão em [Requisitos não funcionais e de segurança](docs/requisitos-nao-funcionais.md).
+O planejamento prevê autenticação por sessão, autorização aplicada no servidor, proteção CSRF, validação de entrada, segredos em variáveis de ambiente, comunicação HTTPS no ambiente publicado, minimização dos dados pessoais e auditoria das ações relevantes. O MVP também disponibiliza Termo de Uso e Política de Privacidade publicamente e exige um aceite versionado antes do acesso às áreas internas. Os requisitos completos e os itens ainda candidatos estão em [Requisitos não funcionais e de segurança](docs/requisitos-nao-funcionais.md).
 
 ## Estado atual do desenvolvimento
 
@@ -144,11 +145,14 @@ O código disponível atualmente possui:
 
 - estrutura inicial em Django;
 - apps `auditoria`, `inventario`, `movimentacoes` e `usuarios`;
+- app `legal` para documentos públicos e registro de aceite;
 - login e logout por sessão usando a autenticação nativa do Django;
 - autorização do inventário com os grupos `Administrador`, `Operador` e `Professor` e permissões nativas do Django;
 - cadastro controlado de contas comuns por Administrador funcional;
 - auditoria persistente de autenticação, acessos negados e ações atuais do inventário;
 - consulta dos registros de auditoria, somente leitura e restrita ao Administrador funcional;
+- Termo de Uso e Política de Privacidade públicos, com confirmação obrigatória após o login;
+- registro persistente do usuário, das versões e da data/hora do aceite, com nova confirmação após mudança de versão;
 - modelos e migrations de Categoria, Local, Equipamento e Movimentação;
 - telas de listagem e cadastro de equipamentos;
 - **RN-01:** restrição de unicidade do número patrimonial no formulário, no model e no banco de dados;
@@ -156,7 +160,7 @@ O código disponível atualmente possui:
 - registros desses modelos no Django Admin;
 - configuração por variáveis de ambiente;
 - SQLite para desenvolvimento local e PostgreSQL por `DATABASE_URL`;
-- 85 testes automatizados para os fluxos já implementados;
+- 100 testes automatizados para os fluxos já implementados;
 - hospedagem configurada na Vercel com HTTPS; a rota publicada precisa de novo deploy ou correção porque retornou `404` na verificação de 10 de setembro de 2026.
 
 Reservas, manutenção, contexto pedagógico, indicadores pedagógicos e a integração executável com a BrasilAPI permanecem como escopo planejado, não como funcionalidades concluídas. As RN-01 e RN-06 ainda aguardam validação com o orientador.

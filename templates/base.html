@@ -97,6 +97,10 @@
         </nav>
 
         <div class="sidebar-footer">
+            <nav class="sidebar-legal-links" aria-label="Documentos legais">
+                <a href="{% url 'legal:termos_de_uso' %}">Termos de Uso</a>
+                <a href="{% url 'legal:politica_privacidade' %}">Privacidade</a>
+            </nav>
             <form class="logout-form" method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
                 <button class="side-nav-item logout-button" type="submit">

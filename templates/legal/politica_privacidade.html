@@ -1,0 +1,71 @@
+{% extends "legal/base_publica.html" %}
+
+{% block title %}Política de Privacidade | SIGEE{% endblock %}
+
+{% block content %}
+<article class="legal-document" aria-labelledby="legal-title">
+    <header class="legal-document-header">
+        <span class="legal-eyebrow">Versão {{ versao_privacidade }}</span>
+        <h1 id="legal-title">Política de Privacidade</h1>
+        <p>Como o protótipo acadêmico do SIGEE trata os dados utilizados na demonstração.</p>
+    </header>
+
+    <section class="legal-notice" aria-labelledby="prototype-notice-title">
+        <h2 id="prototype-notice-title">Ambiente acadêmico</h2>
+        <p>Esta versão é destinada à apresentação e avaliação acadêmica e deve utilizar somente dados sintéticos. Em uma futura implantação real, a instituição que determinar as finalidades e os meios do tratamento deverá ser identificada como controladora e adaptar esta Política ao seu contexto.</p>
+    </section>
+
+    <section>
+        <h2>1. Dados tratados</h2>
+        <p>O SIGEE utiliza dados necessários à criação e ao funcionamento das contas: nome, sobrenome, e-mail, nome de usuário, perfil de acesso, estado da conta, datas técnicas e senha protegida por hash. A senha em texto puro não é armazenada.</p>
+        <p>Também são registrados usuário, ação, resultado, data e hora e entidade afetada em eventos de auditoria. Movimentações podem relacionar operador e destinatário ao equipamento movimentado. Campos de inventário e observações não devem receber dados pessoais reais ou sensíveis.</p>
+    </section>
+
+    <section>
+        <h2>2. Finalidades</h2>
+        <ul>
+            <li>autenticar usuários e manter a sessão;</li>
+            <li>aplicar permissões conforme o perfil funcional;</li>
+            <li>demonstrar a gestão e a rastreabilidade de equipamentos;</li>
+            <li>registrar eventos de segurança e ações relevantes;</li>
+            <li>comprovar o aceite das versões vigentes dos documentos legais;</li>
+            <li>executar testes e produzir evidências para a avaliação acadêmica.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>3. Aceite dos documentos</h2>
+        <p>Ao prosseguir, o usuário aceita os Termos de Uso e declara que leu esta Política. O registro contém a conta utilizada, a versão de cada documento e a data e hora do aceite. Essa confirmação demonstra a apresentação dos documentos; ela não constitui autorização genérica para finalidades diferentes das descritas nesta Política.</p>
+    </section>
+
+    <section>
+        <h2>4. Cookies necessários</h2>
+        <p>O protótipo utiliza cookies técnicos do Django para manter a sessão autenticada e proteger formulários contra requisições forjadas. Eles não são utilizados para publicidade ou criação de perfil comportamental.</p>
+    </section>
+
+    <section>
+        <h2>5. Armazenamento e serviços de infraestrutura</h2>
+        <p>No desenvolvimento local, os dados podem ser mantidos em SQLite. O ambiente publicado prevê a aplicação na Vercel e o PostgreSQL hospedado no Supabase. A interface também carrega recursos visuais do Google Fonts e do jsDelivr. Esses fornecedores podem processar metadados técnicos necessários à entrega de seus serviços, conforme suas próprias condições.</p>
+    </section>
+
+    <section>
+        <h2>6. Conservação e eliminação</h2>
+        <p>Os dados sintéticos são mantidos enquanto necessários ao desenvolvimento, aos testes e à demonstração acadêmica e podem ser redefinidos ou eliminados ao final dessas atividades. Registros relacionados podem ser preservados temporariamente para demonstrar integridade e auditoria. Uma implantação institucional deverá definir prazos próprios antes de utilizar dados reais.</p>
+    </section>
+
+    <section>
+        <h2>7. Segurança e limitações</h2>
+        <p>O projeto utiliza recursos de segurança do Django, incluindo hash de senhas, sessões, proteção CSRF, validação no servidor, grupos e permissões e registros de auditoria. Nenhum sistema é totalmente isento de riscos, e a implantação real dependerá de configuração, testes e operação segura da infraestrutura.</p>
+    </section>
+
+    <section>
+        <h2>8. Direitos e contato</h2>
+        <p>Durante a demonstração, solicitações de informação, acesso, correção ou eliminação dos dados sintéticos associados a uma conta podem ser encaminhadas para <a href="mailto:{{ contato_privacidade }}">{{ contato_privacidade }}</a>.</p>
+    </section>
+
+    <section>
+        <h2>9. Alterações desta Política</h2>
+        <p>Alterações relevantes produzem uma nova versão. O usuário autenticado deverá confirmar novamente a leitura da versão vigente antes de continuar usando as áreas internas.</p>
+    </section>
+</article>
+{% endblock %}

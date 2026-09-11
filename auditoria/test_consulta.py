@@ -8,6 +8,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from legal.services import registrar_aceite_vigente
 from .eventos import AcaoAuditoria
 from .models import RegistroAuditoria
 from usuarios.permissoes import GRUPO_ADMINISTRADOR, GRUPO_OPERADOR
@@ -31,6 +32,8 @@ class ConsultaAuditoriaTests(TestCase):
             Group.objects.get(name=GRUPO_ADMINISTRADOR)
         )
         cls.operador.groups.add(Group.objects.get(name=GRUPO_OPERADOR))
+        registrar_aceite_vigente(cls.administrador)
+        registrar_aceite_vigente(cls.operador)
 
         cls.registro_login = RegistroAuditoria.objects.create(
             usuario=cls.administrador,
@@ -75,6 +78,7 @@ class ConsultaAuditoriaTests(TestCase):
         usuario.user_permissions.add(
             Permission.objects.get(codename="view_registroauditoria")
         )
+        registrar_aceite_vigente(usuario)
         self.client.force_login(usuario)
 
         resposta = self.client.get(reverse("auditoria:registro_lista"))
@@ -87,6 +91,7 @@ class ConsultaAuditoriaTests(TestCase):
             email="tecnico@example.com",
             password="senha-segura-123",
         )
+        registrar_aceite_vigente(superuser)
         self.client.force_login(superuser)
 
         resposta = self.client.get(reverse("auditoria:registro_lista"))

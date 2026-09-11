@@ -1,0 +1,60 @@
+{% extends "legal/base_publica.html" %}
+
+{% block title %}Termos de Uso | SIGEE{% endblock %}
+
+{% block content %}
+<article class="legal-document" aria-labelledby="legal-title">
+    <header class="legal-document-header">
+        <span class="legal-eyebrow">Versão {{ versao_termos }}</span>
+        <h1 id="legal-title">Termos de Uso</h1>
+        <p>Regras aplicáveis ao uso do protótipo acadêmico do SIGEE.</p>
+    </header>
+
+    <section>
+        <h2>1. Sobre o SIGEE</h2>
+        <p>O Sistema Integrado de Gestão de Equipamentos Escolares (SIGEE) é um protótipo acadêmico desenvolvido por Diego Alves da Silva Fagundes e Pietro Lopes Nozella Sousa para apresentação e avaliação em Projeto Final de Curso. Nesta versão, o sistema demonstra como uma instituição de ensino poderia organizar equipamentos, usuários, movimentações e demais processos previstos no projeto.</p>
+        <p>O ambiente de demonstração não representa um serviço institucional oficial nem deve ser utilizado para controlar equipamentos ou pessoas em uma operação real.</p>
+    </section>
+
+    <section>
+        <h2>2. Acesso ao sistema</h2>
+        <p>O cadastro não é público. As contas são criadas de forma controlada e recebem um dos perfis funcionais previstos: Administrador, Operador ou Professor. Cada usuário deve utilizar somente a conta que lhe foi atribuída e manter sua senha em sigilo.</p>
+    </section>
+
+    <section>
+        <h2>3. Uso permitido</h2>
+        <p>O usuário deve utilizar o SIGEE somente para conhecer, testar e avaliar as funcionalidades acadêmicas do protótipo, respeitando as permissões do seu perfil. A demonstração deve empregar dados sintéticos, sem cadastrar informações pessoais reais de estudantes, profissionais ou terceiros.</p>
+    </section>
+
+    <section>
+        <h2>4. Condutas não permitidas</h2>
+        <ul>
+            <li>compartilhar credenciais ou tentar utilizar a conta de outra pessoa;</li>
+            <li>tentar acessar funções, registros ou áreas sem autorização;</li>
+            <li>inserir dados pessoais reais, dados sensíveis ou conteúdo ilícito;</li>
+            <li>interferir no funcionamento, na segurança ou na integridade da demonstração;</li>
+            <li>utilizar o protótipo como sistema oficial de uma instituição.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>5. Registros e auditoria</h2>
+        <p>Para demonstrar segurança e rastreabilidade, o sistema registra eventos de autenticação, acessos negados, ações relevantes e o aceite destes documentos. Esses registros são utilizados exclusivamente no desenvolvimento, nos testes e na avaliação acadêmica do protótipo.</p>
+    </section>
+
+    <section>
+        <h2>6. Disponibilidade e limitações</h2>
+        <p>Por ser um protótipo em desenvolvimento, funcionalidades podem estar incompletas, indisponíveis ou sujeitas a alterações. Não há garantia de disponibilidade contínua, conservação permanente dos dados de demonstração ou adequação imediata a uma implantação institucional.</p>
+    </section>
+
+    <section>
+        <h2>7. Aceite e atualização</h2>
+        <p>O acesso às áreas internas depende do aceite da versão vigente destes Termos e da confirmação de leitura da Política de Privacidade. O sistema registra o usuário, as versões aceitas e a data e hora. Quando uma das versões for alterada, um novo aceite será solicitado.</p>
+    </section>
+
+    <section>
+        <h2>8. Contato</h2>
+        <p>Dúvidas sobre o protótipo podem ser encaminhadas para <a href="mailto:{{ contato_privacidade }}">{{ contato_privacidade }}</a>.</p>
+    </section>
+</article>
+{% endblock %}

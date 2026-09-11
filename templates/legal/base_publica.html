@@ -1,0 +1,50 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>{% block title %}SIGEE{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}">
+</head>
+<body class="legal-page">
+    <a class="skip-link" href="#conteudo-principal">Ir para o conteúdo principal</a>
+
+    <header class="legal-topbar">
+        <a class="legal-brand" href="{% url 'login' %}" aria-label="SIGEE — Gestão de Equipamentos">
+            <span class="brand-symbol" aria-hidden="true">
+                <img src="{% static 'inventario/icons/logo.svg' %}" alt="">
+            </span>
+            <span>
+                <strong>SIGEE</strong>
+                <small>Gestão de Equipamentos</small>
+            </span>
+        </a>
+        <nav class="legal-navigation" aria-label="Documentos legais">
+            <a href="{% url 'legal:termos_de_uso' %}">Termos de Uso</a>
+            <a href="{% url 'legal:politica_privacidade' %}">Política de Privacidade</a>
+            {% block legal_header_action %}
+                {% if request.user.is_authenticated %}
+                    <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_lista' %}">Voltar ao sistema</a>
+                {% else %}
+                    <a class="btn btn-secondary-sigee" href="{% url 'login' %}">Entrar</a>
+                {% endif %}
+            {% endblock %}
+        </nav>
+    </header>
+
+    <main class="legal-main" id="conteudo-principal" tabindex="-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="legal-footer">
+        <p>Protótipo acadêmico do SIGEE — versão demonstrativa para avaliação.</p>
+        <p>Contato: <a href="mailto:{{ contato_privacidade }}">{{ contato_privacidade }}</a></p>
+    </footer>
+</body>
+</html>

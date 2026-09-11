@@ -10,9 +10,10 @@ from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
 from django.http import HttpResponse, HttpResponseForbidden
 from django.test import RequestFactory, TestCase, override_settings
-from django.urls import path, reverse
+from django.urls import include, path, reverse
 
 from inventario.models import Categoria, Equipamento, Local
+from legal.services import registrar_aceite_vigente
 from movimentacoes.models import Movimentacao
 from usuarios.permissoes import GRUPO_ADMINISTRADOR
 
@@ -36,6 +37,7 @@ def logout_para_teste(request):
 
 
 urlpatterns = [
+    path("", include("legal.urls")),
     path("teste/permissao/", view_protegida_para_teste, name="teste_permissao"),
     path("teste/proibido/", view_proibida_para_teste, name="teste_proibido"),
     path("teste/logout/", logout_para_teste, name="logout"),
@@ -133,6 +135,7 @@ class AuditoriaInventarioTests(TestCase):
             password="senha-segura-123",
         )
         cls.usuario.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
+        registrar_aceite_vigente(cls.usuario)
 
     def setUp(self):
         self.client.force_login(self.usuario)
@@ -300,6 +303,7 @@ class AuditoriaAutenticacaoTests(TestCase):
             username="usuario_autenticacao",
             password="senha-segura-123",
         )
+        registrar_aceite_vigente(cls.usuario)
 
     def test_login_bem_sucedido_registra_usuario(self):
         autenticado = self.client.login(
@@ -349,6 +353,7 @@ class AuditoriaAcessoNegadoTests(TestCase):
             username="usuario_sem_permissao",
             password="senha-segura-123",
         )
+        registrar_aceite_vigente(cls.usuario)
 
     def setUp(self):
         self.client.force_login(self.usuario)
