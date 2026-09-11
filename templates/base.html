@@ -30,10 +30,17 @@
                 <img src="{% static 'inventario/icons/overview.svg' %}" alt="" aria-hidden="true">
                 Visão geral
             </span>
-            <a class="side-nav-item is-active" href="{% url 'inventario:equipamento_lista' %}" aria-current="page">
-                <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
-                Equipamentos
-            </a>
+            {% if perms.inventario.view_equipamento %}
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
+                    Equipamentos
+                </a>
+            {% else %}
+                <span class="side-nav-item is-disabled" aria-disabled="true">
+                    <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
+                    Equipamentos
+                </span>
+            {% endif %}
             <span class="side-nav-item is-disabled" aria-disabled="true">
                 <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
                 Reservas
@@ -66,10 +73,17 @@
             </span>
 
             <span class="sidebar-section-title">Administração</span>
-            <span class="side-nav-item is-disabled" aria-disabled="true">
-                <img src="{% static 'inventario/icons/users.svg' %}" alt="" aria-hidden="true">
-                Usuários
-            </span>
+            {% if pode_cadastrar_usuario %}
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'usuarios' %} is-active{% endif %}" href="{% url 'usuarios:usuario_novo' %}"{% if request.resolver_match.namespace == 'usuarios' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/users.svg' %}" alt="" aria-hidden="true">
+                    Cadastrar usuário
+                </a>
+            {% else %}
+                <span class="side-nav-item is-disabled" aria-disabled="true">
+                    <img src="{% static 'inventario/icons/users.svg' %}" alt="" aria-hidden="true">
+                    Usuários
+                </span>
+            {% endif %}
             <span class="side-nav-item is-disabled" aria-disabled="true">
                 <img src="{% static 'inventario/icons/settings.svg' %}" alt="" aria-hidden="true">
                 Configurações
@@ -77,10 +91,13 @@
         </nav>
 
         <div class="sidebar-footer">
-            <span class="side-nav-item is-disabled" aria-disabled="true">
-                <img src="{% static 'inventario/icons/logout.svg' %}" alt="" aria-hidden="true">
-                Sair
-            </span>
+            <form class="logout-form" method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button class="side-nav-item logout-button" type="submit">
+                    <img src="{% static 'inventario/icons/logout.svg' %}" alt="" aria-hidden="true">
+                    Sair
+                </button>
+            </form>
         </div>
     </aside>
 
@@ -101,10 +118,10 @@
             <span class="topbar-divider" aria-hidden="true"></span>
             <div class="user-summary">
                 <span>
-                    <strong>Administrador SIGEE</strong>
-                    <small>Administrador</small>
+                    <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                    <small>{{ request.user.username }}</small>
                 </span>
-                <span class="user-avatar" aria-hidden="true">AS</span>
+                <span class="user-avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
             </div>
         </div>
     </header>

@@ -81,6 +81,9 @@ class Equipamento(models.Model):
         ordering = ["numero_patrimonio"]
         verbose_name = "equipamento"
         verbose_name_plural = "equipamentos"
+        permissions = [
+            ("view_resumo_inventario", "Pode visualizar o resumo do inventário"),
+        ]
 
     def possui_registros_relacionados(self):
         return self.movimentacoes.exists()

@@ -8,35 +8,43 @@
     <header class="page-header">
         <div>
             <h1>Equipamentos</h1>
-            <p>Cadastre, consulte e filtre os equipamentos do inventário.</p>
+            {% if perms.inventario.add_equipamento %}
+                <p>Cadastre, consulte e filtre os equipamentos do inventário.</p>
+            {% else %}
+                <p>Consulte e filtre os equipamentos do inventário.</p>
+            {% endif %}
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_importar' %}">Importar CSV</a>
-            <a class="btn btn-primary-sigee" href="{% url 'inventario:equipamento_novo' %}">
-                <img src="{% static 'inventario/icons/add.svg' %}" alt="" aria-hidden="true">
-                Novo equipamento
-            </a>
-        </div>
+        {% if perms.inventario.add_equipamento %}
+            <div class="d-flex gap-2 flex-wrap">
+                <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_importar' %}">Importar CSV</a>
+                <a class="btn btn-primary-sigee" href="{% url 'inventario:equipamento_novo' %}">
+                    <img src="{% static 'inventario/icons/add.svg' %}" alt="" aria-hidden="true">
+                    Novo equipamento
+                </a>
+            </div>
+        {% endif %}
     </header>
 
-    <section class="kpi-grid" aria-label="Resumo do inventário">
-        <article class="kpi-card">
-            <span class="kpi-label">Total</span>
-            <strong class="kpi-value">{{ indicadores.total }}</strong>
-        </article>
-        <article class="kpi-card">
-            <span class="kpi-label">Disponíveis</span>
-            <strong class="kpi-value kpi-available">{{ indicadores.disponiveis }}</strong>
-        </article>
-        <article class="kpi-card">
-            <span class="kpi-label">Em uso</span>
-            <strong class="kpi-value kpi-in-use">{{ indicadores.em_uso }}</strong>
-        </article>
-        <article class="kpi-card">
-            <span class="kpi-label">Em manutenção</span>
-            <strong class="kpi-value kpi-maintenance">{{ indicadores.manutencao }}</strong>
-        </article>
-    </section>
+    {% if perms.inventario.view_resumo_inventario %}
+        <section class="kpi-grid" aria-label="Resumo do inventário">
+            <article class="kpi-card">
+                <span class="kpi-label">Total</span>
+                <strong class="kpi-value">{{ indicadores.total }}</strong>
+            </article>
+            <article class="kpi-card">
+                <span class="kpi-label">Disponíveis</span>
+                <strong class="kpi-value kpi-available">{{ indicadores.disponiveis }}</strong>
+            </article>
+            <article class="kpi-card">
+                <span class="kpi-label">Em uso</span>
+                <strong class="kpi-value kpi-in-use">{{ indicadores.em_uso }}</strong>
+            </article>
+            <article class="kpi-card">
+                <span class="kpi-label">Em manutenção</span>
+                <strong class="kpi-value kpi-maintenance">{{ indicadores.manutencao }}</strong>
+            </article>
+        </section>
+    {% endif %}
 
     <section class="inventory-card" aria-labelledby="inventory-heading">
         <h2 class="visually-hidden" id="inventory-heading">Lista de equipamentos</h2>
@@ -96,7 +104,7 @@
                             <th scope="col">Categoria</th>
                             <th scope="col">Local</th>
                             <th scope="col">Situação</th>
-                            <th scope="col">Ações</th>
+                            {% if perms.inventario.delete_equipamento %}<th scope="col">Ações</th>{% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -114,23 +122,25 @@
                                         {{ equipamento.get_situacao_display }}
                                     </span>
                                 </td>
-                                <td>
-                                    {% if equipamento.ativo %}
-                                        <form method="post" action="{% url 'inventario:equipamento_excluir' equipamento.pk %}">
-                                            {% csrf_token %}
-                                            <button
-                                                class="btn btn-secondary-sigee"
-                                                type="button"
-                                                data-delete-trigger
-                                                data-equipamento-nome="{{ equipamento.nome }}"
-                                                data-equipamento-patrimonio="{{ equipamento.numero_patrimonio }}"
-                                                data-possui-historico="{{ equipamento.possui_historico|yesno:'true,false' }}"
-                                                aria-haspopup="dialog"
-                                                aria-controls="modal-exclusao"
-                                            >Excluir</button>
-                                        </form>
-                                    {% endif %}
-                                </td>
+                                {% if perms.inventario.delete_equipamento %}
+                                    <td>
+                                        {% if equipamento.ativo %}
+                                            <form method="post" action="{% url 'inventario:equipamento_excluir' equipamento.pk %}">
+                                                {% csrf_token %}
+                                                <button
+                                                    class="btn btn-secondary-sigee"
+                                                    type="button"
+                                                    data-delete-trigger
+                                                    data-equipamento-nome="{{ equipamento.nome }}"
+                                                    data-equipamento-patrimonio="{{ equipamento.numero_patrimonio }}"
+                                                    data-possui-historico="{{ equipamento.possui_historico|yesno:'true,false' }}"
+                                                    aria-haspopup="dialog"
+                                                    aria-controls="modal-exclusao"
+                                                >Excluir</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -166,8 +176,12 @@
             <div class="empty-state" role="status">
                 {% if total_equipamentos == 0 %}
                     <h2>Nenhum equipamento cadastrado</h2>
-                    <p>Cadastre o primeiro equipamento para iniciar o inventário.</p>
-                    <a class="btn btn-primary-sigee" href="{% url 'inventario:equipamento_novo' %}">Cadastrar equipamento</a>
+                    {% if perms.inventario.add_equipamento %}
+                        <p>Cadastre o primeiro equipamento para iniciar o inventário.</p>
+                        <a class="btn btn-primary-sigee" href="{% url 'inventario:equipamento_novo' %}">Cadastrar equipamento</a>
+                    {% else %}
+                        <p>O inventário ainda não possui equipamentos cadastrados.</p>
+                    {% endif %}
                 {% else %}
                     <h2>Nenhum equipamento encontrado</h2>
                     <p>Revise os filtros informados e tente novamente.</p>
@@ -177,6 +191,7 @@
         {% endif %}
     </section>
 
+    {% if perms.inventario.delete_equipamento %}
     <dialog
         class="modal-exclusao"
         id="modal-exclusao"
@@ -232,5 +247,6 @@
             </button>
         </footer>
     </dialog>
+    {% endif %}
 </div>
 {% endblock %}
