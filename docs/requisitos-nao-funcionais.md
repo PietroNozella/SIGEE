@@ -32,6 +32,8 @@ O baseline confirmado contempla `RS-01` a `RS-05` e `RS-08` a `RS-12`. `RS-06` e
 | RS-11 | Confirmado | Auditoria de ações dos usuários | Ações relevantes registram usuário, ação, data/hora e entidade afetada. |
 | RS-12 | Confirmado | Transparência e informações de privacidade | Termo de Uso e Política de Privacidade são públicos e informam os dados tratados e suas finalidades; após o login, o usuário precisa aceitar os Termos e confirmar a leitura da Política para acessar as áreas internas; o sistema registra usuário, versões e data/hora e exige novo aceite quando uma versão muda. |
 
+A implementação, o inventário de dados e as evidências relacionadas ao `RS-12` estão registrados em [Termos de Uso, privacidade e aceite](privacidade-e-termos.md).
+
 ## Limites do produto
 
 Autenticação multifator, notificações de segurança, auditoria avançada e automação de direitos do titular permanecem fora do escopo atual do SIGEE.
