@@ -114,8 +114,8 @@ class DocumentosLegaisTests(TestCase):
         )
         aceite = AceiteDocumentosLegais.objects.get()
         self.assertEqual(aceite.usuario, self.usuario)
-        self.assertEqual(aceite.versao_termos, "1.1")
-        self.assertEqual(aceite.versao_privacidade, "1.1")
+        self.assertEqual(aceite.versao_termos, "1.0")
+        self.assertEqual(aceite.versao_privacidade, "1.0")
         self.assertIsNotNone(aceite.aceito_em)
         self.assertTrue(usuario_possui_aceite_vigente(self.usuario))
 
@@ -174,8 +174,8 @@ class DocumentosLegaisTests(TestCase):
             with transaction.atomic():
                 AceiteDocumentosLegais.objects.create(
                     usuario=self.usuario,
-                    versao_termos="1.1",
-                    versao_privacidade="1.1",
+                    versao_termos="1.0",
+                    versao_privacidade="1.0",
                 )
 
     def test_aceite_gera_evento_de_auditoria(self):
