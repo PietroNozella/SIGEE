@@ -13,7 +13,11 @@ from usuarios.permissoes import GRUPO_ADMINISTRADOR
 
 from .models import AceiteDocumentosLegais
 from .admin import AceiteDocumentosLegaisAdmin
-from .services import registrar_aceite_vigente, usuario_possui_aceite_vigente
+from .services import (
+    registrar_aceite_vigente,
+    usuario_possui_aceite_vigente,
+    versoes_atuais,
+)
 
 
 class DocumentosLegaisTests(TestCase):
@@ -33,9 +37,12 @@ class DocumentosLegaisTests(TestCase):
         self.client.force_login(self.usuario)
 
     def dados_aceite(self, **dados):
+        versao_termos, versao_privacidade = versoes_atuais()
         return {
             "aceitou_termos": "on",
             "confirmou_ciencia_privacidade": "on",
+            "versao_termos": versao_termos,
+            "versao_privacidade": versao_privacidade,
             **dados,
         }
 
@@ -165,6 +172,30 @@ class DocumentosLegaisTests(TestCase):
                 f'{reverse("inventario:equipamento_lista")}'
             ),
             fetch_redirect_response=False,
+        )
+
+    def test_nao_registra_aceite_quando_a_versao_muda_apos_exibir_formulario(self):
+        formulario_exibido = self.client.get(reverse("legal:aceite_documentos"))
+        self.assertEqual(formulario_exibido.context["versao_termos"], "1.0")
+
+        with self.settings(TERMOS_USO_VERSAO="2.0"):
+            resposta = self.client.post(
+                reverse("legal:aceite_documentos"),
+                self.dados_aceite(
+                    versao_termos="1.0",
+                    versao_privacidade="1.0",
+                ),
+            )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Os documentos foram atualizados")
+        self.assertEqual(resposta.context["versao_termos"], "2.0")
+        self.assertFalse(AceiteDocumentosLegais.objects.exists())
+        self.assertFalse(
+            RegistroAuditoria.objects.filter(
+                usuario=self.usuario,
+                acao=AcaoAuditoria.DOCUMENTOS_LEGAIS_ACEITOS,
+            ).exists()
         )
 
     def test_aceite_repetido_nao_cria_duplicidade(self):

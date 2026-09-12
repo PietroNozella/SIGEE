@@ -22,6 +22,7 @@
             <div class="validation-summary" id="form-errors" role="alert" tabindex="-1" data-focus-on-load>
                 <h2>Confirmações necessárias</h2>
                 <ul>
+                    {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
                     {% for field in form %}
                         {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
                     {% endfor %}
@@ -32,6 +33,8 @@
         <form method="post" class="legal-consent-form" novalidate>
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next }}">
+            {{ form.versao_termos }}
+            {{ form.versao_privacidade }}
 
             <div class="legal-confirmation{% if form.aceitou_termos.errors %} has-error{% endif %}">
                 {{ form.aceitou_termos }}

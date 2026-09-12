@@ -26,7 +26,7 @@ Campos livres de inventário e movimentação não devem ser utilizados para reg
 2. A tela de login contém links para os dois documentos.
 3. Depois da autenticação, uma conta sem aceite vigente é encaminhada para `/aceite/` antes de acessar as áreas internas.
 4. O usuário precisa aceitar os Termos e confirmar a leitura da Política.
-5. O sistema armazena a conta, as duas versões e a data e hora em um registro protegido contra alteração e exclusão pela interface administrativa.
+5. Antes de registrar o aceite, o servidor compara as versões enviadas pelo formulário com as versões vigentes. Se houver mudança, exige nova leitura e confirmação; caso contrário, armazena a conta, as duas versões e a data e hora em um registro protegido contra alteração e exclusão pela interface administrativa.
 6. O aceite gera o evento `DOCUMENTOS_LEGAIS_ACEITOS` na auditoria.
 7. Uma alteração da versão configurada exige nova confirmação.
 8. As áreas autenticadas mantêm links permanentes para os documentos.
@@ -63,6 +63,7 @@ Os testes de `legal/tests.py` verificam:
 - persistência da conta, versões e data e hora;
 - rejeição de redirecionamento externo;
 - exigência de novo aceite após mudança de versão;
+- rejeição de um formulário exibido antes de uma mudança de versão;
 - ausência de duplicidade para a mesma combinação de versões;
 - registro do evento de auditoria;
 - proteção do aceite e bloqueio de alterações no Django Admin.
