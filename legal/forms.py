@@ -2,6 +2,8 @@ from django import forms
 
 
 class AceiteDocumentosLegaisForm(forms.Form):
+    versao_termos = forms.CharField(widget=forms.HiddenInput())
+    versao_privacidade = forms.CharField(widget=forms.HiddenInput())
     aceitou_termos = forms.BooleanField(
         required=True,
         error_messages={

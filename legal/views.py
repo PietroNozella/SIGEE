@@ -15,6 +15,7 @@ from .services import (
     contexto_documentos,
     registrar_aceite_vigente,
     usuario_possui_aceite_vigente,
+    versoes_atuais,
 )
 
 
@@ -47,20 +48,38 @@ def aceite_documentos(request):
     if usuario_possui_aceite_vigente(request.user):
         return redirect(destino)
 
-    form = AceiteDocumentosLegaisForm(request.POST or None)
+    versao_termos, versao_privacidade = versoes_atuais()
+    form = AceiteDocumentosLegaisForm(
+        request.POST or None,
+        initial={
+            "versao_termos": versao_termos,
+            "versao_privacidade": versao_privacidade,
+        },
+    )
     if request.method == "POST" and form.is_valid():
-        with transaction.atomic():
-            aceite, criado = registrar_aceite_vigente(request.user)
-            if criado:
-                registrar_evento(
-                    usuario=request.user,
-                    acao=AcaoAuditoria.DOCUMENTOS_LEGAIS_ACEITOS,
-                    resultado=RegistroAuditoria.Resultado.SUCESSO,
-                    entidade="AceiteDocumentosLegais",
-                    entidade_id=aceite.pk,
-                )
-        messages.success(request, "Termos e Política registrados com sucesso.")
-        return redirect(destino)
+        versoes_enviadas = (
+            form.cleaned_data["versao_termos"],
+            form.cleaned_data["versao_privacidade"],
+        )
+        if versoes_enviadas != (versao_termos, versao_privacidade):
+            form.add_error(
+                None,
+                "Os documentos foram atualizados. Leia as versões vigentes e "
+                "confirme novamente.",
+            )
+        else:
+            with transaction.atomic():
+                aceite, criado = registrar_aceite_vigente(request.user)
+                if criado:
+                    registrar_evento(
+                        usuario=request.user,
+                        acao=AcaoAuditoria.DOCUMENTOS_LEGAIS_ACEITOS,
+                        resultado=RegistroAuditoria.Resultado.SUCESSO,
+                        entidade="AceiteDocumentosLegais",
+                        entidade_id=aceite.pk,
+                    )
+            messages.success(request, "Termos e Política registrados com sucesso.")
+            return redirect(destino)
 
     contexto = {**contexto_documentos(), "form": form, "next": destino}
     return render(request, "legal/aceite_documentos.html", contexto)
