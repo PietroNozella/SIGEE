@@ -15,7 +15,7 @@ from django.urls import include, path, reverse
 from inventario.models import Categoria, Equipamento, Local
 from legal.services import registrar_aceite_vigente
 from movimentacoes.models import Movimentacao
-from usuarios.permissoes import GRUPO_ADMINISTRADOR
+from usuarios.permissoes import GRUPO_ADMINISTRADOR, GRUPO_PROFESSOR
 
 from .admin import RegistroAuditoriaAdmin
 from .eventos import AcaoAuditoria
@@ -294,6 +294,76 @@ class AuditoriaInventarioTests(TestCase):
                 entidade_id=str(com_historico.pk),
             ).exists()
         )
+
+
+class AuditoriaCadastroUsuarioTests(TestCase):
+    SENHA = "Senha-SIGEE-2026!"
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command("configurar_perfis", stdout=StringIO())
+        cls.administrador = get_user_model().objects.create_user(
+            username="administrador_contas",
+            password=cls.SENHA,
+        )
+        cls.administrador.groups.add(
+            Group.objects.get(name=GRUPO_ADMINISTRADOR)
+        )
+        cls.grupo_professor = Group.objects.get(name=GRUPO_PROFESSOR)
+        registrar_aceite_vigente(cls.administrador)
+
+    def dados_validos(self, username="novo_usuario_auditado"):
+        return {
+            "first_name": "Maria",
+            "last_name": "Silva",
+            "email": "maria@example.com",
+            "username": username,
+            "perfil": self.grupo_professor.pk,
+            "password1": self.SENHA,
+            "password2": self.SENHA,
+        }
+
+    def setUp(self):
+        self.client.force_login(self.administrador)
+
+    def test_cadastro_bem_sucedido_registra_administrador_e_nova_conta(self):
+        resposta = self.client.post(
+            reverse("usuarios:usuario_novo"),
+            self.dados_validos(),
+        )
+
+        usuario_cadastrado = get_user_model().objects.get(
+            username="novo_usuario_auditado"
+        )
+        registro = RegistroAuditoria.objects.get(
+            acao=AcaoAuditoria.USUARIO_CADASTRADO
+        )
+        self.assertRedirects(resposta, reverse("usuarios:usuario_novo"))
+        self.assertEqual(registro.usuario, self.administrador)
+        self.assertEqual(registro.resultado, RegistroAuditoria.Resultado.SUCESSO)
+        self.assertEqual(registro.entidade, "auth.User")
+        self.assertEqual(registro.entidade_id, str(usuario_cadastrado.pk))
+
+    def test_cadastro_invalido_registra_falha_sem_dados_do_formulario(self):
+        get_user_model().objects.create_user(
+            username="conta_existente",
+            password=self.SENHA,
+        )
+
+        resposta = self.client.post(
+            reverse("usuarios:usuario_novo"),
+            self.dados_validos(username="conta_existente"),
+        )
+
+        registro = RegistroAuditoria.objects.get(
+            acao=AcaoAuditoria.USUARIO_CADASTRADO
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(registro.usuario, self.administrador)
+        self.assertEqual(registro.resultado, RegistroAuditoria.Resultado.FALHA)
+        self.assertEqual(registro.entidade, "auth.User")
+        self.assertEqual(registro.entidade_id, "")
+        self.assertFalse(hasattr(registro, "dados_formulario"))
 
 
 class AuditoriaAutenticacaoTests(TestCase):

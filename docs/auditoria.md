@@ -14,7 +14,8 @@ A auditoria cobre atualmente:
 - cadastro individual de equipamento;
 - importação de equipamentos por CSV;
 - exclusão definitiva de equipamento sem histórico;
-- inativação de equipamento com histórico preservado.
+- inativação de equipamento com histórico preservado;
+- cadastro controlado de contas funcionais.
 
 As funcionalidades futuras devem registrar seus próprios eventos quando forem implementadas. Não se considera concluída a auditoria de reservas, manutenção ou utilização pedagógica enquanto esses fluxos não existirem no código.
 
@@ -47,8 +48,9 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `EQUIPAMENTOS_IMPORTADOS` | Um lote CSV é aceito ou rejeitado. | Sucesso ou falha |
 | `EQUIPAMENTO_EXCLUIDO` | Um equipamento sem histórico é excluído. | Sucesso |
 | `EQUIPAMENTO_INATIVADO` | Um equipamento com histórico é inativado. | Sucesso |
+| `USUARIO_CADASTRADO` | O cadastro controlado de uma conta é aceito ou rejeitado. | Sucesso ou falha |
 
-Uma tentativa de login inválida é registrada sem vincular o nome de usuário informado a uma conta. Consultas registram que houve uso de filtros, mas não armazenam os termos pesquisados. A importação registra um evento para o lote e não copia o conteúdo do arquivo.
+Uma tentativa de login inválida é registrada sem vincular o nome de usuário informado a uma conta. Consultas registram que houve uso de filtros, mas não armazenam os termos pesquisados. A importação registra um evento para o lote e não copia o conteúdo do arquivo. No cadastro de contas, a auditoria identifica o Administrador responsável e, em caso de sucesso, o identificador da conta criada, sem copiar nome, e-mail, perfil ou senha.
 
 ## Controle de acesso e consulta
 
@@ -82,12 +84,13 @@ Os testes dos arquivos `auditoria/tests.py` e `auditoria/test_consulta.py` verif
 - proteção da referência ao usuário;
 - bloqueio de inclusão, alteração e exclusão pelo Django Admin;
 - eventos de autenticação, inventário e acesso negado;
+- cadastro de conta bem-sucedido ou inválido;
 - ausência de credenciais, termos pesquisados e conteúdo de arquivos nos registros;
 - redirecionamento do usuário anônimo;
 - rejeição de perfis não autorizados e do Superuser técnico;
 - consulta, filtros, intervalo de datas e paginação para o Administrador.
 
-Em 10 de setembro de 2026, a suíte integrada foi executada com banco de testes isolado:
+Em 11 de setembro de 2026, a suíte integrada foi executada com banco de testes isolado:
 
 ```powershell
 $env:DATABASE_URL=''
@@ -97,7 +100,7 @@ $env:DATABASE_URL=''
 Resultado observado:
 
 ```text
-Ran 85 tests
+Ran 102 tests
 OK
 System check identified no issues (0 silenced).
 ```
@@ -110,6 +113,7 @@ System check identified no issues (0 silenced).
 | `RS-11` - registrar usuário, ação, data/hora e entidade | `auditoria/models.py` e `auditoria/services.py` |
 | Acessos negados devem ser auditados | `auditoria/middleware.py` |
 | Operações atuais do inventário devem ser auditadas | `inventario/views.py` |
+| Cadastro controlado de contas deve ser auditado | `usuarios/views.py` e `auditoria/tests.py` |
 | Consulta restrita ao Administrador | `auditoria/views.py`, `usuarios/permissoes.py` e `templates/base.html` |
 | Consulta somente leitura | `auditoria/admin.py` e `templates/auditoria/registro_lista.html` |
 | Evidência automatizada | `auditoria/tests.py` e `auditoria/test_consulta.py` |
