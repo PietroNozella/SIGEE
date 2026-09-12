@@ -29,6 +29,9 @@ def registrar_evento(
     if len(entidade) > 100 or len(entidade_id) > 100:
         raise ValueError("A identificação da entidade excede 100 caracteres.")
 
+
+    # A auditoria associa somente identidades autenticadas e persistidas,
+    # evitando registrar como usuário dados não verificados da requisição.
     usuario_persistido = (
         usuario
         if getattr(usuario, "is_authenticated", False) and usuario.pk is not None

@@ -140,10 +140,13 @@ def equipamento_importar(request):
     erros_importacao = []
 
     if request.method == "POST" and form.is_valid():
+
         formularios_validos, erros_importacao = validar_equipamentos_csv(
             form.cleaned_data["arquivo"]
         )
 
+        # O lote só é persistido quando todas as linhas são válidas; a transação
+        # impede registros parciais e auditoria sem a operação correspondente.
         if not erros_importacao:
             try:
                 with transaction.atomic():
@@ -155,6 +158,7 @@ def equipamento_importar(request):
                         resultado=RegistroAuditoria.Resultado.SUCESSO,
                         entidade="inventario.Equipamento",
                     )
+            # Mantém a RN-01 mesmo se outro cadastro ocorrer após a validação inicial.
             except IntegrityError:
                 erros_importacao = [
                     "Não foi possível concluir a importação porque um número de "

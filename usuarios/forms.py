@@ -57,6 +57,8 @@ class CadastroUsuarioForm(UserCreationForm):
                     {"class": "form-control is-invalid", "aria-invalid": "true"}
                 )
 
+    # Ao persistir, o cadastro cria apenas contas funcionais comuns e as vincula
+    # atomicamente a um único perfil da matriz de acesso.
     def save(self, commit=True):
         user = super().save(commit=False)
         user.is_staff = False

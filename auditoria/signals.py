@@ -14,7 +14,8 @@ def registrar_login_realizado(sender, request, user, **kwargs):
         resultado=RegistroAuditoria.Resultado.SUCESSO,
     )
 
-
+# A tentativa é registrada sem credenciais ou usuário informado,
+# porque a identidade ainda não foi autenticada e esses dados são sensíveis.
 @receiver(user_login_failed, dispatch_uid="auditoria_login_falhou")
 def registrar_login_falhou(sender, credentials, request, **kwargs):
     registrar_evento(

@@ -61,6 +61,8 @@ def aceite_documentos(request):
             form.cleaned_data["versao_termos"],
             form.cleaned_data["versao_privacidade"],
         )
+        # Revalida as versões para impedir que um formulário antigo registre
+        # aceite sobre documentos atualizados após sua exibição.
         if versoes_enviadas != (versao_termos, versao_privacidade):
             form.add_error(
                 None,

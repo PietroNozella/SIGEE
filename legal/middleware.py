@@ -27,6 +27,8 @@ class ExigirAceiteDocumentosLegaisMiddleware:
             and not self._rota_isenta(request.path_info)
             and not usuario_possui_aceite_vigente(usuario)
         ):
+            # Preserva o destino somente em métodos seguros; requisições POST não
+            # podem ser retomadas sem os dados e a confirmação originais.
             parametros = ""
             if request.method in {"GET", "HEAD"}:
                 parametros = f"?{urlencode({'next': request.get_full_path()})}"

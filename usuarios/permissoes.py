@@ -25,7 +25,8 @@ PERMISSOES_POR_GRUPO = {
     GRUPO_PROFESSOR: ("inventario.view_equipamento",),
 }
 
-
+# A RN-18 diferencia o Superuser técnico do perfil funcional Administrador.
+# Por isso, o Administrador deve pertencer exclusivamente ao seu grupo funcional.
 def e_administrador_funcional(user):
     if not user.is_authenticated or user.is_superuser:
         return False

@@ -13,6 +13,8 @@ class Command(BaseCommand):
         permissoes_resolvidas = self._resolver_permissoes()
 
         for nome_grupo, permissoes in permissoes_resolvidas.items():
+            # set() substitui permissões antigas para manter cada grupo exatamente
+            # igual à matriz oficial, tornando o comando seguro para reexecução.
             grupo, _ = Group.objects.get_or_create(name=nome_grupo)
             grupo.permissions.set(permissoes)
 

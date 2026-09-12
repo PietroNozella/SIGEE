@@ -2,6 +2,7 @@ from django.db import models
 
 
 class EquipamentoQuerySet(models.QuerySet):
+    # Preserva a RN-06 também nas exclusões em lote do Django.
     def delete(self):
         total_excluido = 0
         detalhes_exclusao = {}
@@ -88,6 +89,8 @@ class Equipamento(models.Model):
     def possui_registros_relacionados(self):
         return self.movimentacoes.exists()
 
+    # RN-06: equipamentos com movimentações são inativados para preservar
+    # o histórico; somente itens sem registros relacionados são excluídos.
     def delete(self, using=None, keep_parents=False):
         if self.possui_registros_relacionados():
             if self.ativo:
