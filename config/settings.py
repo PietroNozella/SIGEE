@@ -34,6 +34,11 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
 DEFAULT_ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sigee-psi.vercel.app"]
 configured_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
 
@@ -53,7 +58,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'auditoria',
     'inventario',
+    'legal',
     'movimentacoes',
     'usuarios',
 ]
@@ -64,6 +71,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'legal.middleware.ExigirAceiteDocumentosLegaisMiddleware',
+    'auditoria.middleware.AuditoriaAcessoNegadoMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -145,6 +154,13 @@ AUTH_PASSWORD_VALIDATORS = [
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "inventario:equipamento_lista"
 LOGOUT_REDIRECT_URL = "login"
+
+TERMOS_USO_VERSAO = "1.0"
+POLITICA_PRIVACIDADE_VERSAO = "1.0"
+CONTATO_PRIVACIDADE = os.getenv(
+    "SIGEE_CONTATO_PRIVACIDADE",
+    "suporte.sigee@gmail.com",
+)
 
 
 # Internationalization

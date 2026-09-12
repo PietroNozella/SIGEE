@@ -8,6 +8,8 @@ from django.core.management.base import CommandError
 from django.test import TestCase
 from django.urls import reverse
 
+from legal.services import registrar_aceite_vigente
+
 from .forms import CadastroUsuarioForm
 from .permissoes import (
     GRUPO_ADMINISTRADOR,
@@ -103,6 +105,16 @@ class CadastroUsuarioTests(TestCase):
             email="tecnico@example.com",
             password=cls.SENHA,
         )
+        for usuario in (
+            cls.administrador,
+            cls.operador,
+            cls.professor,
+            cls.sem_grupo,
+            cls.permissao_individual,
+            cls.multiplos_grupos,
+            cls.superuser,
+        ):
+            registrar_aceite_vigente(usuario)
 
     @classmethod
     def _criar_usuario(cls, username, grupo):

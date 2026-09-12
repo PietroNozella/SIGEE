@@ -1,0 +1,63 @@
+{% extends "legal/base_publica.html" %}
+
+{% block title %}Aceite dos documentos | SIGEE{% endblock %}
+
+{% block legal_header_action %}{% endblock %}
+
+{% block content %}
+<div class="legal-consent-container">
+    <section class="legal-consent-card" aria-labelledby="legal-consent-title">
+        <header class="legal-consent-header">
+            <span class="legal-eyebrow">Primeiro acesso</span>
+            <h1 id="legal-consent-title">Antes de continuar</h1>
+            <p>Leia e confirme os documentos vigentes do SIGEE. O aceite ficará associado à sua conta.</p>
+        </header>
+
+        <div class="legal-version-summary" aria-label="Versões vigentes">
+            <a href="{% url 'legal:termos_de_uso' %}" target="_blank" rel="noopener">Termos de Uso <span>versão {{ versao_termos }}</span></a>
+            <a href="{% url 'legal:politica_privacidade' %}" target="_blank" rel="noopener">Política de Privacidade <span>versão {{ versao_privacidade }}</span></a>
+        </div>
+
+        {% if form.errors %}
+            <div class="validation-summary" id="form-errors" role="alert" tabindex="-1" data-focus-on-load>
+                <h2>Confirmações necessárias</h2>
+                <ul>
+                    {% for field in form %}
+                        {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" class="legal-consent-form" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <div class="legal-confirmation{% if form.aceitou_termos.errors %} has-error{% endif %}">
+                {{ form.aceitou_termos }}
+                <label for="{{ form.aceitou_termos.id_for_label }}">
+                    Li e aceito os <a href="{% url 'legal:termos_de_uso' %}" target="_blank" rel="noopener">Termos de Uso</a> — versão {{ versao_termos }}.
+                </label>
+            </div>
+
+            <div class="legal-confirmation{% if form.confirmou_ciencia_privacidade.errors %} has-error{% endif %}">
+                {{ form.confirmou_ciencia_privacidade }}
+                <label for="{{ form.confirmou_ciencia_privacidade.id_for_label }}">
+                    Li e estou ciente da <a href="{% url 'legal:politica_privacidade' %}" target="_blank" rel="noopener">Política de Privacidade</a> — versão {{ versao_privacidade }}.
+                </label>
+            </div>
+
+            <p class="legal-consent-note">Serão registrados sua conta, as versões acima e a data e hora da confirmação.</p>
+
+            <div class="legal-consent-actions">
+                <button class="btn btn-primary-sigee" type="submit">Aceitar e continuar</button>
+            </div>
+        </form>
+
+        <form class="legal-consent-logout" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Não aceitar e sair</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

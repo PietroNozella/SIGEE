@@ -43,7 +43,7 @@ O comando cria os grupos ausentes e substitui suas permissões pela matriz ofici
 
 ## Limite dos incrementos
 
-Os incrementos cobrem as rotas atuais do inventário e a criação de contas. Listagem, edição ou inativação de usuários, reservas, movimentações funcionais, manutenção, auditoria e BrasilAPI permanecem fora deste trabalho.
+Os incrementos de autenticação cobrem as rotas atuais do inventário e a criação de contas. A auditoria foi implementada em um incremento separado e usa a mesma matriz de grupos e permissões. Listagem, edição ou inativação de usuários, reservas, movimentações funcionais, manutenção e BrasilAPI permanecem fora deste trabalho.
 
 Também não foram implementados autenticação multifator (MFA), recuperação de senha e bloqueio ou atraso progressivo após tentativas inválidas. MFA está fora do recorte atual; recuperação e proteção contra tentativas abusivas permanecem não implementadas e ainda dependem da priorização ou confirmação dos respectivos requisitos.
 

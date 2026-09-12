@@ -4,6 +4,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
+from legal.services import registrar_aceite_vigente
 from usuarios.permissoes import (
     GRUPO_ADMINISTRADOR,
     GRUPO_OPERADOR,
@@ -29,6 +30,13 @@ class AutorizacaoInventarioTests(TestCase):
             username="sem-grupo",
             password="senha-segura-123",
         )
+        for usuario in (
+            cls.administrador,
+            cls.operador,
+            cls.professor,
+            cls.sem_grupo,
+        ):
+            registrar_aceite_vigente(usuario)
 
     @classmethod
     def _criar_usuario(cls, username, nome_grupo):

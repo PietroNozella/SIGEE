@@ -56,6 +56,12 @@
 
                     <button class="btn btn-primary-sigee login-submit" type="submit">Entrar</button>
                 </form>
+
+                <nav class="login-legal-links" aria-label="Documentos legais">
+                    <a href="{% url 'legal:termos_de_uso' %}">Termos de Uso</a>
+                    <span aria-hidden="true">•</span>
+                    <a href="{% url 'legal:politica_privacidade' %}">Política de Privacidade</a>
+                </nav>
             </section>
         </div>
     </main>

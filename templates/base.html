@@ -84,6 +84,12 @@
                     Usuários
                 </span>
             {% endif %}
+            {% if pode_consultar_auditoria %}
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'auditoria' %} is-active{% endif %}" href="{% url 'auditoria:registro_lista' %}"{% if request.resolver_match.namespace == 'auditoria' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/audit.svg' %}" alt="" aria-hidden="true">
+                    Auditoria
+                </a>
+            {% endif %}
             <span class="side-nav-item is-disabled" aria-disabled="true">
                 <img src="{% static 'inventario/icons/settings.svg' %}" alt="" aria-hidden="true">
                 Configurações
@@ -91,6 +97,10 @@
         </nav>
 
         <div class="sidebar-footer">
+            <nav class="sidebar-legal-links" aria-label="Documentos legais">
+                <a href="{% url 'legal:termos_de_uso' %}">Termos de Uso</a>
+                <a href="{% url 'legal:politica_privacidade' %}">Privacidade</a>
+            </nav>
             <form class="logout-form" method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
                 <button class="side-nav-item logout-button" type="submit">

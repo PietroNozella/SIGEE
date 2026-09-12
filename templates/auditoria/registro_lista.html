@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Registros de auditoria | SIGEE{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    <header class="page-header">
+        <div>
+            <h1>Registros de auditoria</h1>
+            <p>Consulte acessos e ações relevantes registrados pelo sistema.</p>
+        </div>
+    </header>
+
+    <section class="inventory-card" aria-labelledby="audit-heading">
+        <h2 class="visually-hidden" id="audit-heading">Lista de registros de auditoria</h2>
+
+        <form class="audit-filter-toolbar" method="get" role="search">
+            <div class="audit-filter-field audit-filter-user">
+                <label for="{{ formulario.usuario.id_for_label }}">{{ formulario.usuario.label }}</label>
+                {{ formulario.usuario }}
+                {{ formulario.usuario.errors }}
+            </div>
+            <div class="audit-filter-field">
+                <label for="{{ formulario.acao.id_for_label }}">{{ formulario.acao.label }}</label>
+                {{ formulario.acao }}
+                {{ formulario.acao.errors }}
+            </div>
+            <div class="audit-filter-field">
+                <label for="{{ formulario.resultado.id_for_label }}">{{ formulario.resultado.label }}</label>
+                {{ formulario.resultado }}
+                {{ formulario.resultado.errors }}
+            </div>
+            <div class="audit-filter-field">
+                <label for="{{ formulario.data_inicial.id_for_label }}">{{ formulario.data_inicial.label }}</label>
+                {{ formulario.data_inicial }}
+                {{ formulario.data_inicial.errors }}
+            </div>
+            <div class="audit-filter-field">
+                <label for="{{ formulario.data_final.id_for_label }}">{{ formulario.data_final.label }}</label>
+                {{ formulario.data_final }}
+                {{ formulario.data_final.errors }}
+            </div>
+            <div class="filter-actions audit-filter-actions">
+                <button class="btn btn-primary-sigee" type="submit">Filtrar</button>
+                {% if ha_filtros %}
+                    <a class="btn btn-secondary-sigee" href="{% url 'auditoria:registro_lista' %}">Limpar</a>
+                {% endif %}
+            </div>
+        </form>
+
+        {% if pagina.object_list %}
+            <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Tabela de registros de auditoria; use rolagem horizontal em telas pequenas">
+                <table class="table inventory-table audit-table mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Data e hora</th>
+                            <th scope="col">Usuário</th>
+                            <th scope="col">Ação</th>
+                            <th scope="col">Resultado</th>
+                            <th scope="col">Entidade afetada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in pagina %}
+                            <tr>
+                                <td class="audit-date">
+                                    <time datetime="{{ registro.data_hora|date:'c' }}">{{ registro.data_hora|date:"d/m/Y H:i:s" }}</time>
+                                </td>
+                                <td>
+                                    {% if registro.usuario %}
+                                        <strong>{{ registro.usuario.get_full_name|default:registro.usuario.username }}</strong>
+                                        {% if registro.usuario.get_full_name %}
+                                            <small class="audit-metadata">{{ registro.usuario.username }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="audit-muted">Não identificado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ registro.acao_exibicao }}
+                                    <small class="audit-metadata">{{ registro.acao }}</small>
+                                </td>
+                                <td>
+                                    <span class="status-badge audit-result-{{ registro.resultado|lower }}">
+                                        {{ registro.get_resultado_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if registro.entidade %}
+                                        {{ registro.entidade }}
+                                        {% if registro.entidade_id %}
+                                            <small class="audit-metadata">ID {{ registro.entidade_id }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="audit-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <footer class="inventory-pagination">
+                <p>
+                    Mostrando {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }} registros
+                </p>
+                {% if pagina.paginator.num_pages > 1 %}
+                    <nav aria-label="Paginação dos registros de auditoria">
+                        <ul class="pagination mb-0">
+                            <li class="page-item{% if not pagina.has_previous %} disabled{% endif %}">
+                                {% if pagina.has_previous %}
+                                    <a class="page-link" href="?{% if parametros_paginacao %}{{ parametros_paginacao }}&amp;{% endif %}pagina={{ pagina.previous_page_number }}">Anterior</a>
+                                {% else %}
+                                    <span class="page-link" aria-disabled="true">Anterior</span>
+                                {% endif %}
+                            </li>
+                            <li class="page-item{% if not pagina.has_next %} disabled{% endif %}">
+                                {% if pagina.has_next %}
+                                    <a class="page-link" href="?{% if parametros_paginacao %}{{ parametros_paginacao }}&amp;{% endif %}pagina={{ pagina.next_page_number }}">Próxima</a>
+                                {% else %}
+                                    <span class="page-link" aria-disabled="true">Próxima</span>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </nav>
+                {% endif %}
+            </footer>
+        {% else %}
+            <div class="empty-state" role="status">
+                <h2>Nenhum registro encontrado</h2>
+                {% if ha_filtros %}
+                    <p>Revise os filtros informados e tente novamente.</p>
+                    <a class="btn btn-secondary-sigee" href="{% url 'auditoria:registro_lista' %}">Limpar filtros</a>
+                {% else %}
+                    <p>Os eventos relevantes do sistema aparecerão aqui.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
