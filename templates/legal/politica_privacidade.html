@@ -7,12 +7,12 @@
     <header class="legal-document-header">
         <span class="legal-eyebrow">Versão {{ versao_privacidade }}</span>
         <h1 id="legal-title">Política de Privacidade</h1>
-        <p>Como o protótipo acadêmico do SIGEE trata os dados utilizados na demonstração.</p>
+        <p>Como os dados pessoais são tratados durante o uso do SIGEE.</p>
     </header>
 
-    <section class="legal-notice" aria-labelledby="prototype-notice-title">
-        <h2 id="prototype-notice-title">Ambiente acadêmico</h2>
-        <p>Esta versão é destinada à apresentação e avaliação acadêmica e deve utilizar somente dados sintéticos. Em uma futura implantação real, a instituição que determinar as finalidades e os meios do tratamento deverá ser identificada como controladora e adaptar esta Política ao seu contexto.</p>
+    <section class="legal-notice" aria-labelledby="privacy-notice-title">
+        <h2 id="privacy-notice-title">Responsabilidades no tratamento</h2>
+        <p>A instituição que adota o SIGEE e determina as finalidades e os meios de utilização dos dados atua como controladora. Os usuários devem tratar as informações acessadas somente de acordo com suas atribuições e com as orientações dessa instituição.</p>
     </section>
 
     <section>
@@ -26,10 +26,10 @@
         <ul>
             <li>autenticar usuários e manter a sessão;</li>
             <li>aplicar permissões conforme o perfil funcional;</li>
-            <li>demonstrar a gestão e a rastreabilidade de equipamentos;</li>
+            <li>viabilizar a gestão e a rastreabilidade de equipamentos;</li>
             <li>registrar eventos de segurança e ações relevantes;</li>
             <li>comprovar o aceite das versões vigentes dos documentos legais;</li>
-            <li>executar testes e produzir evidências para a avaliação acadêmica.</li>
+            <li>prestar suporte, prevenir incidentes e manter a segurança do serviço.</li>
         </ul>
     </section>
 
@@ -40,27 +40,27 @@
 
     <section>
         <h2>4. Cookies necessários</h2>
-        <p>O protótipo utiliza cookies técnicos do Django para manter a sessão autenticada e proteger formulários contra requisições forjadas. Eles não são utilizados para publicidade ou criação de perfil comportamental.</p>
+        <p>O SIGEE utiliza cookies técnicos do Django para manter a sessão autenticada e proteger formulários contra requisições forjadas. Eles não são utilizados para publicidade ou criação de perfil comportamental.</p>
     </section>
 
     <section>
         <h2>5. Armazenamento e serviços de infraestrutura</h2>
-        <p>No desenvolvimento local, os dados podem ser mantidos em SQLite. O ambiente publicado prevê a aplicação na Vercel e o PostgreSQL hospedado no Supabase. A interface também carrega recursos visuais do Google Fonts e do jsDelivr. Esses fornecedores podem processar metadados técnicos necessários à entrega de seus serviços, conforme suas próprias condições.</p>
+        <p>Os dados são armazenados em infraestrutura de aplicação e banco de dados contratada para a operação do SIGEE. Fornecedores de hospedagem, banco de dados e entrega de conteúdo podem processar dados e metadados técnicos estritamente necessários à prestação de seus serviços, conforme as condições contratuais e as medidas de segurança aplicáveis.</p>
     </section>
 
     <section>
         <h2>6. Conservação e eliminação</h2>
-        <p>Os dados sintéticos são mantidos enquanto necessários ao desenvolvimento, aos testes e à demonstração acadêmica e podem ser redefinidos ou eliminados ao final dessas atividades. Registros relacionados podem ser preservados temporariamente para demonstrar integridade e auditoria. Uma implantação institucional deverá definir prazos próprios antes de utilizar dados reais.</p>
+        <p>Os dados são mantidos pelo período necessário ao cumprimento das finalidades informadas e das obrigações legais ou contratuais aplicáveis. A eliminação pode ser limitada quando a conservação for necessária para segurança, auditoria, cumprimento de obrigação ou exercício regular de direitos.</p>
     </section>
 
     <section>
         <h2>7. Segurança e limitações</h2>
-        <p>O projeto utiliza recursos de segurança do Django, incluindo hash de senhas, sessões, proteção CSRF, validação no servidor, grupos e permissões e registros de auditoria. Nenhum sistema é totalmente isento de riscos, e a implantação real dependerá de configuração, testes e operação segura da infraestrutura.</p>
+        <p>O SIGEE utiliza recursos de segurança do Django, incluindo hash de senhas, sessões, proteção CSRF, validação no servidor, grupos, permissões e registros de auditoria. Também são adotadas medidas técnicas e administrativas compatíveis com os riscos do tratamento, embora nenhum sistema seja totalmente isento de incidentes.</p>
     </section>
 
     <section>
         <h2>8. Direitos e contato</h2>
-        <p>Durante a demonstração, solicitações de informação, acesso, correção ou eliminação dos dados sintéticos associados a uma conta podem ser encaminhadas para <a href="mailto:{{ contato_privacidade }}">{{ contato_privacidade }}</a>.</p>
+        <p>Solicitações relacionadas aos direitos do titular, incluindo confirmação do tratamento, acesso, correção e eliminação quando aplicável, podem ser encaminhadas à instituição responsável pela conta ou para <a href="mailto:{{ contato_privacidade }}">{{ contato_privacidade }}</a>.</p>
     </section>
 
     <section>

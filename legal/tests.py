@@ -49,7 +49,7 @@ class DocumentosLegaisTests(TestCase):
         self.assertEqual(politica.status_code, 200)
         self.assertContains(termos, "Termos de Uso")
         self.assertContains(politica, "Política de Privacidade")
-        self.assertContains(politica, "dados sintéticos")
+        self.assertContains(politica, "dados pessoais")
         self.assertContains(politica, "suporte.sigee@gmail.com")
 
     def test_login_exibe_links_para_os_documentos(self):
@@ -114,8 +114,8 @@ class DocumentosLegaisTests(TestCase):
         )
         aceite = AceiteDocumentosLegais.objects.get()
         self.assertEqual(aceite.usuario, self.usuario)
-        self.assertEqual(aceite.versao_termos, "1.0")
-        self.assertEqual(aceite.versao_privacidade, "1.0")
+        self.assertEqual(aceite.versao_termos, "1.1")
+        self.assertEqual(aceite.versao_privacidade, "1.1")
         self.assertIsNotNone(aceite.aceito_em)
         self.assertTrue(usuario_possui_aceite_vigente(self.usuario))
 
@@ -174,8 +174,8 @@ class DocumentosLegaisTests(TestCase):
             with transaction.atomic():
                 AceiteDocumentosLegais.objects.create(
                     usuario=self.usuario,
-                    versao_termos="1.0",
-                    versao_privacidade="1.0",
+                    versao_termos="1.1",
+                    versao_privacidade="1.1",
                 )
 
     def test_aceite_gera_evento_de_auditoria(self):

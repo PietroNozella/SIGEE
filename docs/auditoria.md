@@ -1,6 +1,6 @@
 # Auditoria de acessos e ações
 
-Este documento registra o incremento de auditoria básica do SIGEE, implementado para atender ao `RS-09` e ao `RS-11`. O objetivo é permitir a verificação posterior de eventos relevantes de autenticação e das funcionalidades atuais sem armazenar senhas, credenciais, conteúdo integral de arquivos ou valores informados nos filtros.
+Este documento descreve a auditoria básica do SIGEE, implementada para atender ao `RS-09` e ao `RS-11`. O objetivo é permitir a verificação posterior de eventos relevantes de autenticação e das funcionalidades atuais sem armazenar senhas, credenciais, conteúdo integral de arquivos ou valores informados nos filtros.
 
 ## Escopo implementado
 
@@ -116,7 +116,7 @@ System check identified no issues (0 silenced).
 
 ## Limitações e evolução
 
-Esta entrega implementa auditoria básica. Permanecem fora do recorte atual:
+O módulo atual implementa auditoria básica. Permanecem fora do recorte atual:
 
 - exportação dos registros;
 - alertas e análise automática de comportamento;

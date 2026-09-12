@@ -1,6 +1,6 @@
 # SIGEE — Sistema Integrado de Gestão de Equipamentos Escolares
 
-![Status](https://img.shields.io/badge/status-em%20desenvolvimento-F59E0B?style=for-the-badge)
+![Status](https://img.shields.io/badge/status-MVP-2563EB?style=for-the-badge)
 
 **Tecnologias atuais**
 
@@ -24,18 +24,7 @@
 
 ![BrasilAPI](https://img.shields.io/badge/BrasilAPI-009C3B?style=for-the-badge)
 
-O SIGEE é uma aplicação web desenvolvida como Projeto Final de Curso (PFC) do Bacharelado em Engenharia de Software da Universidade de Mogi das Cruzes (UMC).
-
-## Identificação acadêmica
-
-- **Instituição:** Universidade de Mogi das Cruzes — UMC
-- **Curso:** Bacharelado em Engenharia de Software
-- **Turma:** 8ºA ES — Matutino
-- **Projeto:** Projeto Final de Curso — PFC
-- **Local e ano:** Mogi das Cruzes — SP, 2026
-- **Autores:** Diego Alves da Silva Fagundes e Pietro Lopes Nozella Sousa
-- **Orientador:** Pedro Henrique Miho de Souza
-- **Coorientador:** Alessandro Aparecido da Silva Horas
+O SIGEE é uma aplicação web para a gestão e a rastreabilidade de equipamentos de instituições de ensino.
 
 ## Problema e contexto
 
@@ -70,7 +59,7 @@ As ações permitidas para cada perfil estão definidas na [Matriz de acesso](do
 
 ## Escopo planejado
 
-O escopo final do PFC contempla:
+O escopo funcional do SIGEE contempla:
 
 - autenticação e autorização por perfil;
 - gestão e consulta do inventário;
@@ -133,11 +122,11 @@ O SIGEE adota uma arquitetura web monolítica com Django e renderização no ser
 - **Modelagem:** UML para fluxos e arquitetura, DER para dados e Figma para validação da interface.
 - **Validação:** execução dos requisitos e fluxos críticos de ponta a ponta, com registro do resultado esperado, resultado obtido e evidências.
 
-O [protótipo do SIGEE no Figma](https://www.figma.com/design/cBCn1GfruefHTGZZqTTvDU/Sem-t%C3%ADtulo?node-id=0-1&t=Oi1tT0KLAXj8Yo2G-1) integra os materiais de apoio do projeto.
+O [design de interface do SIGEE no Figma](https://www.figma.com/design/cBCn1GfruefHTGZZqTTvDU/Sem-t%C3%ADtulo?node-id=0-1&t=Oi1tT0KLAXj8Yo2G-1) integra os materiais de apoio do produto.
 
 ## Segurança e privacidade
 
-O planejamento prevê autenticação por sessão, autorização aplicada no servidor, proteção CSRF, validação de entrada, segredos em variáveis de ambiente, comunicação HTTPS no ambiente publicado, minimização dos dados pessoais e auditoria das ações relevantes. O MVP também disponibiliza Termo de Uso e Política de Privacidade publicamente e exige um aceite versionado antes do acesso às áreas internas. Os requisitos completos e os itens ainda candidatos estão em [Requisitos não funcionais e de segurança](docs/requisitos-nao-funcionais.md).
+O SIGEE utiliza autenticação por sessão, autorização aplicada no servidor, proteção CSRF, validação de entrada, segredos em variáveis de ambiente, minimização de dados pessoais e auditoria das ações relevantes. O MVP também disponibiliza Termo de Uso e Política de Privacidade publicamente e exige um aceite versionado antes do acesso às áreas internas. Os requisitos completos e os itens ainda candidatos estão em [Requisitos não funcionais e de segurança](docs/requisitos-nao-funcionais.md).
 
 ## Estado atual do desenvolvimento
 
