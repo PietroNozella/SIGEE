@@ -24,19 +24,6 @@
 
 ![BrasilAPI](https://img.shields.io/badge/BrasilAPI-009C3B?style=for-the-badge)
 
-O SIGEE é uma aplicação web desenvolvida como Projeto Final de Curso (PFC) do Bacharelado em Engenharia de Software da Universidade de Mogi das Cruzes (UMC).
-
-## Identificação acadêmica
-
-- **Instituição:** Universidade de Mogi das Cruzes — UMC
-- **Curso:** Bacharelado em Engenharia de Software
-- **Turma:** 8ºA ES — Matutino
-- **Projeto:** Projeto Final de Curso — PFC
-- **Local e ano:** Mogi das Cruzes — SP, 2026
-- **Autores:** Diego Alves da Silva Fagundes e Pietro Lopes Nozella Sousa
-- **Orientador:** Pedro Henrique Miho de Souza
-- **Coorientador:** Alessandro Aparecido da Silva Horas
-
 ## Problema e contexto
 
 Em instituições de ensino, o registro descentralizado de reservas, localização, manutenção e utilização de equipamentos pode dificultar a consulta da disponibilidade, a rastreabilidade dos itens e a identificação de como esses recursos tecnológicos são empregados nas atividades de ensino. Esse cenário pode gerar conflitos de uso, atrasos nas atividades e dificuldade no acompanhamento da utilização pedagógica.
