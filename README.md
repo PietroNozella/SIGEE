@@ -57,8 +57,6 @@ As ações permitidas para cada perfil estão definidas na [Matriz de acesso](do
 
 ## Escopo planejado
 
-O escopo final do PFC contempla:
-
 - autenticação e autorização por perfil;
 - gestão e consulta do inventário;
 - categorias, locais, patrimônio único e situação dos equipamentos;
