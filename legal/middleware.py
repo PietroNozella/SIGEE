@@ -10,6 +10,10 @@ from .services import usuario_possui_aceite_vigente
 ROTAS_ISENTAS = {
     "login",
     "logout",
+    "password_reset",
+    "password_reset_done",
+    "password_reset_confirm",
+    "password_reset_complete",
     "legal:aceite_documentos",
     "legal:termos_de_uso",
     "legal:politica_privacidade",

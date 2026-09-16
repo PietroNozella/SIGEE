@@ -1,6 +1,6 @@
 # Evidências de autenticação e autorização
 
-Este documento reúne evidências reproduzíveis do incremento de segurança associado ao `RF-01`, ao `RNF-01` e ao `RS-01`. A verificação foi executada em 10 de setembro de 2026 com dados sintéticos e banco de testes isolado do Django.
+Este documento reúne evidências reproduzíveis dos incrementos de segurança associados ao `RF-01`, ao `RNF-01`, ao `RS-01` e ao `RS-07`. As verificações usam dados sintéticos e banco de testes isolado do Django.
 
 ## Resultado dos cenários de segurança
 
@@ -13,6 +13,8 @@ Este documento reúne evidências reproduzíveis do incremento de segurança ass
 | Operador e Professor consultando | Os dois perfis recebem resposta `200` na listagem de equipamentos. | `AutorizacaoInventarioTests.test_tres_perfis_podem_consultar_a_listagem` | Passou |
 | Operador e Professor impedidos de alterar | Cadastro, importação, download do modelo e exclusão direta retornam `403`; a tentativa de exclusão não altera o equipamento. | `AutorizacaoInventarioTests.test_operador_e_professor_recebem_403_nas_rotas_de_alteracao` | Passou |
 | Logout invalidando a sessão | `GET` no logout retorna `405`; `POST` encerra a sessão e uma nova tentativa de abrir a listagem volta ao login. | `AutenticacaoTests.test_logout_aceita_somente_post_e_impede_retorno_direto` | Passou |
+| Solicitação de recuperação | Conta ativa recebe e-mail em texto e HTML; e-mail inexistente ou conta inativa recebe a mesma confirmação pública sem mensagem enviada. | `RecuperacaoSenhaTests.test_email_existente_recebe_link_em_texto_e_html` e `test_email_inexistente_ou_conta_inativa_recebe_resposta_neutra` | Passou |
+| Redefinição segura | Link válido altera a senha, gera auditoria e não pode ser reutilizado; link expirado é rejeitado. | `RecuperacaoSenhaTests.test_link_valido_redefine_senha_e_nao_pode_ser_reutilizado` e `test_link_expirado_e_rejeitado` | Passou |
 
 As verificações de autorização são realizadas nas views. A ausência de botões no template é somente uma orientação de interface e não substitui o bloqueio da URL ou do `POST`.
 
@@ -28,6 +30,30 @@ Resultado observado:
 
 ```text
 Ran 23 tests in 12.850s
+OK
+System check identified no issues (0 silenced).
+```
+
+### Recuperação de senha
+
+Comando executado em 15 de setembro de 2026:
+
+```powershell
+python manage.py test usuarios.tests.RecuperacaoSenhaTests --verbosity 2
+```
+
+Resultado observado:
+
+```text
+Ran 7 tests in 6.372s
+OK
+System check identified no issues (0 silenced).
+```
+
+A suíte completa também foi executada após o incremento:
+
+```text
+Ran 112 tests in 46.415s
 OK
 System check identified no issues (0 silenced).
 ```
@@ -57,6 +83,7 @@ Essa regressão cobre patrimônio único, formulário e listagem, filtros, indic
 | Autenticação e sessão | `LoginView`, `LogoutView`, `AuthenticationForm`, `login_required` e middleware de sessão/autenticação do Django. |
 | Autorização | `permission_required(..., raise_exception=True)`, grupos e permissões configurados pelo comando `configurar_perfis`. |
 | Senha | `UserCreationForm` e `check_password`; a senha em texto puro não é persistida. |
+| Recuperação de senha | `PasswordResetView`, `PasswordResetConfirmView`, `PasswordResetForm`, `SetPasswordForm` e gerador de token nativo do Django. |
 | CSRF | `CsrfViewMiddleware` e `{% csrf_token %}` nos formulários `POST` de login, logout, cadastro e exclusão. |
 | Acesso direto | Resposta `403` para usuário autenticado sem permissão e redirecionamento ao login para anônimo. |
 
@@ -75,6 +102,6 @@ O transporte HTTPS e a política HSTS foram confirmados. Entretanto, a rota reto
 
 - Os testes automatizados usam banco isolado e dados sintéticos.
 - MFA não foi implementado e permanece fora do recorte atual.
-- Recuperação de senha não foi implementada.
+- O envio real depende da configuração de um provedor SMTP no ambiente publicado; os testes usam o backend de e-mail em memória.
 - Bloqueio ou atraso progressivo por tentativas de login não foi implementado; o requisito permanece candidato e ainda depende de confirmação.
 - A auditoria de ações foi integrada posteriormente em módulo próprio, com registro persistente e consulta restrita ao Administrador funcional, conforme as [evidências de auditoria](auditoria.md).

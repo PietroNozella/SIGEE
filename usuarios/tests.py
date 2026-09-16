@@ -1,14 +1,21 @@
+import re
 from io import StringIO
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.tokens import default_token_generator
+from django.core import mail
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import IntegrityError, transaction
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
+from auditoria.eventos import AcaoAuditoria
+from auditoria.models import RegistroAuditoria
 from legal.services import registrar_aceite_vigente
 
 from .forms import CadastroUsuarioForm
@@ -315,3 +322,182 @@ class CadastroUsuarioTests(TestCase):
 
         self.assertEqual(resposta.status_code, 200)
         self.assertNotContains(resposta, reverse("usuarios:usuario_novo"))
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="SIGEE <nao-responda@example.com>",
+)
+class RecuperacaoSenhaTests(TestCase):
+    SENHA_ATUAL = "Senha-SIGEE-2026!"
+    NOVA_SENHA = "Nova-Senha-SIGEE-2026!"
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.usuario = get_user_model().objects.create_user(
+            username="usuario-recuperacao",
+            email="usuario@example.com",
+            password=cls.SENHA_ATUAL,
+            first_name="Maria",
+            last_name="Silva",
+        )
+        cls.usuario_inativo = get_user_model().objects.create_user(
+            username="usuario-inativo",
+            email="inativo@example.com",
+            password=cls.SENHA_ATUAL,
+            is_active=False,
+        )
+
+    def solicitar_recuperacao(self, email="usuario@example.com"):
+        return self.client.post(reverse("password_reset"), {"email": email})
+
+    def caminho_enviado(self):
+        correspondencia = re.search(
+            r"http://testserver(?P<caminho>/redefinir-senha/[^\s]+)",
+            mail.outbox[0].body,
+        )
+        self.assertIsNotNone(correspondencia)
+        return correspondencia.group("caminho")
+
+    def test_login_exibe_link_para_recuperacao(self):
+        resposta = self.client.get(reverse("login"))
+
+        self.assertContains(
+            resposta,
+            f'href="{reverse("password_reset")}"',
+        )
+        self.assertContains(resposta, "Esqueceu a senha?")
+
+    def test_formulario_de_recuperacao_e_publico_e_protegido_por_csrf(self):
+        self.client.force_login(self.usuario)
+
+        resposta = self.client.get(reverse("password_reset"))
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, 'name="email"')
+        self.assertContains(resposta, 'name="csrfmiddlewaretoken"')
+        self.assertContains(resposta, "Recuperar senha")
+
+    def test_email_existente_recebe_link_em_texto_e_html(self):
+        resposta = self.solicitar_recuperacao()
+
+        self.assertRedirects(
+            resposta,
+            reverse("password_reset_done"),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        mensagem = mail.outbox[0]
+        self.assertEqual(mensagem.to, [self.usuario.email])
+        self.assertEqual(mensagem.from_email, "SIGEE <nao-responda@example.com>")
+        self.assertEqual(mensagem.subject, "Redefinição de senha — SIGEE")
+        self.assertIn("/redefinir-senha/", mensagem.body)
+        self.assertIn("60 minutos", mensagem.body)
+        self.assertEqual(len(mensagem.alternatives), 1)
+        self.assertEqual(mensagem.alternatives[0].mimetype, "text/html")
+        self.assertIn("60 minutos", mensagem.alternatives[0].content)
+        self.assertTrue(
+            RegistroAuditoria.objects.filter(
+                acao=AcaoAuditoria.RECUPERACAO_SENHA_SOLICITADA,
+                resultado=RegistroAuditoria.Resultado.SUCESSO,
+                usuario__isnull=True,
+            ).exists()
+        )
+
+    def test_email_inexistente_ou_conta_inativa_recebe_resposta_neutra(self):
+        for email in ("inexistente@example.com", self.usuario_inativo.email):
+            with self.subTest(email=email):
+                mail.outbox.clear()
+                resposta = self.solicitar_recuperacao(email)
+
+                self.assertRedirects(
+                    resposta,
+                    reverse("password_reset_done"),
+                    fetch_redirect_response=False,
+                )
+                self.assertEqual(len(mail.outbox), 0)
+
+        confirmacao = self.client.get(reverse("password_reset_done"))
+        self.assertContains(
+            confirmacao,
+            "Se existir uma conta ativa com o e-mail informado",
+        )
+
+    def test_link_valido_redefine_senha_e_nao_pode_ser_reutilizado(self):
+        self.solicitar_recuperacao()
+        caminho_original = self.caminho_enviado()
+
+        resposta_token = self.client.get(caminho_original)
+        self.assertEqual(resposta_token.status_code, 302)
+        caminho_formulario = resposta_token.url
+
+        formulario = self.client.get(caminho_formulario)
+        self.assertContains(formulario, "Defina uma nova senha")
+        self.assertContains(formulario, 'name="new_password1"')
+        self.assertContains(formulario, 'name="new_password2"')
+
+        resposta = self.client.post(
+            caminho_formulario,
+            {
+                "new_password1": self.NOVA_SENHA,
+                "new_password2": self.NOVA_SENHA,
+            },
+        )
+
+        self.assertRedirects(
+            resposta,
+            reverse("password_reset_complete"),
+            fetch_redirect_response=False,
+        )
+        self.usuario.refresh_from_db()
+        self.assertTrue(self.usuario.check_password(self.NOVA_SENHA))
+        self.assertFalse(self.usuario.check_password(self.SENHA_ATUAL))
+        self.assertTrue(
+            RegistroAuditoria.objects.filter(
+                usuario=self.usuario,
+                acao=AcaoAuditoria.SENHA_REDEFINIDA,
+                resultado=RegistroAuditoria.Resultado.SUCESSO,
+                entidade="auth.User",
+                entidade_id=str(self.usuario.pk),
+            ).exists()
+        )
+
+        reutilizacao = self.client.get(caminho_original, follow=True)
+        self.assertContains(reutilizacao, "Link inválido ou expirado")
+
+    def test_senhas_diferentes_nao_alteram_a_conta(self):
+        self.solicitar_recuperacao()
+        resposta_token = self.client.get(self.caminho_enviado())
+
+        resposta = self.client.post(
+            resposta_token.url,
+            {
+                "new_password1": self.NOVA_SENHA,
+                "new_password2": "Outra-Senha-SIGEE-2026!",
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Os dois campos de senha não correspondem")
+        self.usuario.refresh_from_db()
+        self.assertTrue(self.usuario.check_password(self.SENHA_ATUAL))
+        self.assertFalse(
+            RegistroAuditoria.objects.filter(
+                acao=AcaoAuditoria.SENHA_REDEFINIDA
+            ).exists()
+        )
+
+    @override_settings(PASSWORD_RESET_TIMEOUT=-1)
+    def test_link_expirado_e_rejeitado(self):
+        uidb64 = urlsafe_base64_encode(force_bytes(self.usuario.pk))
+        token = default_token_generator.make_token(self.usuario)
+        caminho = reverse(
+            "password_reset_confirm",
+            kwargs={"uidb64": uidb64, "token": token},
+        )
+
+        resposta = self.client.get(caminho, follow=True)
+
+        self.assertContains(resposta, "Link inválido ou expirado")
+        self.usuario.refresh_from_db()
+        self.assertTrue(self.usuario.check_password(self.SENHA_ATUAL))

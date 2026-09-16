@@ -82,7 +82,7 @@ As ações permitidas para cada perfil estão definidas na [Matriz de acesso](do
 
 O baseline aprovado contém 11 requisitos funcionais:
 
-- **RF-01:** autenticação e autorização por perfil;
+- **RF-01:** autenticação, recuperação de acesso e autorização por perfil;
 - **RF-02:** cadastro e gerenciamento do inventário;
 - **RF-03:** consulta e filtragem de equipamentos;
 - **RF-04:** reserva de equipamentos;
@@ -132,6 +132,7 @@ O código disponível atualmente possui:
 - apps `auditoria`, `inventario`, `movimentacoes` e `usuarios`;
 - app `legal` para documentos públicos e registro de aceite;
 - login e logout por sessão usando a autenticação nativa do Django;
+- recuperação de senha por e-mail com token expirável e de uso único;
 - autorização do inventário com os grupos `Administrador`, `Operador` e `Professor` e permissões nativas do Django;
 - cadastro controlado de contas comuns por Administrador funcional;
 - auditoria persistente de autenticação, acessos negados e ações atuais do inventário;
@@ -145,7 +146,7 @@ O código disponível atualmente possui:
 - registros desses modelos no Django Admin;
 - configuração por variáveis de ambiente;
 - SQLite para desenvolvimento local e PostgreSQL por `DATABASE_URL`;
-- 100 testes automatizados para os fluxos já implementados;
+- 112 testes automatizados para os fluxos já implementados;
 - hospedagem configurada na Vercel com HTTPS; a rota publicada precisa de novo deploy ou correção porque retornou `404` na verificação de 10 de setembro de 2026.
 
 Reservas, manutenção, contexto pedagógico, indicadores pedagógicos e a integração executável com a BrasilAPI permanecem como escopo planejado, não como funcionalidades concluídas. As RN-01 e RN-06 ainda aguardam validação com o orientador.
