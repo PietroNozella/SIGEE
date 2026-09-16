@@ -1,156 +1,103 @@
-# SIGEE — Sistema Integrado de Gestão de Equipamentos Escolares
+<div align="center">
+
+# SIGEE
+
+### Sistema Integrado de Gestão de Equipamentos Escolares
+
+Centralize o inventário tecnológico da instituição com controle de acesso, rastreabilidade e segurança.
 
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-F59E0B?style=for-the-badge)
+[![Deploy](https://img.shields.io/badge/deploy-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://sigee-psi.vercel.app/login/)
 
-**Tecnologias atuais**
+**[Acessar o SIGEE →](https://sigee-psi.vercel.app/login/)**
+
+#### Aplicação
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-5.2-092E20?style=for-the-badge&logo=django&logoColor=white)
 ![Django Templates](https://img.shields.io/badge/Django%20Templates-092E20?style=for-the-badge&logo=django&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+
+#### Interface
+
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap%205-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+
+#### Dados e infraestrutura
+
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+
+#### Desenvolvimento e design
+
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
 ![Figma](https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white)
 
-**Tecnologias previstas / integrações futuras**
+</div>
 
+## Sobre o SIGEE
 
-![BrasilAPI](https://img.shields.io/badge/BrasilAPI-009C3B?style=for-the-badge)
+O SIGEE é uma plataforma web para organizar e acompanhar equipamentos tecnológicos de instituições de ensino. A aplicação reúne inventário, usuários, permissões e registros de auditoria em um único ambiente, reduzindo controles dispersos e facilitando a consulta das informações.
 
-## Problema e contexto
+Com uma interface responsiva e regras aplicadas no servidor, o sistema prioriza quatro pontos essenciais para a operação:
 
-Em instituições de ensino, o registro descentralizado de reservas, localização, manutenção e utilização de equipamentos pode dificultar a consulta da disponibilidade, a rastreabilidade dos itens e a identificação de como esses recursos tecnológicos são empregados nas atividades de ensino. Esse cenário pode gerar conflitos de uso, atrasos nas atividades e dificuldade no acompanhamento da utilização pedagógica.
+- **centralização:** equipamentos, categorias, locais e usuários no mesmo ambiente;
+- **rastreabilidade:** registro persistente de acessos e operações relevantes;
+- **segurança:** autenticação, permissões por perfil e proteção dos dados;
+- **simplicidade:** fluxos diretos para cadastro, consulta e administração.
 
-O SIGEE propõe centralizar o controle dos equipamentos, reservas, movimentações e manutenções, permitindo também relacionar sua utilização a turmas, disciplinas e atividades pedagógicas.
+## Principais recursos
 
-## Objetivos
-
-### Objetivo geral
-
-Desenvolver uma plataforma web para auxiliar instituições de ensino no gerenciamento de equipamentos tecnológicos, centralizando informações e processos de controle, disponibilidade, reserva, retirada, devolução e manutenção, além de permitir o acompanhamento de sua utilização no contexto educacional.
-
-### Objetivos específicos
-
-1. Organizar as informações dos equipamentos tecnológicos.
-2. Permitir a consulta da situação e da disponibilidade dos equipamentos.
-3. Implementar reserva, retirada e devolução com controle das movimentações.
-4. Registrar e acompanhar manutenções.
-5. Centralizar a gestão e a consulta em uma aplicação web.
-6. Vincular a utilização dos equipamentos a turmas, disciplinas e atividades pedagógicas.
-
-## Público e perfis de acesso
-
-- **Administrador:** gerencia o sistema, o inventário, os usuários e o painel resumido com indicadores.
-- **Operador:** registra retiradas, devoluções e demais movimentações autorizadas.
-- **Professor:** consulta a disponibilidade, realiza reservas e associa a utilização dos equipamentos ao contexto pedagógico.
-
-Não haverá cadastro público. A primeira conta administrativa funcional será configurada por meio de uma conta técnica de Django Superuser; depois disso, usuários autorizados com perfil Administrador poderão cadastrar as demais contas.
-
-As ações permitidas para cada perfil estão definidas na [Matriz de acesso](docs/matriz-de-acesso.md).
-
-## Escopo planejado
-
-- autenticação e autorização por perfil;
-- gestão e consulta do inventário;
-- categorias, locais, patrimônio único e situação dos equipamentos;
-- reservas por período com bloqueio de conflitos e indisponibilidade;
-- consulta informativa de feriados nacionais pela BrasilAPI durante a reserva;
-- retirada, devolução e histórico de movimentações;
-- manutenção e histórico de intervenções;
-- vinculação da utilização a turma, disciplina e atividade pedagógica;
-- painel resumido do inventário;
-- indicadores de utilização pedagógica;
-- auditoria básica de acessos e ações relevantes.
-- Termo de Uso e Política de Privacidade com aceite versionado.
-
-### Fora do escopo
-
-- identificação por código de barras ou QR Code;
-- integrações externas além da BrasilAPI e dos serviços de infraestrutura previstos;
-- gerenciamento simultâneo de múltiplas unidades escolares;
-- relatórios avançados;
-- notificações automáticas.
-
-## Funcionalidades planejadas
-
-O baseline aprovado contém 11 requisitos funcionais:
-
-- **RF-01:** autenticação e autorização por perfil;
-- **RF-02:** cadastro e gerenciamento do inventário;
-- **RF-03:** consulta e filtragem de equipamentos;
-- **RF-04:** reserva de equipamentos;
-- **RF-05:** retirada e devolução;
-- **RF-06:** histórico de movimentações;
-- **RF-07:** gerenciamento de manutenção;
-- **RF-08:** painel resumido do inventário;
-- **RF-09:** consulta de feriados nacionais durante a reserva;
-- **RF-10:** vinculação da utilização ao contexto pedagógico;
-- **RF-11:** indicadores de utilização pedagógica.
-
-Os critérios de aceite estão em [Requisitos funcionais](docs/requisitos-funcionais.md).
-
-## Arquitetura e tecnologias
-
-O SIGEE adota uma arquitetura web monolítica com Django e renderização no servidor. As regras de negócio, autenticação, autorização, acesso aos dados e renderização das páginas permanecem integrados na mesma aplicação.
-
-| Área | Tecnologias e decisões |
+| Recurso | O que o SIGEE oferece |
 |---|---|
-| Interface | Django Templates, HTML5, CSS3, Bootstrap 5 e JavaScript pontual |
-| Aplicação | Python 3.12, Django 5.2 LTS, Django ORM, Authentication e Groups/Permissions |
-| Banco de dados | PostgreSQL por `DATABASE_URL` e SQLite para desenvolvimento local |
-| Integração externa | BrasilAPI para consulta não bloqueante de feriados nacionais |
-| Implantação | Vercel com deploy ativo e integração pelo GitHub |
-| Versionamento | Git e GitHub, com integração das alterações por Pull Request |
-| Prototipação | Figma |
+| **Controle de acesso** | Autenticação por sessão e autorização com grupos e permissões nativos do Django. |
+| **Gestão do inventário** | Cadastro de equipamentos com patrimônio único, categoria, local, situação e estado ativo. |
+| **Consulta centralizada** | Busca e filtros por texto, categoria, local e situação, além de resumo do inventário para administradores. |
+| **Importação em lote** | Cadastro de equipamentos por arquivo CSV, com validação integral antes da gravação. |
+| **Preservação do histórico** | Exclusão de itens sem registros relacionados e inativação quando há movimentações vinculadas. |
+| **Gestão de usuários** | Criação controlada de contas e atribuição de um perfil funcional por administrador. |
+| **Auditoria** | Registro e consulta de autenticações, acessos negados e ações relevantes realizadas no sistema. |
+| **Privacidade** | Termos de Uso e Política de Privacidade públicos, com aceite obrigatório e versionado. |
 
-## Organização do desenvolvimento
+## Perfis de acesso
 
-- **Método de trabalho:** Kanban.
-- **Gestão e acompanhamento:** Notion e Microsoft Teams.
-- **Requisitos:** levantamento incremental, com identificação, prioridade e critério de aceite verificável.
-- **Modelagem:** UML para fluxos e arquitetura, DER para dados e Figma para validação da interface.
-- **Validação:** execução dos requisitos e fluxos críticos de ponta a ponta, com registro do resultado esperado, resultado obtido e evidências.
+O SIGEE não possui cadastro público. As contas são criadas por usuários autorizados e recebem um perfil compatível com suas responsabilidades.
 
-O [protótipo do SIGEE no Figma](https://www.figma.com/design/cBCn1GfruefHTGZZqTTvDU/Sem-t%C3%ADtulo?node-id=0-1&t=Oi1tT0KLAXj8Yo2G-1) integra os materiais de apoio do projeto.
+| Perfil | Acesso disponível atualmente |
+|---|---|
+| **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, consulta o resumo e acessa a auditoria. |
+| **Operador** | Consulta o inventário e a disponibilidade registrada dos equipamentos. |
+| **Professor** | Consulta o inventário e a disponibilidade registrada dos equipamentos. |
 
-## Segurança e privacidade
+Consulte os detalhes de autorização na [matriz de acesso](docs/matriz-de-acesso.md).
 
-O planejamento prevê autenticação por sessão, autorização aplicada no servidor, proteção CSRF, validação de entrada, segredos em variáveis de ambiente, comunicação HTTPS no ambiente publicado, minimização dos dados pessoais e auditoria das ações relevantes. O MVP também disponibiliza Termo de Uso e Política de Privacidade publicamente e exige um aceite versionado antes do acesso às áreas internas. Os requisitos completos e os itens ainda candidatos estão em [Requisitos não funcionais e de segurança](docs/requisitos-nao-funcionais.md).
+## Arquitetura
 
-## Estado atual do desenvolvimento
+O SIGEE utiliza uma arquitetura web monolítica com Django e renderização no servidor. Autenticação, autorização, regras de negócio, persistência e interface permanecem integradas na mesma aplicação, reduzindo a complexidade operacional e mantendo o código simples de evoluir.
 
-O código disponível atualmente possui:
-
-- estrutura inicial em Django;
-- apps `auditoria`, `inventario`, `movimentacoes` e `usuarios`;
-- app `legal` para documentos públicos e registro de aceite;
-- login e logout por sessão usando a autenticação nativa do Django;
-- autorização do inventário com os grupos `Administrador`, `Operador` e `Professor` e permissões nativas do Django;
-- cadastro controlado de contas comuns por Administrador funcional;
-- auditoria persistente de autenticação, acessos negados e ações atuais do inventário;
-- consulta dos registros de auditoria, somente leitura e restrita ao Administrador funcional;
-- Termo de Uso e Política de Privacidade públicos, com confirmação obrigatória após o login;
-- registro persistente do usuário, das versões e da data/hora do aceite, com nova confirmação após mudança de versão;
-- modelos e migrations de Categoria, Local, Equipamento e Movimentação;
-- telas de listagem e cadastro de equipamentos;
-- **RN-01:** restrição de unicidade do número patrimonial no formulário, no model e no banco de dados;
-- **RN-06:** exclusão definitiva sem histórico e inativação com preservação de movimentações;
-- registros desses modelos no Django Admin;
-- configuração por variáveis de ambiente;
-- SQLite para desenvolvimento local e PostgreSQL por `DATABASE_URL`;
-- 100 testes automatizados para os fluxos já implementados;
-- hospedagem configurada na Vercel com HTTPS; a rota publicada precisa de novo deploy ou correção porque retornou `404` na verificação de 10 de setembro de 2026.
-
-Reservas, manutenção, contexto pedagógico, indicadores pedagógicos e a integração executável com a BrasilAPI permanecem como escopo planejado, não como funcionalidades concluídas. As RN-01 e RN-06 ainda aguardam validação com o orientador.
+| Camada | Tecnologias e decisões |
+|---|---|
+| **Interface** | Django Templates, HTML5, CSS3, Bootstrap 5 e JavaScript pontual. |
+| **Aplicação** | Python 3.12, Django 5.2 LTS, Django ORM, Authentication e Groups/Permissions. |
+| **Persistência** | SQLite no desenvolvimento local e PostgreSQL configurado por `DATABASE_URL`, com Supabase na infraestrutura do projeto. |
+| **Implantação** | Aplicação publicada na Vercel com HTTPS. |
+| **Segurança** | Sessões, proteção CSRF, validação no servidor, hash de senhas, cookies seguros em produção e auditoria. |
 
 ## Execução local
+
+### Pré-requisitos
+
+- Python 3.12;
+- Git;
+- PostgreSQL opcional — sem `DATABASE_URL`, o projeto utiliza SQLite.
+
+### Instalação
+
+Na raiz do repositório, crie e ative o ambiente virtual, instale as dependências e prepare o arquivo de configuração:
 
 ```powershell
 py -3.12 -m venv .venv
@@ -159,9 +106,24 @@ python -m pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-No arquivo `.env`, substitua `DJANGO_SECRET_KEY` por uma chave local. Para utilizar SQLite, remova ou deixe vazia a variável `DATABASE_URL`. Para utilizar PostgreSQL, substitua o valor de exemplo por uma conexão válida.
+Edite o arquivo `.env`, defina uma chave local em `DJANGO_SECRET_KEY` e escolha o banco de dados:
 
-Depois, prepare o banco, configure a matriz de permissões, crie o usuário técnico do Django Admin e inicie a aplicação:
+- para usar SQLite, deixe `DATABASE_URL=` sem valor;
+- para usar PostgreSQL, informe uma URL de conexão válida.
+
+### Variáveis de ambiente
+
+| Variável | Obrigatória | Descrição |
+|---|:---:|---|
+| `DJANGO_SECRET_KEY` | Sim | Chave usada pelos mecanismos criptográficos do Django. |
+| `DJANGO_DEBUG` | Não | Ativa o modo de depuração; use `False` em produção. |
+| `DJANGO_ALLOWED_HOSTS` | Não | Lista de hosts permitidos, separados por vírgula. |
+| `DATABASE_URL` | Não | Conexão PostgreSQL; sem valor, utiliza SQLite local. |
+| `SIGEE_CONTATO_PRIVACIDADE` | Não | E-mail exibido nos documentos de privacidade. |
+
+### Preparação e inicialização
+
+Prepare o banco, configure os perfis funcionais e crie a primeira conta técnica:
 
 ```powershell
 python manage.py migrate
@@ -170,15 +132,40 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-No bootstrap, o Superuser entra no Django Admin, cria uma conta comum e atribui somente o grupo `Administrador`. Essa conta funcional passa a cadastrar os demais usuários pela tela `/usuarios/novo/`. Sempre execute `configurar_perfis` depois de `migrate`; o comando pode ser repetido e substitui as permissões dos três grupos pela configuração oficial.
+O superusuário deve criar uma conta comum pelo Django Admin e atribuir somente o grupo `Administrador`. Essa conta funcional poderá cadastrar os demais usuários pela rota `/usuarios/novo/`.
 
-## Documentação versionada
+Execute `configurar_perfis` depois das migrations. O comando é idempotente e mantém as permissões dos perfis alinhadas à configuração do projeto.
 
-- [Requisitos funcionais](docs/requisitos-funcionais.md)
-- [Requisitos não funcionais e de segurança](docs/requisitos-nao-funcionais.md)
-- [Regras de negócio](docs/regras-de-negocio.md)
+## Testes
+
+A suíte automatizada cobre autenticação, autorização, inventário, importação CSV, usuários, documentos legais e auditoria.
+
+Para validar o projeto com SQLite:
+
+```powershell
+$env:DATABASE_URL=''
+python manage.py check
+python manage.py test
+```
+
+## Roadmap
+
+As próximas evoluções estão planejadas, mas ainda não representam funcionalidades disponíveis na versão atual:
+
+- [ ] reservas de equipamentos com controle de disponibilidade e conflitos;
+- [ ] retirada e devolução de equipamentos;
+- [ ] registro e acompanhamento de manutenções;
+- [ ] vinculação da utilização ao contexto pedagógico;
+- [ ] indicadores de utilização pedagógica;
+- [ ] consulta informativa de feriados nacionais pela BrasilAPI.
+
+![BrasilAPI](https://img.shields.io/badge/integração%20planejada-BrasilAPI-009C3B?style=for-the-badge)
+
+## Documentação técnica
+
+- [Arquitetura do sistema](docs/arquitetura-do-sistema.md)
 - [Matriz de acesso](docs/matriz-de-acesso.md)
-- [Autenticação](docs/autenticacao.md)
-- [Evidências de segurança](docs/evidencias-seguranca.md)
+- [Autenticação e autorização](docs/autenticacao.md)
 - [Auditoria de acessos e ações](docs/auditoria.md)
-- [Projeto lógico da BrasilAPI](docs/projeto-logico-brasilapi.md)
+- [Segurança](docs/evidencias-seguranca.md)
+- [Privacidade e termos](docs/privacidade-e-termos.md)
