@@ -21,7 +21,7 @@ A mensagem para credenciais inválidas é neutra e não informa se o nome de usu
 5. A nova senha passa pelos mesmos validadores configurados para o cadastro.
 6. Ao concluir, o usuário retorna ao login e acessa a conta com a nova credencial.
 
-Em desenvolvimento, o backend de e-mail exibe a mensagem no console. No ambiente publicado, o backend SMTP, o remetente e as credenciais devem ser configurados por variáveis de ambiente. A solicitação e a conclusão são auditadas sem armazenar o endereço informado, a senha ou o token.
+Em desenvolvimento, o backend de e-mail exibe a mensagem no console. No ambiente publicado, o envio usa Gmail SMTP na porta `587` com TLS. O endereço remetente e a senha de app ficam somente nas variáveis protegidas da hospedagem; nenhuma credencial é versionada. A solicitação e a conclusão são auditadas sem armazenar o endereço informado, a senha ou o token.
 
 ## Autorização implementada
 

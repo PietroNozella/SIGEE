@@ -50,10 +50,15 @@ OK
 System check identified no issues (0 silenced).
 ```
 
-A suíte completa também foi executada após o incremento:
+A suíte completa também foi executada em 16 de setembro de 2026 com SQLite, isolada do banco publicado:
+
+```powershell
+$env:DATABASE_URL=''
+python manage.py test --verbosity 1
+```
 
 ```text
-Ran 112 tests in 46.415s
+Ran 112 tests in 18.280s
 OK
 System check identified no issues (0 silenced).
 ```
