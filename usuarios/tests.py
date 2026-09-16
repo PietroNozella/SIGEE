@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
 
@@ -221,35 +222,62 @@ class CadastroUsuarioTests(TestCase):
             get_user_model().objects.filter(username="novo-usuario").exists()
         )
 
-    def test_email_e_obrigatorio_mas_pode_se_repetir(self):
-        get_user_model().objects.create_user(
-            username="email-existente",
-            email="maria@example.com",
-            password=self.SENHA,
-        )
+    def test_email_e_obrigatorio(self):
         self.client.force_login(self.administrador)
 
         dados_sem_email = self.dados_validos(username="sem-email")
         dados_sem_email["email"] = ""
-        resposta_invalida = self.client.post(
+        resposta = self.client.post(
             reverse("usuarios:usuario_novo"), dados_sem_email
         )
-        resposta_valida = self.client.post(
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertFormError(
+            resposta.context["form"],
+            "email",
+            "Este campo é obrigatório.",
+        )
+        self.assertFalse(
+            get_user_model().objects.filter(username="sem-email").exists()
+        )
+
+    def test_email_duplicado_e_rejeitado_sem_diferenciar_maiusculas(self):
+        get_user_model().objects.create_user(
+            username="email-existente",
+            email="Maria@Example.com",
+            password=self.SENHA,
+        )
+        self.client.force_login(self.administrador)
+
+        resposta = self.client.post(
             reverse("usuarios:usuario_novo"),
             self.dados_validos(username="email-repetido"),
         )
 
-        self.assertEqual(resposta_invalida.status_code, 200)
+        self.assertEqual(resposta.status_code, 200)
         self.assertFormError(
-            resposta_invalida.context["form"],
+            resposta.context["form"],
             "email",
-            "Este campo é obrigatório.",
+            "Já existe um usuário cadastrado com este e-mail.",
         )
-        self.assertRedirects(
-            resposta_valida,
-            reverse("usuarios:usuario_novo"),
-            fetch_redirect_response=False,
+        self.assertFalse(
+            get_user_model().objects.filter(username="email-repetido").exists()
         )
+
+    def test_banco_impede_email_duplicado_sem_diferenciar_maiusculas(self):
+        get_user_model().objects.create_user(
+            username="email-banco-existente",
+            email="contato@example.com",
+            password=self.SENHA,
+        )
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                get_user_model().objects.create_user(
+                    username="email-banco-repetido",
+                    email="CONTATO@example.com",
+                    password=self.SENHA,
+                )
 
     def test_perfis_nao_autorizados_recebem_403_em_get_e_post(self):
         usuarios_sem_acesso = (
