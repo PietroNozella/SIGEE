@@ -43,25 +43,7 @@ Centralize o inventário tecnológico da instituição com controle de acesso, r
 
 O SIGEE é uma plataforma web para organizar e acompanhar equipamentos tecnológicos de instituições de ensino. A aplicação reúne inventário, usuários, permissões e registros de auditoria em um único ambiente, reduzindo controles dispersos e facilitando a consulta das informações.
 
-Com uma interface responsiva e regras aplicadas no servidor, o sistema prioriza quatro pontos essenciais para a operação:
-
-- **centralização:** equipamentos, categorias, locais e usuários no mesmo ambiente;
-- **rastreabilidade:** registro persistente de acessos e operações relevantes;
-- **segurança:** autenticação, permissões por perfil e proteção dos dados;
-- **simplicidade:** fluxos diretos para cadastro, consulta e administração.
-
-## Principais recursos
-
-| Recurso | O que o SIGEE oferece |
-|---|---|
-| **Controle de acesso** | Autenticação por sessão e autorização com grupos e permissões nativos do Django. |
-| **Gestão do inventário** | Cadastro de equipamentos com patrimônio único, categoria, local, situação e estado ativo. |
-| **Consulta centralizada** | Busca e filtros por texto, categoria, local e situação, além de resumo do inventário para administradores. |
-| **Importação em lote** | Cadastro de equipamentos por arquivo CSV, com validação integral antes da gravação. |
-| **Preservação do histórico** | Exclusão de itens sem registros relacionados e inativação quando há movimentações vinculadas. |
-| **Gestão de usuários** | Criação controlada de contas e atribuição de um perfil funcional por administrador. |
-| **Auditoria** | Registro e consulta de autenticações, acessos negados e ações relevantes realizadas no sistema. |
-| **Privacidade** | Termos de Uso e Política de Privacidade públicos, com aceite obrigatório e versionado. |
+## Problema e contexto
 
 ## Perfis de acesso
 
