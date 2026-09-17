@@ -15,7 +15,7 @@ Este documento reúne os requisitos não funcionais prioritários e os requisito
 
 ## Requisitos de segurança e privacidade
 
-O baseline confirmado contempla `RS-01` a `RS-05` e `RS-08` a `RS-12`. `RS-06` e `RS-07` continuam como candidatos.
+O baseline confirmado contempla `RS-01` a `RS-05` e `RS-07` a `RS-12`. `RS-06` continua como candidato.
 
 | ID | Situação | Requisito | Critério de aceite |
 |---|---|---|---|
@@ -25,7 +25,7 @@ O baseline confirmado contempla `RS-01` a `RS-05` e `RS-08` a `RS-12`. `RS-06` e
 | RS-04 | Confirmado | Comunicação segura | O ambiente publicado utiliza HTTPS e não expõe segredos em templates, JavaScript ou versionamento. |
 | RS-05 | Confirmado | Gerenciamento seguro de sessões | Sessões expiram e são invalidadas no logout. |
 | RS-06 | Candidato | Proteção contra tentativas abusivas de autenticação | Tentativas repetidas são limitadas por bloqueio temporário, atraso progressivo ou mecanismo equivalente. |
-| RS-07 | Candidato | Recuperação segura de senha | A recuperação utiliza token seguro, com expiração e invalidação após o uso. |
+| RS-07 | Confirmado | Recuperação segura de senha | A recuperação utiliza resposta neutra e token seguro, com expiração em uma hora e invalidação após o uso. |
 | RS-08 | Confirmado | Validação segura das entradas | Dados são validados no servidor antes do processamento ou da persistência. |
 | RS-09 | Confirmado | Registro de eventos de segurança | Eventos relevantes de autenticação são registrados para verificação posterior. |
 | RS-10 | Confirmado | Proteção e minimização de dados pessoais | A coleta e o armazenamento são limitados às informações necessárias às finalidades do SIGEE. |
