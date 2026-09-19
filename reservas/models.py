@@ -31,8 +31,13 @@ class Reserva(models.Model):
         ATIVA = "ATIVA", "Ativa"
         CANCELADA = "CANCELADA", "Cancelada"
 
-    equipamento = models.ForeignKey(
-        "inventario.Equipamento",
+    tipo_equipamento = models.ForeignKey(
+        "inventario.TipoEquipamento",
+        on_delete=models.PROTECT,
+        related_name="reservas",
+    )
+    local = models.ForeignKey(
+        "inventario.Local",
         on_delete=models.PROTECT,
         related_name="reservas",
     )
@@ -43,6 +48,7 @@ class Reserva(models.Model):
     )
     inicio = models.DateTimeField("início")
     fim = models.DateTimeField()
+    quantidade = models.PositiveIntegerField(default=1)
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -60,11 +66,15 @@ class Reserva(models.Model):
                 condition=Q(fim__gt=F("inicio")),
                 name="reserva_fim_posterior_inicio",
             ),
+            models.CheckConstraint(
+                condition=Q(quantidade__gte=1),
+                name="reserva_quantidade_positiva",
+            ),
         ]
         indexes = [
             models.Index(
-                fields=["equipamento", "inicio", "fim"],
-                name="reserva_equip_periodo_idx",
+                fields=["tipo_equipamento", "local", "inicio", "fim"],
+                name="res_tipo_loc_periodo_idx",
             ),
         ]
 
@@ -77,16 +87,16 @@ class Reserva(models.Model):
                 "Somente um usuário com perfil Professor pode criar uma reserva."
             )
 
-        if self._state.adding and self.equipamento_id:
-            equipamento_indisponivel = (
-                not self.equipamento.ativo
-                or self.equipamento.situacao
-                != self.equipamento.Situacao.DISPONIVEL
+        if self.tipo_equipamento_id and not self.tipo_equipamento.ativo:
+            erros["tipo_equipamento"] = (
+                "Somente um tipo de equipamento ativo pode ser reservado."
             )
-            if equipamento_indisponivel:
-                erros["equipamento"] = (
-                    "Somente um equipamento ativo e disponível pode ser reservado."
-                )
+
+        if self.local_id and not self.local.ativo:
+            erros["local"] = "Somente um local ativo pode ser selecionado para a reserva."
+
+        if self.quantidade is not None and self.quantidade < 1:
+            erros["quantidade"] = "Informe uma quantidade maior que zero."
 
         periodo_valido = self.inicio is not None and self.fim is not None
         if periodo_valido and (
@@ -99,7 +109,7 @@ class Reserva(models.Model):
 
         if periodo_valido and self.fim <= self.inicio:
             erros["fim"] = (
-                "A data e a hora final devem ser posteriores ao início da reserva."
+                "A hora final deve ser posterior ao inicio da reserva"
             )
             periodo_valido = False
 
@@ -114,31 +124,38 @@ class Reserva(models.Model):
                 "sábado ou domingo."
             )
 
-        if (
-            periodo_valido
-            and self.equipamento_id
-            and self.status == self.Status.ATIVA
-        ):
-            conflito = (
-                type(self)
-                .objects.filter(
-                    equipamento_id=self.equipamento_id,
-                    status=self.Status.ATIVA,
-                    inicio__lt=self.fim,
-                    fim__gt=self.inicio,
-                )
-                .exclude(pk=self.pk)
-                .exists()
-            )
-            if conflito:
-                erros[NON_FIELD_ERRORS] = (
-                    "O equipamento já possui uma reserva ativa nesse período."
-                )
-
         if erros:
             raise ValidationError(erros)
 
     def __str__(self):
         return (
-            f"{self.equipamento} — {timezone.localtime(self.inicio):%d/%m/%Y %H:%M}"
+            f"{self.quantidade}x {self.tipo_equipamento.nome} — {self.local.nome} — "
+            f"{timezone.localtime(self.inicio):%d/%m/%Y %H:%M}"
         )
+
+
+class ReservaEquipamento(models.Model):
+    reserva = models.ForeignKey(
+        Reserva,
+        on_delete=models.CASCADE,
+        related_name="itens",
+    )
+    equipamento = models.ForeignKey(
+        "inventario.Equipamento",
+        on_delete=models.PROTECT,
+        related_name="itens_reserva",
+    )
+
+    class Meta:
+        ordering = ["equipamento__numero_patrimonio"]
+        verbose_name = "equipamento reservado"
+        verbose_name_plural = "equipamentos reservados"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("reserva", "equipamento"),
+                name="reserva_equipamento_unico",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.reserva} — {self.equipamento.numero_patrimonio}"

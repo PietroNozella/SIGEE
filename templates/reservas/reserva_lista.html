@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Minhas Reservas | SIGEE{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    <header class="page-header">
+        <div>
+            <h1>Minhas Reservas</h1>
+            <p>Consulte os períodos reservados e cancele uma reserva ativa quando necessário.</p>
+        </div>
+        <a class="btn btn-primary-sigee" href="{% url 'reservas:reserva_nova' %}">
+            <img src="{% static 'inventario/icons/add.svg' %}" alt="" aria-hidden="true">
+            Nova reserva
+        </a>
+    </header>
+
+    <section class="inventory-card" aria-labelledby="reservations-heading">
+        <h2 class="visually-hidden" id="reservations-heading">Lista das minhas reservas</h2>
+
+        <form class="reservation-filter-toolbar" method="get">
+            <div class="reservation-filter-field">
+                <label for="status">Situação da reserva</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todas</option>
+                    {% for valor, rotulo in status_reserva.choices %}
+                        <option value="{{ valor }}"{% if status_atual == valor %} selected{% endif %}>{{ rotulo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-primary-sigee" type="submit">Filtrar</button>
+                {% if status_atual %}
+                    <a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_lista' %}">Limpar</a>
+                {% endif %}
+            </div>
+        </form>
+
+        {% if pagina.object_list %}
+            <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Tabela de reservas; use rolagem horizontal em telas pequenas">
+                <table class="table inventory-table reservation-table mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Tipo/modelo</th>
+                            <th scope="col">Quantidade</th>
+                            <th scope="col">Data</th>
+                            <th scope="col">Horário</th>
+                            <th scope="col">Local</th>
+                            <th scope="col">Situação</th>
+                            <th scope="col">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reserva in pagina %}
+                            <tr>
+                                <td>
+                                    <strong>{{ reserva.tipo_equipamento.nome }}</strong>
+                                    <span class="table-metadata">{{ reserva.tipo_equipamento.categoria.nome }}</span>
+                                </td>
+                                <td>{{ reserva.quantidade }}</td>
+                                <td>{{ reserva.inicio|date:"d/m/Y" }}</td>
+                                <td>{{ reserva.inicio|time:"H:i" }}–{{ reserva.fim|time:"H:i" }}</td>
+                                <td>
+                                    {{ reserva.local.nome }}
+                                </td>
+                                <td>
+                                    <span class="status-badge reservation-status-{{ reserva.status|lower }}">
+                                        {{ reserva.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if reserva.status == status_reserva.ATIVA %}
+                                        <button
+                                            class="btn btn-secondary-sigee"
+                                            type="button"
+                                            data-cancel-reservation-trigger
+                                            data-cancel-url="{% url 'reservas:reserva_cancelar' reserva.pk %}"
+                                            data-reservation-equipment="{{ reserva.quantidade }}x {{ reserva.tipo_equipamento.nome }}"
+                                            data-reservation-date="{{ reserva.inicio|date:'d/m/Y' }}"
+                                            aria-haspopup="dialog"
+                                            aria-controls="cancel-reservation-dialog"
+                                        >Cancelar</button>
+                                    {% else %}
+                                        <span class="table-muted">Sem ações</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <footer class="inventory-pagination">
+                <p>Mostrando {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }} reservas</p>
+                {% if pagina.paginator.num_pages > 1 %}
+                    <nav aria-label="Paginação de reservas">
+                        <ul class="pagination mb-0">
+                            <li class="page-item{% if not pagina.has_previous %} disabled{% endif %}">
+                                {% if pagina.has_previous %}
+                                    <a class="page-link" href="?{% if parametros_paginacao %}{{ parametros_paginacao }}&amp;{% endif %}pagina={{ pagina.previous_page_number }}">Anterior</a>
+                                {% else %}
+                                    <span class="page-link" aria-disabled="true">Anterior</span>
+                                {% endif %}
+                            </li>
+                            <li class="page-item{% if not pagina.has_next %} disabled{% endif %}">
+                                {% if pagina.has_next %}
+                                    <a class="page-link" href="?{% if parametros_paginacao %}{{ parametros_paginacao }}&amp;{% endif %}pagina={{ pagina.next_page_number }}">Próxima</a>
+                                {% else %}
+                                    <span class="page-link" aria-disabled="true">Próxima</span>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </nav>
+                {% endif %}
+            </footer>
+        {% else %}
+            <div class="empty-state" role="status">
+                <h2>{% if status_atual %}Nenhuma reserva encontrada{% else %}Você ainda não possui reservas{% endif %}</h2>
+                {% if status_atual %}
+                    <p>Não há reservas com a situação selecionada.</p>
+                    <a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_lista' %}">Ver todas</a>
+                {% else %}
+                    <p>Consulte os equipamentos disponíveis e faça sua primeira reserva.</p>
+                    <a class="btn btn-primary-sigee" href="{% url 'inventario:equipamento_lista' %}">Ver equipamentos</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+
+    <dialog class="modal-exclusao" id="cancel-reservation-dialog" aria-labelledby="cancel-reservation-title" aria-describedby="cancel-reservation-description" aria-modal="true" data-cancel-reservation-dialog>
+        <div class="modal-exclusao-conteudo">
+            <header class="modal-exclusao-cabecalho reservation-cancel-header">
+                <span class="modal-exclusao-icone" aria-hidden="true">!</span>
+                <div class="modal-exclusao-titulo-grupo">
+                    <h2 id="cancel-reservation-title">Cancelar reserva</h2>
+                    <p id="cancel-reservation-description">
+                        Confirma o cancelamento de <strong data-cancel-reservation-equipment></strong> para <strong data-cancel-reservation-date></strong>?
+                    </p>
+                </div>
+                <button class="modal-exclusao-fechar" type="button" aria-label="Fechar confirmação" data-cancel-reservation-close>×</button>
+            </header>
+        </div>
+        <footer class="modal-exclusao-acoes">
+            <button class="btn btn-secondary-sigee" type="button" data-cancel-reservation-close>Manter reserva</button>
+            <form method="post" data-cancel-reservation-form>
+                {% csrf_token %}
+                <button class="btn btn-danger-sigee" type="submit">Sim, cancelar reserva</button>
+            </form>
+        </footer>
+    </dialog>
+</div>
+{% endblock %}

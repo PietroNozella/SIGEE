@@ -34,7 +34,7 @@ Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permiss�
 | Decisão | Evidência de requisito |
 |---|---|
 | Autenticação e autorização por perfil | RF-01, RNF-01 e RS-01 |
-| Criação e cancelamento de reserva própria pelo Professor | RN-07 e RN-12 |
+| Criação por tipo/modelo e local, e cancelamento de reserva própria pelo Professor | RN-02, RN-07 e RN-12 |
 | Bloqueio de reserva passada ou em fim de semana | RF-04 e RN-19 |
 | Retirada e devolução por Operador | RN-08 e RN-13 |
 | Encaminhamento para manutenção na devolução | RN-14 |

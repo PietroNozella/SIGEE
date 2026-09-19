@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Count, Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -11,7 +11,8 @@ from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from movimentacoes.models import Movimentacao
-from reservas.models import Reserva
+from reservas.models import ReservaEquipamento
+from usuarios.permissoes import e_professor_funcional
 
 from .forms import EquipamentoForm, ImportacaoEquipamentosCSVForm
 from .importacao_csv import CABECALHOS_CSV, validar_equipamentos_csv
@@ -21,10 +22,13 @@ from .models import Categoria, Equipamento, Local
 @login_required
 @permission_required("inventario.view_equipamento", raise_exception=True)
 def equipamento_lista(request):
-    equipamentos = Equipamento.objects.select_related("categoria", "local").annotate(
+    e_professor = e_professor_funcional(request.user)
+    equipamentos = Equipamento.objects.select_related("tipo__categoria", "local").annotate(
         possui_historico=(
             Exists(Movimentacao.objects.filter(equipamento_id=OuterRef("pk")))
-            | Exists(Reserva.objects.filter(equipamento_id=OuterRef("pk")))
+            | Exists(
+                ReservaEquipamento.objects.filter(equipamento_id=OuterRef("pk"))
+            )
         )
     )
 
@@ -51,14 +55,22 @@ def equipamento_lista(request):
 
     if busca:
         equipamentos = equipamentos.filter(
-            Q(numero_patrimonio__icontains=busca) | Q(nome__icontains=busca)
+            Q(numero_patrimonio__icontains=busca)
+            | Q(tipo__nome__icontains=busca)
         )
     if categoria.isdigit():
-        equipamentos = equipamentos.filter(categoria_id=categoria)
+        equipamentos = equipamentos.filter(tipo__categoria_id=categoria)
     if local.isdigit():
         equipamentos = equipamentos.filter(local_id=local)
     if situacao in Equipamento.Situacao.values:
         equipamentos = equipamentos.filter(situacao=situacao)
+
+    if e_professor:
+        equipamentos = equipamentos.filter(
+            ativo=True,
+            tipo__ativo=True,
+            local__ativo=True,
+        )
 
     ha_filtros = any((busca, categoria, local, situacao))
 
@@ -68,6 +80,25 @@ def equipamento_lista(request):
             acao=AcaoAuditoria.INVENTARIO_CONSULTADO,
             resultado=RegistroAuditoria.Resultado.SUCESSO,
             entidade="inventario.Equipamento",
+        )
+
+    if e_professor:
+        equipamentos = (
+            equipamentos.values(
+                "tipo_id",
+                "tipo__nome",
+                "tipo__categoria__nome",
+                "local_id",
+                "local__nome",
+            )
+            .annotate(
+                quantidade_total=Count("id"),
+                quantidade_disponivel=Count(
+                    "id",
+                    filter=Q(situacao=Equipamento.Situacao.DISPONIVEL),
+                ),
+            )
+            .order_by("tipo__categoria__nome", "tipo__nome", "local__nome")
         )
 
     paginator = Paginator(equipamentos, 5)
@@ -91,6 +122,7 @@ def equipamento_lista(request):
         "parametros_paginacao": parametros.urlencode(),
         "ha_filtros": ha_filtros,
         "total_equipamentos": total_equipamentos,
+        "e_professor": e_professor,
     }
     return render(request, "inventario/equipamento_lista.html", context)
 

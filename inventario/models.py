@@ -47,6 +47,31 @@ class Local(models.Model):
         return self.nome
 
 
+class TipoEquipamento(models.Model):
+    categoria = models.ForeignKey(
+        Categoria,
+        on_delete=models.PROTECT,
+        related_name="tipos_equipamento",
+    )
+    nome = models.CharField("tipo/modelo", max_length=150)
+    ativo = models.BooleanField(default=True)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["categoria__nome", "nome"]
+        verbose_name = "tipo de equipamento"
+        verbose_name_plural = "tipos de equipamento"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("categoria", "nome"),
+                name="tipo_equip_categoria_nome_unicos",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.categoria.nome} — {self.nome}"
+
+
 class Equipamento(models.Model):
     MENSAGEM_PATRIMONIO_DUPLICADO = (
         "Já existe um equipamento cadastrado com este número de patrimônio."
@@ -63,9 +88,12 @@ class Equipamento(models.Model):
         unique=True,
         error_messages={"unique": MENSAGEM_PATRIMONIO_DUPLICADO},
     )
-    nome = models.CharField(max_length=150)
     descricao = models.TextField(blank=True)
-    categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT)
+    tipo = models.ForeignKey(
+        TipoEquipamento,
+        on_delete=models.PROTECT,
+        related_name="equipamentos",
+    )
     local = models.ForeignKey(Local, on_delete=models.PROTECT)
     situacao = models.CharField(
         max_length=30,
@@ -87,7 +115,7 @@ class Equipamento(models.Model):
         ]
 
     def possui_registros_relacionados(self):
-        return self.movimentacoes.exists() or self.reservas.exists()
+        return self.movimentacoes.exists() or self.itens_reserva.exists()
 
     # RN-06: equipamentos com movimentações são inativados para preservar
     # o histórico; somente itens sem registros relacionados são excluídos.
@@ -104,4 +132,4 @@ class Equipamento(models.Model):
         return super().delete(using=using, keep_parents=keep_parents)
 
     def __str__(self):
-        return f"{self.numero_patrimonio} - {self.nome}"
+        return f"{self.numero_patrimonio} - {self.tipo.nome}"

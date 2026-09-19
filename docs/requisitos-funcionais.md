@@ -5,9 +5,9 @@ Este documento registra o baseline aprovado de requisitos funcionais do SIGEE. A
 | ID | Requisito | Critério de aceite |
 |---|---|---|
 | RF-01 | Autenticar usuários e aplicar autorização por perfil. | Usuários válidos acessam o sistema e cada perfil executa somente as ações permitidas. |
-| RF-02 | Cadastrar e gerenciar o inventário. | Equipamentos possuem patrimônio único, categoria, local e situação válidos. O cadastro pode ser unitário ou por CSV; na importação, o lote só é salvo se todas as linhas forem válidas. |
+| RF-02 | Cadastrar e gerenciar o inventário. | Equipamentos físicos possuem patrimônio único, tipo/modelo, categoria, local e situação válidos. Categoria representa a classificação ampla; tipo/modelo identifica o conjunto de unidades selecionável para reserva. O cadastro pode ser unitário ou por CSV; na importação, o lote só é salvo se todas as linhas forem válidas. |
 | RF-03 | Consultar e filtrar equipamentos. | Filtros por texto, categoria, local e situação retornam resultados coerentes. |
-| RF-04 | Reservar equipamentos. | Professor autenticado cria uma reserva vinculada à própria conta para equipamento disponível e período definido. Conflitos, indisponibilidade, início no passado e períodos que incluam sábado ou domingo são bloqueados. A data atual é aceita quando o horário inicial ainda não passou. |
+| RF-04 | Reservar equipamentos. | Professor autenticado seleciona um tipo/modelo, local de retirada, data, horários e quantidade. O sistema informa as unidades disponíveis naquele local e aloca equipamentos físicos do mesmo tipo e local automaticamente em uma única reserva vinculada à própria conta. Conflitos, indisponibilidade, início no passado e períodos que incluam sábado ou domingo são bloqueados. A data atual é aceita quando o horário inicial ainda não passou. |
 | RF-05 | Registrar retirada e devolução. | Operador autorizado registra as movimentações e a situação do equipamento é atualizada corretamente. |
 | RF-06 | Consultar o histórico de movimentações. | Retiradas e devoluções preservam data, hora, responsável, destinatário e tipo. |
 | RF-07 | Gerenciar manutenção. | Equipamentos em manutenção permanecem indisponíveis e mantêm o histórico das intervenções. |
@@ -18,6 +18,10 @@ Este documento registra o baseline aprovado de requisitos funcionais do SIGEE. A
 
 ## Estado do RF-09
 
-> **RF-09 implementado e testado no backend; interface ainda pendente.**
+> **RF-09 implementado e testado no backend e na interface do Professor.**
 
-O contrato externo, o fluxo informativo e a contingência estão definidos no [projeto lógico da consulta de feriados](projeto-logico-brasilapi.md). O cliente da BrasilAPI, o serviço de criação da reserva e os testes automatizados estão implementados; a apresentação dos avisos na interface permanece pendente.
+O contrato externo, o fluxo informativo e a contingência estão definidos no [projeto lógico da consulta de feriados](projeto-logico-brasilapi.md). O cliente da BrasilAPI, o serviço de criação da reserva, a apresentação dos avisos na interface e os testes automatizados estão implementados.
+
+## Funcionalidade futura confirmada
+
+A tela de **Configurações** do Professor permanece planejada para uma etapa futura. Enquanto seu comportamento e seus campos não forem definidos, ela não é exibida na sidebar para evitar uma opção de navegação sem funcionalidade. Termos de Uso e Política de Privacidade permanecem disponíveis no menu do usuário.

@@ -22,6 +22,11 @@
                     Novo equipamento
                 </a>
             </div>
+        {% elif perms.reservas.add_reserva %}
+            <a class="btn btn-primary-sigee" href="{% url 'reservas:reserva_nova' %}">
+                <img src="{% static 'inventario/icons/add.svg' %}" alt="" aria-hidden="true">
+                Nova reserva
+            </a>
         {% endif %}
     </header>
 
@@ -51,9 +56,9 @@
 
         <form class="filter-toolbar" method="get" role="search">
             <div class="filter-search">
-                <label class="visually-hidden" for="busca">Buscar por patrimônio ou nome</label>
+                <label class="visually-hidden" for="busca">{% if e_professor %}Buscar por equipamento{% else %}Buscar por patrimônio ou nome{% endif %}</label>
                 <img src="{% static 'inventario/icons/search.svg' %}" alt="" aria-hidden="true">
-                <input class="form-control" id="busca" name="busca" type="search" value="{{ filtros.busca }}" placeholder="Buscar por patrimônio ou nome">
+                <input class="form-control" id="busca" name="busca" type="search" value="{{ filtros.busca }}" placeholder="{% if e_professor %}Buscar por equipamento{% else %}Buscar por patrimônio ou nome{% endif %}">
             </div>
 
             <div>
@@ -98,50 +103,84 @@
             <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Tabela de equipamentos; use rolagem horizontal em telas pequenas">
                 <table class="table inventory-table mb-0">
                     <thead>
-                        <tr>
-                            <th scope="col">Patrimônio</th>
-                            <th scope="col">Nome</th>
-                            <th scope="col">Categoria</th>
-                            <th scope="col">Local</th>
-                            <th scope="col">Situação</th>
-                            {% if perms.inventario.delete_equipamento %}<th scope="col">Ações</th>{% endif %}
-                        </tr>
+                        {% if e_professor %}
+                            <tr>
+                                <th scope="col">Equipamento</th>
+                                <th scope="col">Categoria</th>
+                                <th scope="col">Local</th>
+                                <th scope="col">Quantidade disponível</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Ação</th>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <th scope="col">Patrimônio</th>
+                                <th scope="col">Nome</th>
+                                <th scope="col">Categoria</th>
+                                <th scope="col">Local</th>
+                                <th scope="col">Situação</th>
+                                {% if perms.inventario.delete_equipamento or perms.reservas.add_reserva %}<th scope="col">Ações</th>{% endif %}
+                            </tr>
+                        {% endif %}
                     </thead>
                     <tbody>
                         {% for equipamento in pagina %}
-                            <tr>
-                                <td><strong>{{ equipamento.numero_patrimonio }}</strong></td>
-                                <td>
-                                    {{ equipamento.nome }}
-                                    {% if not equipamento.ativo %}<span class="inactive-label">Inativo</span>{% endif %}
-                                </td>
-                                <td>{{ equipamento.categoria.nome }}</td>
-                                <td>{{ equipamento.local.nome }}</td>
-                                <td>
-                                    <span class="status-badge status-{{ equipamento.situacao|lower }}">
-                                        {{ equipamento.get_situacao_display }}
-                                    </span>
-                                </td>
-                                {% if perms.inventario.delete_equipamento %}
+                            {% if e_professor %}
+                                <tr>
+                                    <td><strong>{{ equipamento.tipo__nome }}</strong></td>
+                                    <td>{{ equipamento.tipo__categoria__nome }}</td>
+                                    <td>{{ equipamento.local__nome }}</td>
+                                    <td>{{ equipamento.quantidade_disponivel }} disponível{{ equipamento.quantidade_disponivel|pluralize:"is" }}</td>
                                     <td>
-                                        {% if equipamento.ativo %}
-                                            <form method="post" action="{% url 'inventario:equipamento_excluir' equipamento.pk %}">
-                                                {% csrf_token %}
-                                                <button
-                                                    class="btn btn-secondary-sigee"
-                                                    type="button"
-                                                    data-delete-trigger
-                                                    data-equipamento-nome="{{ equipamento.nome }}"
-                                                    data-equipamento-patrimonio="{{ equipamento.numero_patrimonio }}"
-                                                    data-possui-historico="{{ equipamento.possui_historico|yesno:'true,false' }}"
-                                                    aria-haspopup="dialog"
-                                                    aria-controls="modal-exclusao"
-                                                >Excluir</button>
-                                            </form>
+                                        {% if equipamento.quantidade_disponivel %}
+                                            <span class="status-badge status-disponivel">Disponível</span>
+                                        {% else %}
+                                            <span class="status-badge status-indisponivel">Indisponível</span>
                                         {% endif %}
                                     </td>
-                                {% endif %}
-                            </tr>
+                                    <td>
+                                        {% if equipamento.quantidade_disponivel %}
+                                            <a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_nova' %}?tipo={{ equipamento.tipo_id }}&amp;local={{ equipamento.local_id }}">Reservar</a>
+                                        {% else %}
+                                            <span class="table-muted">Reservar</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td><strong>{{ equipamento.numero_patrimonio }}</strong></td>
+                                    <td>
+                                        {{ equipamento.tipo.nome }}
+                                        {% if not equipamento.ativo %}<span class="inactive-label">Inativo</span>{% endif %}
+                                    </td>
+                                    <td>{{ equipamento.tipo.categoria.nome }}</td>
+                                    <td>{{ equipamento.local.nome }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ equipamento.situacao|lower }}">
+                                            {{ equipamento.get_situacao_display }}
+                                        </span>
+                                    </td>
+                                    {% if perms.inventario.delete_equipamento %}
+                                        <td>
+                                            {% if equipamento.ativo %}
+                                                <form method="post" action="{% url 'inventario:equipamento_excluir' equipamento.pk %}">
+                                                    {% csrf_token %}
+                                                    <button
+                                                        class="btn btn-secondary-sigee"
+                                                        type="button"
+                                                        data-delete-trigger
+                                                        data-equipamento-nome="{{ equipamento.tipo.nome }}"
+                                                        data-equipamento-patrimonio="{{ equipamento.numero_patrimonio }}"
+                                                        data-possui-historico="{{ equipamento.possui_historico|yesno:'true,false' }}"
+                                                        aria-haspopup="dialog"
+                                                        aria-controls="modal-exclusao"
+                                                    >Excluir</button>
+                                                </form>
+                                            {% endif %}
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -149,7 +188,7 @@
 
             <footer class="inventory-pagination">
                 <p>
-                    Mostrando {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }} equipamentos
+                    Mostrando {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }} {% if e_professor %}grupos de equipamentos{% else %}equipamentos{% endif %}
                 </p>
                 {% if pagina.paginator.num_pages > 1 %}
                     <nav aria-label="Paginação de equipamentos">

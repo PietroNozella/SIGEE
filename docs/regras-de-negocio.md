@@ -3,12 +3,12 @@
 Este documento registra as 19 regras de negócio confirmadas para o SIGEE. Elas representam o comportamento esperado do sistema e devem ser vinculadas à implementação, aos testes e às evidências conforme o desenvolvimento avançar.
 
 - **RN-01 — Unicidade do número de patrimônio:** cada número de patrimônio identifica um único equipamento.
-- **RN-02 — Disponibilidade para reserva e retirada:** somente equipamento disponível pode ser reservado ou retirado.
-- **RN-03 — Prevenção de conflito de reservas:** reservas conflitantes para o mesmo período são impedidas.
+- **RN-02 — Disponibilidade para reserva e retirada:** somente equipamento físico ativo e disponível pode ser reservado ou retirado. A consulta da reserva é feita pelo tipo/modelo e pelo local de retirada, e a alocação considera somente unidades físicas desse mesmo tipo e local.
+- **RN-03 — Prevenção de conflito de reservas:** reservas conflitantes para o mesmo período são impedidas por unidade física alocada; períodos apenas adjacentes não conflitam.
 - **RN-04 — Registro e atualização de movimentações:** retirada e devolução registram a movimentação e atualizam a situação do equipamento.
 - **RN-05 — Indisponibilidade durante manutenção:** equipamento em manutenção permanece indisponível até a conclusão da intervenção.
 - **RN-06 — Inativação com preservação do histórico:** equipamento com registros relacionados é inativado em vez de excluído definitivamente.
-- **RN-07 — Reserva exclusiva e própria por professores:** somente usuários com perfil Professor podem reservar equipamentos, e cada reserva é vinculada ao próprio Professor autenticado que a criou.
+- **RN-07 — Reserva exclusiva e própria por professores:** somente usuários com perfil Professor podem reservar equipamentos, e cada reserva em lote é vinculada ao próprio Professor autenticado que a criou.
 - **RN-08 — Retirada e devolução por operador:** somente usuários com perfil autorizado de Operador podem registrar retirada e devolução física.
 - **RN-09 — Retirada com ou sem reserva prévia:** equipamento disponível pode ser retirado sem reserva, desde que a movimentação seja registrada com as informações necessárias à rastreabilidade.
 - **RN-10 — Devolução vinculada à retirada:** a devolução exige uma retirada em aberto correspondente; depois dela, o equipamento retorna à situação disponível, salvo outro impedimento registrado.
@@ -21,6 +21,10 @@ Este documento registra as 19 regras de negócio confirmadas para o SIGEE. Elas 
 - **RN-17 — Indicadores baseados em registros pedagógicos:** indicadores pedagógicos são calculados somente a partir de registros efetivamente vinculados a turma, disciplina e atividade pedagógica.
 - **RN-18 — Cadastro controlado de usuários:** o SIGEE não permite cadastro público; novas contas de Administrador, Operador e Professor são criadas por um Administrador. O primeiro Administrador é configurado por meio de uma conta técnica de Django Superuser.
 - **RN-19 — Validade temporal e dias permitidos da reserva:** a data e a hora inicial da reserva não podem estar no passado. A data atual é permitida quando o horário inicial ainda não tiver passado. Reservas cujo período inclua sábado ou domingo são impedidas. A coincidência com feriado nacional consultado pela BrasilAPI gera somente aviso informativo e não impede a reserva.
+
+## Decisão de modelagem da reserva em lote
+
+`Categoria` representa uma classificação ampla, como Notebook ou Projetor. `TipoEquipamento` identifica o tipo/modelo selecionável, como “Notebook Dell Latitude 5420”, `Local` identifica o ponto de retirada escolhido e `Equipamento` continua representando cada unidade física com patrimônio próprio. Uma solicitação do Professor grava uma única `Reserva` com tipo/modelo, local e quantidade, e cria os vínculos `ReservaEquipamento` somente para unidades compatíveis com esse tipo e local. Essa separação evita que o Professor tenha de repetir a operação para cada patrimônio, impede lotes distribuídos entre locais diferentes e mantém o histórico físico auditável.
 
 ## Implicações da RN-18
 
