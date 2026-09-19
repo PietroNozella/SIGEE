@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'inventario',
     'legal',
     'movimentacoes',
+    'reservas',
     'usuarios',
 ]
 

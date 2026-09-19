@@ -11,7 +11,7 @@ from usuarios.permissoes import (
     GRUPO_PROFESSOR,
 )
 
-from .models import Categoria, Equipamento, Local
+from .models import Categoria, Equipamento, Local, TipoEquipamento
 
 
 class AutorizacaoInventarioTests(TestCase):
@@ -19,6 +19,7 @@ class AutorizacaoInventarioTests(TestCase):
     def setUpTestData(cls):
         call_command("configurar_perfis", verbosity=0)
         cls.categoria = Categoria.objects.get(nome="Notebook")
+        cls.tipo = TipoEquipamento.objects.create(categoria=cls.categoria, nome="Notebook de teste")
         cls.local = Local.objects.get(nome="Laboratório de informática")
 
         cls.administrador = cls._criar_usuario(
@@ -50,8 +51,7 @@ class AutorizacaoInventarioTests(TestCase):
     def criar_equipamento(self, patrimonio="PAT-AUT-001"):
         return Equipamento.objects.create(
             numero_patrimonio=patrimonio,
-            nome="Notebook de teste",
-            categoria=self.categoria,
+            tipo=self.tipo,
             local=self.local,
         )
 
@@ -150,6 +150,35 @@ class AutorizacaoInventarioTests(TestCase):
                 self.assertNotContains(resposta, "data-delete-trigger")
                 self.assertNotContains(resposta, "Cadastrar usuário")
                 self.assertContains(resposta, "Equipamentos")
+
+    def test_professor_visualiza_uma_linha_por_tipo_e_local_com_quantidade(self):
+        self.criar_equipamento("PAT-AUT-002")
+        indisponivel = self.criar_equipamento("PAT-AUT-003")
+        indisponivel.situacao = Equipamento.Situacao.MANUTENCAO
+        indisponivel.save(update_fields=["situacao"])
+        self.client.force_login(self.professor)
+
+        resposta = self.client.get(reverse("inventario:equipamento_lista"))
+
+        self.assertContains(resposta, "Quantidade disponível")
+        self.assertContains(resposta, "1 disponível")
+        self.assertContains(resposta, "Notebook de teste")
+        self.assertContains(
+            resposta,
+            f"{reverse('reservas:reserva_nova')}?tipo={self.tipo.pk}&amp;local={self.local.pk}",
+        )
+        self.assertNotContains(resposta, "PAT-AUT-001")
+
+    def test_professor_nao_visualiza_tipo_de_equipamento_inativo(self):
+        self.criar_equipamento()
+        self.tipo.ativo = False
+        self.tipo.save(update_fields=("ativo",))
+        self.client.force_login(self.professor)
+
+        resposta = self.client.get(reverse("inventario:equipamento_lista"))
+
+        self.assertNotContains(resposta, "Notebook de teste")
+        self.assertNotContains(resposta, "Reservar")
 
     def test_resumo_nao_e_calculado_sem_permissao(self):
         self.client.force_login(self.operador)

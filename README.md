@@ -45,6 +45,10 @@ O SIGEE é uma plataforma web para organizar e acompanhar equipamentos tecnológ
 
 ## Problema e contexto
 
+Em instituições de ensino, o registro descentralizado de reservas, localização, manutenção e utilização de equipamentos dificulta a consulta da disponibilidade e a rastreabilidade dos itens.
+
+O SIGEE centraliza o inventário, as reservas e os registros relacionados, reduzindo conflitos de uso e facilitando o acompanhamento dos equipamentos.
+
 ## Perfis de acesso
 
 O SIGEE não possui cadastro público. As contas são criadas por usuários autorizados e recebem um perfil compatível com suas responsabilidades.
@@ -53,7 +57,7 @@ O SIGEE não possui cadastro público. As contas são criadas por usuários auto
 |---|---|
 | **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, consulta o resumo e acessa a auditoria. |
 | **Operador** | Consulta o inventário e a disponibilidade registrada dos equipamentos. |
-| **Professor** | Consulta o inventário e a disponibilidade registrada dos equipamentos. |
+| **Professor** | Consulta os equipamentos e a disponibilidade, cria reservas próprias em lote e cancela as próprias reservas. |
 
 Consulte os detalhes de autorização na [matriz de acesso](docs/matriz-de-acesso.md).
 
@@ -68,6 +72,7 @@ O SIGEE utiliza uma arquitetura web monolítica com Django e renderização no s
 | **Persistência** | SQLite no desenvolvimento local e PostgreSQL configurado por `DATABASE_URL`, com Supabase na infraestrutura do projeto. |
 | **Implantação** | Aplicação publicada na Vercel com HTTPS. |
 | **Segurança** | Sessões, proteção CSRF, validação no servidor, hash de senhas, cookies seguros em produção e auditoria. |
+| **Integração externa** | BrasilAPI para consulta informativa e não bloqueante de feriados nacionais durante a reserva. |
 
 ## Execução local
 
@@ -120,7 +125,7 @@ Execute `configurar_perfis` depois das migrations. O comando é idempotente e ma
 
 ## Testes
 
-A suíte automatizada cobre autenticação, autorização, inventário, importação CSV, usuários, documentos legais e auditoria.
+A suíte automatizada cobre autenticação, autorização, inventário, importação CSV, usuários, documentos legais, auditoria, reservas, disponibilidade, conflitos, cancelamento e contingência da BrasilAPI.
 
 Para validar o projeto com SQLite:
 
@@ -130,18 +135,21 @@ python manage.py check
 python manage.py test
 ```
 
+## Funcionalidades disponíveis nesta entrega
+
+- [x] reservas próprias por Professor, com quantidade e controle de disponibilidade;
+- [x] prevenção de conflitos e bloqueio de períodos inválidos;
+- [x] cancelamento das próprias reservas;
+- [x] consulta informativa de feriados nacionais pela BrasilAPI.
+
 ## Roadmap
 
-As próximas evoluções estão planejadas, mas ainda não representam funcionalidades disponíveis na versão atual:
-
-- [ ] reservas de equipamentos com controle de disponibilidade e conflitos;
 - [ ] retirada e devolução de equipamentos;
 - [ ] registro e acompanhamento de manutenções;
 - [ ] vinculação da utilização ao contexto pedagógico;
-- [ ] indicadores de utilização pedagógica;
-- [ ] consulta informativa de feriados nacionais pela BrasilAPI.
+- [ ] indicadores de utilização pedagógica.
 
-![BrasilAPI](https://img.shields.io/badge/integração%20planejada-BrasilAPI-009C3B?style=for-the-badge)
+![BrasilAPI](https://img.shields.io/badge/integração%20ativa-BrasilAPI-009C3B?style=for-the-badge)
 
 ## Documentação técnica
 

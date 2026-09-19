@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Nova reserva | SIGEE{% endblock %}
+
+{% block content %}
+<div class="page-content form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">
+        <a href="{% url 'reservas:reserva_lista' %}">Minhas Reservas</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Nova reserva</span>
+    </nav>
+
+    <header class="page-header form-page-header">
+        <div>
+            <h1>Nova reserva</h1>
+            <p>Escolha o equipamento, informe a data e o período desejados.</p>
+        </div>
+    </header>
+
+    <section class="form-card" aria-labelledby="reservation-form-title">
+        <div class="form-card-header">
+            <h2 id="reservation-form-title">Dados da reserva</h2>
+            <p>Todos os campos são obrigatórios.</p>
+        </div>
+
+        {% if form.errors %}
+            <div class="validation-summary" id="form-errors" role="alert" tabindex="-1" data-focus-on-load>
+                <h3>Revise os campos indicados</h3>
+                <ul>
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ error }}</a></li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" data-reservation-form data-availability-url="{% url 'reservas:reserva_disponibilidade' %}">
+            {% csrf_token %}
+            <div class="equipment-form-grid reservation-form-grid">
+                {% for field in form %}
+                    <div class="form-field{% if field.name == 'tipo_equipamento' or field.name == 'local' %} form-field-full{% elif field.name == 'data_reserva' or field.name == 'hora_inicio' or field.name == 'hora_fim' %} reservation-period-field{% elif field.name == 'quantidade' %} reservation-quantity-field is-disabled{% endif %}">
+                        <label class="form-label" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                            {% if field.name == 'quantidade' %}
+                                <span class="availability-label" data-reservation-quantity-label aria-live="polite">(Disponível: --)</span>
+                                <span class="visually-hidden" data-reservation-availability-message role="status" aria-live="polite"></span>
+                            {% endif %}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="form-help" id="{{ field.id_for_label }}_help">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="field-error" id="id_{{ field.name }}_error">
+                                {% for error in field.errors %}<span>{{ error }}</span>{% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if field.name == 'data_reserva' or field.name == 'hora_inicio' or field.name == 'hora_fim' %}
+                            <div class="field-error" data-reservation-error-for="{{ field.name }}" hidden></div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_lista' %}">Cancelar</a>
+                <button class="btn btn-primary-sigee" type="submit" aria-haspopup="dialog" aria-controls="reservation-confirm-dialog">Confirmar reserva</button>
+            </div>
+        </form>
+
+        <dialog
+            class="modal-exclusao reservation-confirm-dialog"
+            id="reservation-confirm-dialog"
+            aria-labelledby="reservation-confirm-title"
+            aria-describedby="reservation-confirm-description"
+            data-reservation-confirm-dialog
+        >
+            <div class="modal-exclusao-conteudo">
+                <header class="modal-exclusao-cabecalho">
+                    <span class="modal-exclusao-icone" aria-hidden="true">?</span>
+                    <div class="modal-exclusao-titulo-grupo">
+                        <h2 id="reservation-confirm-title">Confirmar reserva</h2>
+                        <p id="reservation-confirm-description">Confira os dados antes de confirmar a reserva.</p>
+                    </div>
+                    <button class="modal-exclusao-fechar" type="button" aria-label="Fechar confirmação" data-reservation-confirm-close>×</button>
+                </header>
+
+                <dl class="reservation-confirm-details">
+                    <div>
+                        <dt>Equipamento</dt>
+                        <dd data-reservation-confirm-equipment>—</dd>
+                    </div>
+                    <div>
+                        <dt>Quantidade</dt>
+                        <dd data-reservation-confirm-quantity>—</dd>
+                    </div>
+                    <div>
+                        <dt>Local</dt>
+                        <dd data-reservation-confirm-location>—</dd>
+                    </div>
+                    <div>
+                        <dt>Data</dt>
+                        <dd data-reservation-confirm-date>—</dd>
+                    </div>
+                    <div>
+                        <dt>Horário</dt>
+                        <dd><span data-reservation-confirm-start>—</span> às <span data-reservation-confirm-end>—</span></dd>
+                    </div>
+                </dl>
+            </div>
+
+            <footer class="modal-exclusao-acoes">
+                <button class="btn btn-secondary-sigee" type="button" data-reservation-confirm-cancel>Voltar</button>
+                <button class="btn btn-primary-sigee" type="button" data-reservation-confirm-submit>Confirmar reserva</button>
+            </footer>
+        </dialog>
+    </section>
+</div>
+{% endblock %}

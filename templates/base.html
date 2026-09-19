@@ -21,11 +21,21 @@
             </span>
             <span>
                 <strong>SIGEE</strong>
-                <small>Gestão de Equipamentos</small>
+                <small>{% if e_professor %}Portal do Professor{% else %}Gestão de Equipamentos{% endif %}</small>
             </span>
         </div>
 
         <nav class="sidebar-navigation" aria-label="Módulos do sistema">
+            {% if e_professor %}
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
+                    Equipamentos
+                </a>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' %} is-active{% endif %}" href="{% url 'reservas:reserva_lista' %}"{% if request.resolver_match.namespace == 'reservas' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
+                    Minhas Reservas
+                </a>
+            {% else %}
             <span class="side-nav-item is-disabled" aria-disabled="true">
                 <img src="{% static 'inventario/icons/overview.svg' %}" alt="" aria-hidden="true">
                 Visão geral
@@ -94,22 +104,36 @@
                 <img src="{% static 'inventario/icons/settings.svg' %}" alt="" aria-hidden="true">
                 Configurações
             </span>
+            {% endif %}
         </nav>
 
         <div class="sidebar-footer">
-            <nav class="sidebar-legal-links" aria-label="Documentos legais">
-                <a href="{% url 'legal:termos_de_uso' %}">Termos de Uso</a>
-                <a href="{% url 'legal:politica_privacidade' %}">Privacidade</a>
-            </nav>
             <form class="logout-form" method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
-                <button class="side-nav-item logout-button" type="submit">
+                <button class="side-nav-item logout-button" type="submit" data-logout-trigger aria-haspopup="dialog" aria-controls="logout-confirm-dialog">
                     <img src="{% static 'inventario/icons/logout.svg' %}" alt="" aria-hidden="true">
                     Sair
                 </button>
             </form>
         </div>
     </aside>
+
+    <dialog class="modal-exclusao logout-confirm-dialog" id="logout-confirm-dialog" aria-labelledby="logout-confirm-title" aria-describedby="logout-confirm-description" data-logout-dialog>
+        <div class="modal-exclusao-conteudo">
+            <header class="modal-exclusao-cabecalho">
+                <span class="modal-exclusao-icone" aria-hidden="true">!</span>
+                <div class="modal-exclusao-titulo-grupo">
+                    <h2 id="logout-confirm-title">Sair da conta</h2>
+                    <p id="logout-confirm-description">Tem certeza de que deseja encerrar sua sessão no SIGEE?</p>
+                </div>
+                <button class="modal-exclusao-fechar" type="button" aria-label="Fechar confirmação" data-logout-close>×</button>
+            </header>
+        </div>
+        <footer class="modal-exclusao-acoes">
+            <button class="btn btn-secondary-sigee" type="button" data-logout-cancel>Continuar conectado</button>
+            <button class="btn btn-danger-sigee" type="button" data-logout-confirm>Sim, sair</button>
+        </footer>
+    </dialog>
 
     <button class="sidebar-overlay" type="button" data-sidebar-close aria-label="Fechar menu"></button>
 
@@ -126,13 +150,20 @@
                 <img src="{% static 'inventario/icons/help.svg' %}" alt="">
             </span>
             <span class="topbar-divider" aria-hidden="true"></span>
-            <div class="user-summary">
-                <span>
-                    <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
-                    <small>{{ request.user.username }}</small>
-                </span>
-                <span class="user-avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
-            </div>
+            <details class="user-menu">
+                <summary class="user-summary" aria-label="Abrir menu do usuário">
+                    <span class="user-summary-text">
+                        <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                        <small>{% if e_professor %}Professor{% else %}{{ request.user.username }}{% endif %}</small>
+                    </span>
+                    <span class="user-avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
+                </summary>
+                <nav class="user-menu-panel" aria-label="Menu do usuário">
+                    <span class="user-menu-heading">Documentos legais</span>
+                    <a href="{% url 'legal:termos_de_uso' %}" target="_blank" rel="noopener">Termos de Uso</a>
+                    <a href="{% url 'legal:politica_privacidade' %}" target="_blank" rel="noopener">Política de Privacidade</a>
+                </nav>
+            </details>
         </div>
     </header>
 
@@ -140,7 +171,7 @@
         {% if messages %}
             <section class="flash-messages" aria-label="Mensagens do sistema">
                 {% for message in messages %}
-                    <div class="system-message system-message-{{ message.tags|default:'info' }}" role="status">
+                    <div class="system-message system-message-{{ message.level_tag|default:'info' }}{% if 'reserva' in message.tags %} reservation-message{% endif %}" role="status"{% if 'reserva' in message.tags %} data-auto-dismiss="true"{% endif %}>
                         {{ message }}
                     </div>
                 {% endfor %}

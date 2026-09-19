@@ -15,9 +15,10 @@ A auditoria cobre atualmente:
 - importação de equipamentos por CSV;
 - exclusão definitiva de equipamento sem histórico;
 - inativação de equipamento com histórico preservado;
-- cadastro controlado de contas funcionais.
+- cadastro controlado de contas funcionais;
+- criação e cancelamento de reservas próprias pelo Professor.
 
-As funcionalidades futuras devem registrar seus próprios eventos quando forem implementadas. Não se considera concluída a auditoria de reservas, manutenção ou utilização pedagógica enquanto esses fluxos não existirem no código.
+As funcionalidades futuras devem registrar seus próprios eventos quando forem implementadas. A auditoria de manutenção e utilização pedagógica continua pendente enquanto esses fluxos não existirem no código.
 
 ## Registro persistente
 
@@ -49,6 +50,8 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `EQUIPAMENTO_EXCLUIDO` | Um equipamento sem histórico é excluído. | Sucesso |
 | `EQUIPAMENTO_INATIVADO` | Um equipamento com histórico é inativado. | Sucesso |
 | `USUARIO_CADASTRADO` | O cadastro controlado de uma conta é aceito ou rejeitado. | Sucesso ou falha |
+| `RESERVA_CRIADA` | O Professor cria uma reserva própria. | Sucesso |
+| `RESERVA_CANCELADA` | O Professor cancela uma reserva própria. | Sucesso |
 
 Uma tentativa de login inválida é registrada sem vincular o nome de usuário informado a uma conta. Consultas registram que houve uso de filtros, mas não armazenam os termos pesquisados. A importação registra um evento para o lote e não copia o conteúdo do arquivo. No cadastro de contas, a auditoria identifica o Administrador responsável e, em caso de sucesso, o identificador da conta criada, sem copiar nome, e-mail, perfil ou senha.
 
@@ -90,7 +93,7 @@ Os testes dos arquivos `auditoria/tests.py` e `auditoria/test_consulta.py` verif
 - rejeição de perfis não autorizados e do Superuser técnico;
 - consulta, filtros, intervalo de datas e paginação para o Administrador.
 
-Em 11 de setembro de 2026, a suíte integrada foi executada com banco de testes isolado:
+Em 19 de setembro de 2026, a suíte integrada da branch de reservas foi executada com banco de testes isolado:
 
 ```powershell
 $env:DATABASE_URL=''
@@ -100,7 +103,7 @@ $env:DATABASE_URL=''
 Resultado observado:
 
 ```text
-Ran 102 tests
+Ran 152 tests
 OK
 System check identified no issues (0 silenced).
 ```

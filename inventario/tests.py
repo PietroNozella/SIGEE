@@ -15,7 +15,7 @@ from movimentacoes.models import Movimentacao
 from usuarios.permissoes import GRUPO_ADMINISTRADOR
 
 from .forms import EquipamentoForm
-from .models import Categoria, Equipamento, Local
+from .models import Categoria, Equipamento, Local, TipoEquipamento
 
 
 class EquipamentoRN01Tests(TestCase):
@@ -23,6 +23,7 @@ class EquipamentoRN01Tests(TestCase):
     def setUpTestData(cls):
         call_command("configurar_perfis", verbosity=0)
         cls.categoria = Categoria.objects.get(nome="Notebook")
+        cls.tipo = TipoEquipamento.objects.create(categoria=cls.categoria, nome="Notebook Dell")
         cls.local = Local.objects.get(nome="Laboratório de informática")
         cls.usuario = get_user_model().objects.create_user(
             username="usuario-inventario",
@@ -38,7 +39,10 @@ class EquipamentoRN01Tests(TestCase):
         return {"numero_patrimonio": patrimonio, "nome": "Notebook Dell", "descricao": "Equipamento para uso pedagógico.", "categoria": self.categoria.pk, "local": self.local.pk, "situacao": Equipamento.Situacao.DISPONIVEL}
 
     def criar_equipamento(self, patrimonio, **dados):
-        return Equipamento.objects.create(numero_patrimonio=patrimonio, nome=dados.pop("nome", "Notebook existente"), categoria=dados.pop("categoria", self.categoria), local=dados.pop("local", self.local), **dados)
+        nome = dados.pop("nome", "Notebook existente")
+        categoria = dados.pop("categoria", self.categoria)
+        tipo = dados.pop("tipo", None) or TipoEquipamento.objects.get_or_create(categoria=categoria, nome=nome)[0]
+        return Equipamento.objects.create(numero_patrimonio=patrimonio, tipo=tipo, local=dados.pop("local", self.local), **dados)
 
     def test_patrimonio_novo_e_validado_e_salvo(self):
         formulario = EquipamentoForm(data=self.dados_equipamento("PAT-001"))
@@ -57,7 +61,7 @@ class EquipamentoRN01Tests(TestCase):
 
     def test_modelo_rejeita_patrimonio_duplicado_antes_de_salvar(self):
         self.criar_equipamento("PAT-001")
-        duplicado = Equipamento(numero_patrimonio="PAT-001", nome="Outro notebook", categoria=self.categoria, local=self.local)
+        duplicado = Equipamento(numero_patrimonio="PAT-001", tipo=self.tipo, local=self.local)
         with self.assertRaisesMessage(ValidationError, Equipamento.MENSAGEM_PATRIMONIO_DUPLICADO):
             duplicado.full_clean()
         self.assertEqual(Equipamento.objects.count(), 1)
@@ -96,7 +100,7 @@ class EquipamentoRN01Tests(TestCase):
     def test_tela_de_cadastro_exibe_campos_do_equipamento_form(self):
         resposta = self.client.get(reverse("inventario:equipamento_novo"))
         self.assertEqual(resposta.status_code, 200)
-        for texto in ("Número de patrimônio", "Nome do equipamento", "Categoria", "Local", "Situação", "Notebook", "Sala-01", "csrfmiddlewaretoken"):
+        for texto in ("Número de patrimônio", "Tipo/modelo do equipamento", "Categoria", "Local", "Situação", "Notebook", "Sala-01", "csrfmiddlewaretoken"):
             self.assertContains(resposta, texto)
 
     def test_post_cadastra_patrimonio_novo_e_confirma_sucesso(self):
@@ -119,6 +123,7 @@ class ExclusaoEquipamentoTest(TestCase):
     def setUpTestData(cls):
         call_command("configurar_perfis", verbosity=0)
         cls.categoria = Categoria.objects.get(nome="Notebook")
+        cls.tipo = TipoEquipamento.objects.create(categoria=cls.categoria, nome="Notebook educacional")
         cls.local = Local.objects.create(nome="Sala de tecnologia")
         cls.administrador = get_user_model().objects.create_user(username="administrador-inventario", password="senha-segura-123")
         cls.administrador.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
@@ -130,7 +135,7 @@ class ExclusaoEquipamentoTest(TestCase):
         self.client.force_login(self.administrador)
 
     def criar_equipamento(self, patrimonio):
-        return Equipamento.objects.create(numero_patrimonio=patrimonio, nome="Notebook educacional", categoria=self.categoria, local=self.local)
+        return Equipamento.objects.create(numero_patrimonio=patrimonio, tipo=self.tipo, local=self.local)
 
     def test_exclui_definitivamente_equipamento_sem_historico(self):
         equipamento = self.criar_equipamento("PAT-001")
@@ -238,6 +243,7 @@ class ImportacaoEquipamentosCSVTests(TestCase):
     def setUpTestData(cls):
         call_command("configurar_perfis", verbosity=0)
         cls.categoria = Categoria.objects.get(nome="Notebook")
+        cls.tipo = TipoEquipamento.objects.create(categoria=cls.categoria, nome="Notebook CSV")
         cls.local = Local.objects.get(nome="Laboratório de informática")
         cls.usuario = get_user_model().objects.create_user(
             username="usuario-importacao",
@@ -365,8 +371,7 @@ class ImportacaoEquipamentosCSVTests(TestCase):
     def test_rejeita_patrimonio_duplicado_no_banco_sem_salvar_lote(self):
         Equipamento.objects.create(
             numero_patrimonio="PAT-CSV-006",
-            nome="Equipamento existente",
-            categoria=self.categoria,
+            tipo=self.tipo,
             local=self.local,
         )
         conteudo = "\n".join(
@@ -570,6 +575,10 @@ class AutenticacaoTests(TestCase):
             f'<form class="logout-form" method="post" action="{reverse("logout")}">',
             html=False,
         )
+        self.assertContains(resposta, "data-logout-trigger")
+        self.assertContains(resposta, "data-logout-dialog")
+        self.assertContains(resposta, "Tem certeza de que deseja encerrar sua sessão no SIGEE?")
+        self.assertContains(resposta, "Sim, sair")
 
     def test_logout_aceita_somente_post_e_impede_retorno_direto(self):
         self.client.force_login(self.usuario)
