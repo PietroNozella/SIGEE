@@ -57,6 +57,14 @@ class CadastroUsuarioForm(UserCreationForm):
                     {"class": "form-control is-invalid", "aria-invalid": "true"}
                 )
 
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        if get_user_model()._default_manager.filter(email__iexact=email).exists():
+            raise forms.ValidationError(
+                "Já existe um usuário cadastrado com este e-mail."
+            )
+        return email
+
     # Ao persistir, o cadastro cria apenas contas funcionais comuns e as vincula
     # atomicamente a um único perfil da matriz de acesso.
     def save(self, commit=True):

@@ -18,6 +18,8 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
+from usuarios import views as usuarios_views
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path(
@@ -28,6 +30,30 @@ urlpatterns = [
         name='login',
     ),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path(
+        'esqueci-senha/',
+        usuarios_views.SolicitarRecuperacaoSenhaView.as_view(),
+        name='password_reset',
+    ),
+    path(
+        'esqueci-senha/enviado/',
+        auth_views.PasswordResetDoneView.as_view(
+            template_name='registration/password_reset_done.html',
+        ),
+        name='password_reset_done',
+    ),
+    path(
+        'redefinir-senha/<uidb64>/<token>/',
+        usuarios_views.ConfirmarRecuperacaoSenhaView.as_view(),
+        name='password_reset_confirm',
+    ),
+    path(
+        'redefinir-senha/concluida/',
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name='registration/password_reset_complete.html',
+        ),
+        name='password_reset_complete',
+    ),
     path('', include('legal.urls')),
     path('auditoria/', include('auditoria.urls')),
     path('equipamentos/', include('inventario.urls')),
