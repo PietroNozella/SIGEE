@@ -1,23 +1,27 @@
 from django import forms
 from django.core.validators import FileExtensionValidator
 
-from .models import Equipamento
+from .models import Categoria, Equipamento, TipoEquipamento
 
 
 class EquipamentoForm(forms.ModelForm):
     """Valida os dados de cadastro antes da persistência do equipamento."""
 
+    nome = forms.CharField(label="Tipo/modelo do equipamento", max_length=150)
+    categoria = forms.ModelChoiceField(
+        label="Categoria",
+        queryset=Categoria.objects.filter(ativo=True).order_by("nome"),
+        empty_label="Selecione uma categoria",
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.fields["numero_patrimonio"].label = "Número de patrimônio"
-        self.fields["nome"].label = "Nome do equipamento"
         self.fields["descricao"].label = "Descrição"
-        self.fields["categoria"].label = "Categoria"
         self.fields["local"].label = "Local"
         self.fields["situacao"].label = "Situação"
 
-        self.fields["categoria"].empty_label = "Selecione uma categoria"
         self.fields["local"].empty_label = "Selecione um local"
         self.fields["situacao"].choices = [
             ("", "Selecione uma situação"),
@@ -31,7 +35,7 @@ class EquipamentoForm(forms.ModelForm):
             },
             "nome": {
                 "class": "form-control",
-                "placeholder": "Ex.: Notebook Dell",
+                "placeholder": "Ex.: Notebook Dell Latitude 5420",
             },
             "descricao": {
                 "class": "form-control",
@@ -46,6 +50,21 @@ class EquipamentoForm(forms.ModelForm):
         for field_name, attributes in field_configuration.items():
             self.fields[field_name].widget.attrs.update(attributes)
 
+        self.order_fields(
+            (
+                "numero_patrimonio",
+                "nome",
+                "descricao",
+                "categoria",
+                "local",
+                "situacao",
+            )
+        )
+
+        if self.instance.pk and not self.is_bound:
+            self.initial.setdefault("nome", self.instance.tipo.nome)
+            self.initial.setdefault("categoria", self.instance.tipo.categoria)
+
         if self.is_bound:
             for field_name in self.errors:
                 field = self.fields.get(field_name)
@@ -56,13 +75,28 @@ class EquipamentoForm(forms.ModelForm):
                 field.widget.attrs["aria-invalid"] = "true"
                 field.widget.attrs["aria-describedby"] = f"id_{field_name}_error"
 
+    def clean_nome(self):
+        return self.cleaned_data["nome"].strip()
+
+    def save(self, commit=True):
+        equipamento = super().save(commit=False)
+        tipo, _ = TipoEquipamento.objects.get_or_create(
+            categoria=self.cleaned_data["categoria"],
+            nome=self.cleaned_data["nome"],
+        )
+        equipamento.tipo = tipo
+
+        if commit:
+            equipamento.save()
+            self.save_m2m()
+
+        return equipamento
+
     class Meta:
         model = Equipamento
         fields = (
             "numero_patrimonio",
-            "nome",
             "descricao",
-            "categoria",
             "local",
             "situacao",
         )

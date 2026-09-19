@@ -12,7 +12,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import include, path, reverse
 
-from inventario.models import Categoria, Equipamento, Local
+from inventario.models import Categoria, Equipamento, Local, TipoEquipamento
 from legal.services import registrar_aceite_vigente
 from movimentacoes.models import Movimentacao
 from usuarios.permissoes import GRUPO_ADMINISTRADOR, GRUPO_PROFESSOR
@@ -129,6 +129,7 @@ class AuditoriaInventarioTests(TestCase):
     def setUpTestData(cls):
         call_command("configurar_perfis", stdout=StringIO())
         cls.categoria = Categoria.objects.get(nome="Notebook")
+        cls.tipo = TipoEquipamento.objects.create(categoria=cls.categoria, nome="Notebook auditoria")
         cls.local = Local.objects.get(nome="Laboratório de informática")
         cls.usuario = get_user_model().objects.create_user(
             username="operador_auditoria",
@@ -169,8 +170,7 @@ class AuditoriaInventarioTests(TestCase):
     def test_cadastro_invalido_registra_falha_sem_dados_do_formulario(self):
         Equipamento.objects.create(
             numero_patrimonio="PAT-AUD-002",
-            nome="Equipamento existente",
-            categoria=self.categoria,
+            tipo=self.tipo,
             local=self.local,
         )
 
@@ -254,14 +254,12 @@ class AuditoriaInventarioTests(TestCase):
     def test_exclusao_e_inativacao_geram_eventos_distintos(self):
         sem_historico = Equipamento.objects.create(
             numero_patrimonio="PAT-AUD-004",
-            nome="Equipamento sem histórico",
-            categoria=self.categoria,
+            tipo=self.tipo,
             local=self.local,
         )
         com_historico = Equipamento.objects.create(
             numero_patrimonio="PAT-AUD-005",
-            nome="Equipamento com histórico",
-            categoria=self.categoria,
+            tipo=self.tipo,
             local=self.local,
         )
         destinatario = get_user_model().objects.create_user(

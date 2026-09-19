@@ -42,6 +42,8 @@ O backend concentra os serviços e as regras relacionadas às principais áreas 
 - associação da utilização a turmas, disciplinas e atividades pedagógicas;
 - consolidação de indicadores do inventário e da utilização pedagógica.
 
+No domínio de reservas, `Categoria` classifica os equipamentos, `TipoEquipamento` representa o tipo/modelo escolhido pelo Professor, `Local` identifica o ponto de retirada e `Equipamento` representa cada unidade física patrimonial. A entidade `Reserva` registra uma solicitação em lote para um único tipo/modelo e local; a tabela associativa `ReservaEquipamento` registra as unidades efetivamente alocadas nesse local, permitindo consultar disponibilidade e impedir conflitos por patrimônio.
+
 As validações de domínio devem permanecer no servidor para que as regras sejam aplicadas mesmo quando uma requisição não se originar da navegação comum da interface.
 
 ## Camada de persistência
