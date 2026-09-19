@@ -9,6 +9,7 @@ Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permiss�
 - Cada conta funcional pertence a exatamente um desses grupos. Uma conta sem grupo pode se autenticar, mas não recebe permissões funcionais.
 - O Django Superuser é uma conta técnica, usada para a configuração inicial, e não constitui um quarto perfil funcional.
 - A autorização é verificada no servidor com `Groups` e `Permissions`. Nas ações que dependem do proprietário do registro, como cancelar uma reserva, a aplicação também verifica a relação entre o usuário e o objeto.
+- Uma nova reserva é sempre vinculada pelo servidor ao Professor autenticado; o Professor não pode criar uma reserva em nome de outro usuário.
 
 ## Ações por perfil
 
@@ -20,7 +21,7 @@ Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permiss�
 | Cadastrar usuários e atribuir o grupo funcional | Sim | Não | Não |
 | Consultar registros de auditoria | Sim | Não | Não |
 | Visualizar o painel resumido e os indicadores pedagógicos | Sim | Não | Não |
-| Criar reserva | Não | Não | Sim |
+| Criar reserva própria | Não | Não | Sim |
 | Consultar e cancelar reserva própria | Não | Não | Sim |
 | Registrar retirada e devolução | Não | Sim | Não |
 | Consultar histórico de movimentações | Sim | Sim | Não |
@@ -33,7 +34,8 @@ Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permiss�
 | Decisão | Evidência de requisito |
 |---|---|
 | Autenticação e autorização por perfil | RF-01, RNF-01 e RS-01 |
-| Reserva exclusiva de Professor e cancelamento da própria reserva | RN-07 e RN-12 |
+| Criação e cancelamento de reserva própria pelo Professor | RN-07 e RN-12 |
+| Bloqueio de reserva passada ou em fim de semana | RF-04 e RN-19 |
 | Retirada e devolução por Operador | RN-08 e RN-13 |
 | Encaminhamento para manutenção na devolução | RN-14 |
 | Cadastro controlado de contas e separação do Superuser técnico | RN-18 |

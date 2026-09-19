@@ -8,6 +8,12 @@ Este documento define somente o comportamento esperado da integração. Não exi
 
 Durante a reserva, informar ao Professor quando o período escolhido coincidir com um feriado nacional. O aviso é informativo: a ocorrência do feriado e a indisponibilidade da API não bloqueiam a reserva.
 
+## Relação com as validações da reserva
+
+A consulta de feriados não substitui as validações locais previstas para a reserva. Conforme a `RN-19`, períodos que incluam sábado ou domingo e reservas cuja data e hora inicial já tenham passado são bloqueados pelo próprio SIGEE, sem depender da BrasilAPI. A data atual permanece permitida quando o horário inicial ainda não passou.
+
+Assim, feriado e fim de semana possuem efeitos diferentes: o feriado retornado pela BrasilAPI gera somente aviso informativo, enquanto sábado ou domingo impedem a conclusão da reserva.
+
 ## Fluxo previsto
 
 ```text
@@ -85,6 +91,7 @@ Nenhuma resposta da BrasilAPI será usada para decidir disponibilidade do equipa
 
 - período sem feriado;
 - período contendo um ou mais feriados;
+- feriado em dia útil com aviso, sem bloqueio da reserva;
 - período abrangendo dois anos;
 - timeout e erro de rede;
 - status HTTP inesperado;

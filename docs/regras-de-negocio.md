@@ -1,6 +1,6 @@
 # Regras de negócio
 
-Este documento registra as 18 regras de negócio confirmadas para o SIGEE. Elas representam o comportamento esperado do sistema e devem ser vinculadas à implementação, aos testes e às evidências conforme o desenvolvimento avançar.
+Este documento registra as 19 regras de negócio confirmadas para o SIGEE. Elas representam o comportamento esperado do sistema e devem ser vinculadas à implementação, aos testes e às evidências conforme o desenvolvimento avançar.
 
 - **RN-01 — Unicidade do número de patrimônio:** cada número de patrimônio identifica um único equipamento.
 - **RN-02 — Disponibilidade para reserva e retirada:** somente equipamento disponível pode ser reservado ou retirado.
@@ -8,7 +8,7 @@ Este documento registra as 18 regras de negócio confirmadas para o SIGEE. Elas 
 - **RN-04 — Registro e atualização de movimentações:** retirada e devolução registram a movimentação e atualizam a situação do equipamento.
 - **RN-05 — Indisponibilidade durante manutenção:** equipamento em manutenção permanece indisponível até a conclusão da intervenção.
 - **RN-06 — Inativação com preservação do histórico:** equipamento com registros relacionados é inativado em vez de excluído definitivamente.
-- **RN-07 — Reserva exclusiva por professores:** somente usuários com perfil Professor podem reservar equipamentos.
+- **RN-07 — Reserva exclusiva e própria por professores:** somente usuários com perfil Professor podem reservar equipamentos, e cada reserva é vinculada ao próprio Professor autenticado que a criou.
 - **RN-08 — Retirada e devolução por operador:** somente usuários com perfil autorizado de Operador podem registrar retirada e devolução física.
 - **RN-09 — Retirada com ou sem reserva prévia:** equipamento disponível pode ser retirado sem reserva, desde que a movimentação seja registrada com as informações necessárias à rastreabilidade.
 - **RN-10 — Devolução vinculada à retirada:** a devolução exige uma retirada em aberto correspondente; depois dela, o equipamento retorna à situação disponível, salvo outro impedimento registrado.
@@ -20,6 +20,7 @@ Este documento registra as 18 regras de negócio confirmadas para o SIGEE. Elas 
 - **RN-16 — Vinculação pedagógica com ou sem reserva:** a associação pedagógica pode ser registrada em utilizações originadas de reserva ou de retirada sem reserva, preservando a movimentação.
 - **RN-17 — Indicadores baseados em registros pedagógicos:** indicadores pedagógicos são calculados somente a partir de registros efetivamente vinculados a turma, disciplina e atividade pedagógica.
 - **RN-18 — Cadastro controlado de usuários:** o SIGEE não permite cadastro público; novas contas de Administrador, Operador e Professor são criadas por um Administrador. O primeiro Administrador é configurado por meio de uma conta técnica de Django Superuser.
+- **RN-19 — Validade temporal e dias permitidos da reserva:** a data e a hora inicial da reserva não podem estar no passado. A data atual é permitida quando o horário inicial ainda não tiver passado. Reservas cujo período inclua sábado ou domingo são impedidas. A coincidência com feriado nacional consultado pela BrasilAPI gera somente aviso informativo e não impede a reserva.
 
 ## Implicações da RN-18
 

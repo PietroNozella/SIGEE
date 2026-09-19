@@ -60,7 +60,7 @@ As ações permitidas para cada perfil estão definidas na [Matriz de acesso](do
 - autenticação e autorização por perfil;
 - gestão e consulta do inventário;
 - categorias, locais, patrimônio único e situação dos equipamentos;
-- reservas por período com bloqueio de conflitos e indisponibilidade;
+- reservas próprias por Professor, com bloqueio de conflitos, indisponibilidade, início no passado e períodos que incluam sábado ou domingo;
 - consulta informativa de feriados nacionais pela BrasilAPI durante a reserva;
 - retirada, devolução e histórico de movimentações;
 - manutenção e histórico de intervenções;
