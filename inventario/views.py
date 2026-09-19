@@ -11,6 +11,7 @@ from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from movimentacoes.models import Movimentacao
+from reservas.models import Reserva
 
 from .forms import EquipamentoForm, ImportacaoEquipamentosCSVForm
 from .importacao_csv import CABECALHOS_CSV, validar_equipamentos_csv
@@ -21,8 +22,9 @@ from .models import Categoria, Equipamento, Local
 @permission_required("inventario.view_equipamento", raise_exception=True)
 def equipamento_lista(request):
     equipamentos = Equipamento.objects.select_related("categoria", "local").annotate(
-        possui_historico=Exists(
-            Movimentacao.objects.filter(equipamento_id=OuterRef("pk"))
+        possui_historico=(
+            Exists(Movimentacao.objects.filter(equipamento_id=OuterRef("pk")))
+            | Exists(Reserva.objects.filter(equipamento_id=OuterRef("pk")))
         )
     )
 

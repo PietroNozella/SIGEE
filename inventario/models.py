@@ -87,7 +87,7 @@ class Equipamento(models.Model):
         ]
 
     def possui_registros_relacionados(self):
-        return self.movimentacoes.exists()
+        return self.movimentacoes.exists() or self.reservas.exists()
 
     # RN-06: equipamentos com movimentações são inativados para preservar
     # o histórico; somente itens sem registros relacionados são excluídos.

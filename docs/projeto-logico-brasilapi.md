@@ -1,8 +1,8 @@
 # Projeto lógico da consulta de feriados — BrasilAPI
 
-> **Status: RF-09 projetado e ainda não implementado.**
+> **Status: integração e testes automatizados implementados no backend; interface ainda pendente.**
 
-Este documento define somente o comportamento esperado da integração. Não existem cliente HTTP, chamada externa, tela de reserva ou testes da BrasilAPI implementados neste incremento.
+O cliente HTTP, a validação da resposta externa, o serviço de criação da reserva e os testes automatizados estão implementados no backend. A tela de reserva permanece pendente para o próximo incremento.
 
 ## Objetivo
 

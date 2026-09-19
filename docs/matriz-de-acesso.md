@@ -50,6 +50,6 @@ O comando `python manage.py configurar_perfis`, executado depois de `migrate`, a
 |---|---|
 | Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auditoria.view_registroauditoria` |
 | Operador | `view_equipamento` |
-| Professor | `view_equipamento` |
+| Professor | `view_equipamento`, `add_reserva`, `view_reserva`, `change_reserva` |
 
 As permissões das funcionalidades futuras serão acrescentadas somente quando suas respectivas rotas forem implementadas.

@@ -10,6 +10,9 @@ GRUPOS_FUNCIONAIS = (
 
 PERMISSAO_CADASTRAR_USUARIO = "auth.add_user"
 PERMISSAO_CONSULTAR_AUDITORIA = "auditoria.view_registroauditoria"
+PERMISSAO_CRIAR_RESERVA = "reservas.add_reserva"
+PERMISSAO_CONSULTAR_RESERVA = "reservas.view_reserva"
+PERMISSAO_ALTERAR_RESERVA = "reservas.change_reserva"
 
 PERMISSOES_POR_GRUPO = {
     GRUPO_ADMINISTRADOR: (
@@ -22,7 +25,12 @@ PERMISSOES_POR_GRUPO = {
         PERMISSAO_CONSULTAR_AUDITORIA,
     ),
     GRUPO_OPERADOR: ("inventario.view_equipamento",),
-    GRUPO_PROFESSOR: ("inventario.view_equipamento",),
+    GRUPO_PROFESSOR: (
+        "inventario.view_equipamento",
+        PERMISSAO_CRIAR_RESERVA,
+        PERMISSAO_CONSULTAR_RESERVA,
+        PERMISSAO_ALTERAR_RESERVA,
+    ),
 }
 
 # A RN-18 diferencia o Superuser técnico do perfil funcional Administrador.
@@ -33,6 +41,14 @@ def e_administrador_funcional(user):
 
     grupos_do_usuario = set(user.groups.values_list("name", flat=True))
     return grupos_do_usuario == {GRUPO_ADMINISTRADOR}
+
+
+def e_professor_funcional(user):
+    if not user.is_authenticated or user.is_superuser:
+        return False
+
+    grupos_do_usuario = set(user.groups.values_list("name", flat=True))
+    return grupos_do_usuario == {GRUPO_PROFESSOR}
 
 
 def pode_cadastrar_usuario(user):

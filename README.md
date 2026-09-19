@@ -129,7 +129,7 @@ O planejamento prevê autenticação por sessão, autorização aplicada no serv
 O código disponível atualmente possui:
 
 - estrutura inicial em Django;
-- apps `auditoria`, `inventario`, `movimentacoes` e `usuarios`;
+- apps `auditoria`, `inventario`, `movimentacoes`, `reservas` e `usuarios`;
 - app `legal` para documentos públicos e registro de aceite;
 - login e logout por sessão usando a autenticação nativa do Django;
 - autorização do inventário com os grupos `Administrador`, `Operador` e `Professor` e permissões nativas do Django;
@@ -139,16 +139,18 @@ O código disponível atualmente possui:
 - Termo de Uso e Política de Privacidade públicos, com confirmação obrigatória após o login;
 - registro persistente do usuário, das versões e da data/hora do aceite, com nova confirmação após mudança de versão;
 - modelos e migrations de Categoria, Local, Equipamento e Movimentação;
+- model e migration inicial de Reserva, com validações de período, fim de semana, disponibilidade e conflito;
+- integração de backend com a BrasilAPI para avisos informativos de feriados;
 - telas de listagem e cadastro de equipamentos;
 - **RN-01:** restrição de unicidade do número patrimonial no formulário, no model e no banco de dados;
 - **RN-06:** exclusão definitiva sem histórico e inativação com preservação de movimentações;
 - registros desses modelos no Django Admin;
 - configuração por variáveis de ambiente;
 - SQLite para desenvolvimento local e PostgreSQL por `DATABASE_URL`;
-- 100 testes automatizados para os fluxos já implementados;
+- testes automatizados para os fluxos já implementados, incluindo as regras de reserva e a contingência da BrasilAPI;
 - hospedagem configurada na Vercel com HTTPS; a rota publicada precisa de novo deploy ou correção porque retornou `404` na verificação de 10 de setembro de 2026.
 
-Reservas, manutenção, contexto pedagógico, indicadores pedagógicos e a integração executável com a BrasilAPI permanecem como escopo planejado, não como funcionalidades concluídas. As RN-01 e RN-06 ainda aguardam validação com o orientador.
+As telas de reservas, manutenção, contexto pedagógico e indicadores pedagógicos permanecem como escopo planejado, não como funcionalidades concluídas. A apresentação dos avisos da BrasilAPI ainda depende da interface de reservas. As RN-01 e RN-06 ainda aguardam validação com o orientador.
 
 ## Execução local
 

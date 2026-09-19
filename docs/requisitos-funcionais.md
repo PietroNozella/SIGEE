@@ -18,6 +18,6 @@ Este documento registra o baseline aprovado de requisitos funcionais do SIGEE. A
 
 ## Estado do RF-09
 
-> **RF-09 projetado e ainda não implementado.**
+> **RF-09 implementado e testado no backend; interface ainda pendente.**
 
-O contrato externo, o fluxo informativo e a contingência estão definidos no [projeto lógico da consulta de feriados](projeto-logico-brasilapi.md). A implementação depende do futuro incremento de reservas.
+O contrato externo, o fluxo informativo e a contingência estão definidos no [projeto lógico da consulta de feriados](projeto-logico-brasilapi.md). O cliente da BrasilAPI, o serviço de criação da reserva e os testes automatizados estão implementados; a apresentação dos avisos na interface permanece pendente.
