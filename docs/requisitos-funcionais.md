@@ -11,7 +11,7 @@ Este documento registra o baseline aprovado de requisitos funcionais do SIGEE. A
 | RF-05 | Registrar retirada e devolução. | Operador autorizado registra as movimentações e a situação do equipamento é atualizada corretamente. |
 | RF-06 | Consultar o histórico de movimentações. | Retiradas e devoluções preservam data, hora, responsável, destinatário e tipo. |
 | RF-07 | Gerenciar manutenção. | Equipamentos em manutenção permanecem indisponíveis e mantêm o histórico das intervenções. |
-| RF-08 | Exibir painel resumido do inventário. | O Administrador visualiza indicadores numéricos, totais por situação, movimentações recentes e representações gráficas coerentes com os dados. |
+| RF-08 | Exibir painel resumido do inventário. | O Administrador visualiza os totais de equipamentos ativos, disponíveis, em uso, em manutenção e inativos, as dez movimentações mais recentes e um gráfico da distribuição dos equipamentos ativos por situação. Os valores são coerentes com os registros persistidos. |
 | RF-09 | Consultar feriados nacionais durante a reserva. | O sistema informa quando o período selecionado coincide com feriado nacional por meio da BrasilAPI; a indisponibilidade da API não impede a conclusão da reserva. |
 | RF-10 | Vincular a utilização ao contexto pedagógico. | O Professor associa a utilização do equipamento a turma, disciplina e atividade pedagógica, preservando essas informações no respectivo registro. |
 | RF-11 | Exibir indicadores de utilização pedagógica. | O Administrador visualiza informações consolidadas sobre a utilização por turma, disciplina e atividade pedagógica. |
