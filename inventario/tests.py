@@ -117,6 +117,73 @@ class EquipamentoRN01Tests(TestCase):
         self.assertContains(resposta, 'aria-invalid="true"')
         self.assertEqual(Equipamento.objects.count(), 1)
 
+    def test_tela_de_edicao_exibe_dados_atuais_do_equipamento(self):
+        equipamento = self.criar_equipamento(
+            "PAT-EDIT-001",
+            descricao="Descrição original",
+            situacao=Equipamento.Situacao.MANUTENCAO,
+        )
+
+        resposta = self.client.get(
+            reverse("inventario:equipamento_editar", args=[equipamento.pk])
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Editar equipamento")
+        self.assertContains(resposta, "PAT-EDIT-001")
+        self.assertContains(resposta, "Notebook existente")
+        self.assertContains(resposta, "Descrição original")
+        self.assertContains(resposta, "Salvar alterações")
+
+    def test_post_edita_todos_os_campos_permitidos(self):
+        equipamento = self.criar_equipamento("PAT-EDIT-002")
+        nova_categoria = Categoria.objects.get(nome="Projetor")
+        novo_local = Local.objects.get(nome="Sala multimídia")
+        dados = {
+            "numero_patrimonio": "PAT-EDIT-002-ATUALIZADO",
+            "nome": "Projetor Epson PowerLite",
+            "descricao": "Equipamento atualizado",
+            "categoria": nova_categoria.pk,
+            "local": novo_local.pk,
+            "situacao": Equipamento.Situacao.MANUTENCAO,
+        }
+
+        resposta = self.client.post(
+            reverse("inventario:equipamento_editar", args=[equipamento.pk]),
+            dados,
+            follow=True,
+        )
+
+        equipamento.refresh_from_db()
+        self.assertRedirects(resposta, reverse("inventario:equipamento_lista"))
+        self.assertContains(resposta, "Equipamento atualizado com sucesso.")
+        self.assertEqual(equipamento.numero_patrimonio, dados["numero_patrimonio"])
+        self.assertEqual(equipamento.tipo.nome, dados["nome"])
+        self.assertEqual(equipamento.tipo.categoria, nova_categoria)
+        self.assertEqual(equipamento.descricao, dados["descricao"])
+        self.assertEqual(equipamento.local, novo_local)
+        self.assertEqual(equipamento.situacao, dados["situacao"])
+
+    def test_edicao_rejeita_patrimonio_duplicado_sem_alterar_equipamento(self):
+        equipamento = self.criar_equipamento(
+            "PAT-EDIT-003",
+            descricao="Descrição preservada",
+        )
+        self.criar_equipamento("PAT-EDIT-004")
+        dados = self.dados_equipamento("PAT-EDIT-004")
+        dados["descricao"] = "Descrição que não deve ser persistida"
+
+        resposta = self.client.post(
+            reverse("inventario:equipamento_editar", args=[equipamento.pk]),
+            dados,
+        )
+
+        equipamento.refresh_from_db()
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, Equipamento.MENSAGEM_PATRIMONIO_DUPLICADO)
+        self.assertEqual(equipamento.numero_patrimonio, "PAT-EDIT-003")
+        self.assertEqual(equipamento.descricao, "Descrição preservada")
+
 
 class ExclusaoEquipamentoTest(TestCase):
     @classmethod
@@ -516,6 +583,7 @@ class AutenticacaoTests(TestCase):
         rotas = (
             ("get", reverse("inventario:equipamento_lista")),
             ("get", reverse("inventario:equipamento_novo")),
+            ("get", reverse("inventario:equipamento_editar", args=[999])),
             ("get", reverse("inventario:equipamento_importar")),
             ("get", reverse("inventario:equipamento_modelo_csv")),
             ("post", reverse("inventario:equipamento_excluir", args=[999])),

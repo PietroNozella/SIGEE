@@ -137,6 +137,7 @@ python manage.py test
 
 ## Funcionalidades disponíveis nesta entrega
 
+- [x] cadastro, importação, consulta, edição e inativação de equipamentos;
 - [x] reservas próprias por Professor, com quantidade e controle de disponibilidade;
 - [x] prevenção de conflitos e bloqueio de períodos inválidos;
 - [x] cancelamento das próprias reservas;

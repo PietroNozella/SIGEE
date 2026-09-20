@@ -119,7 +119,7 @@
                                 <th scope="col">Categoria</th>
                                 <th scope="col">Local</th>
                                 <th scope="col">Situação</th>
-                                {% if perms.inventario.delete_equipamento or perms.reservas.add_reserva %}<th scope="col">Ações</th>{% endif %}
+                                {% if perms.inventario.change_equipamento or perms.inventario.delete_equipamento or perms.reservas.add_reserva %}<th scope="col">Ações</th>{% endif %}
                             </tr>
                         {% endif %}
                     </thead>
@@ -160,23 +160,28 @@
                                             {{ equipamento.get_situacao_display }}
                                         </span>
                                     </td>
-                                    {% if perms.inventario.delete_equipamento %}
+                                    {% if perms.inventario.change_equipamento or perms.inventario.delete_equipamento %}
                                         <td>
-                                            {% if equipamento.ativo %}
-                                                <form method="post" action="{% url 'inventario:equipamento_excluir' equipamento.pk %}">
-                                                    {% csrf_token %}
-                                                    <button
-                                                        class="btn btn-secondary-sigee"
-                                                        type="button"
-                                                        data-delete-trigger
-                                                        data-equipamento-nome="{{ equipamento.tipo.nome }}"
-                                                        data-equipamento-patrimonio="{{ equipamento.numero_patrimonio }}"
-                                                        data-possui-historico="{{ equipamento.possui_historico|yesno:'true,false' }}"
-                                                        aria-haspopup="dialog"
-                                                        aria-controls="modal-exclusao"
-                                                    >Excluir</button>
-                                                </form>
-                                            {% endif %}
+                                            <div class="d-flex gap-2 flex-wrap">
+                                                {% if perms.inventario.change_equipamento %}
+                                                    <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_editar' equipamento.pk %}">Editar</a>
+                                                {% endif %}
+                                                {% if perms.inventario.delete_equipamento and equipamento.ativo %}
+                                                    <form method="post" action="{% url 'inventario:equipamento_excluir' equipamento.pk %}">
+                                                        {% csrf_token %}
+                                                        <button
+                                                            class="btn btn-secondary-sigee"
+                                                            type="button"
+                                                            data-delete-trigger
+                                                            data-equipamento-nome="{{ equipamento.tipo.nome }}"
+                                                            data-equipamento-patrimonio="{{ equipamento.numero_patrimonio }}"
+                                                            data-possui-historico="{{ equipamento.possui_historico|yesno:'true,false' }}"
+                                                            aria-haspopup="dialog"
+                                                            aria-controls="modal-exclusao"
+                                                        >Excluir</button>
+                                                    </form>
+                                                {% endif %}
+                                            </div>
                                         </td>
                                     {% endif %}
                                 </tr>
