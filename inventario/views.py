@@ -168,6 +168,48 @@ def equipamento_novo(request):
 
 
 @login_required
+@permission_required("inventario.change_equipamento", raise_exception=True)
+def equipamento_editar(request, equipamento_id):
+    equipamento = get_object_or_404(Equipamento, pk=equipamento_id)
+    form = EquipamentoForm(request.POST or None, instance=equipamento)
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            with transaction.atomic():
+                equipamento = form.save()
+                registrar_evento(
+                    usuario=request.user,
+                    acao=AcaoAuditoria.EQUIPAMENTO_EDITADO,
+                    resultado=RegistroAuditoria.Resultado.SUCESSO,
+                    entidade="inventario.Equipamento",
+                    entidade_id=equipamento.pk,
+                )
+        except IntegrityError:
+            form.add_error(
+                "numero_patrimonio",
+                Equipamento.MENSAGEM_PATRIMONIO_DUPLICADO,
+            )
+        else:
+            messages.success(request, "Equipamento atualizado com sucesso.")
+            return redirect("inventario:equipamento_lista")
+
+    if request.method == "POST":
+        registrar_evento(
+            usuario=request.user,
+            acao=AcaoAuditoria.EQUIPAMENTO_EDITADO,
+            resultado=RegistroAuditoria.Resultado.FALHA,
+            entidade="inventario.Equipamento",
+            entidade_id=equipamento.pk,
+        )
+
+    return render(
+        request,
+        "inventario/equipamento_form.html",
+        {"form": form, "editando": True, "equipamento": equipamento},
+    )
+
+
+@login_required
 @permission_required("inventario.add_equipamento", raise_exception=True)
 def equipamento_importar(request):
     form = ImportacaoEquipamentosCSVForm(request.POST or None, request.FILES or None)

@@ -1,19 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Novo equipamento | SIGEE{% endblock %}
+{% block title %}{% if editando %}Editar equipamento{% else %}Novo equipamento{% endif %} | SIGEE{% endblock %}
 
 {% block content %}
 <div class="page-content form-page">
     <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">
         <a href="{% url 'inventario:equipamento_lista' %}">Equipamentos</a>
         <span aria-hidden="true">/</span>
-        <span aria-current="page">Novo equipamento</span>
+        <span aria-current="page">{% if editando %}Editar equipamento{% else %}Novo equipamento{% endif %}</span>
     </nav>
 
     <header class="page-header form-page-header">
         <div>
-            <h1>Novo equipamento</h1>
-            <p>Cadastre um item do inventário com patrimônio, categoria, local e situação válidos.</p>
+            <h1>{% if editando %}Editar equipamento{% else %}Novo equipamento{% endif %}</h1>
+            {% if editando %}
+                <p>Atualize os dados do patrimônio {{ equipamento.numero_patrimonio }}.</p>
+            {% else %}
+                <p>Cadastre um item do inventário com patrimônio, categoria, local e situação válidos.</p>
+            {% endif %}
         </div>
     </header>
 
@@ -68,7 +72,7 @@
 
             <div class="form-actions">
                 <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_lista' %}">Cancelar</a>
-                <button class="btn btn-primary-sigee" type="submit">Cadastrar equipamento</button>
+                <button class="btn btn-primary-sigee" type="submit">{% if editando %}Salvar alterações{% else %}Cadastrar equipamento{% endif %}</button>
             </div>
         </form>
     </section>

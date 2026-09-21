@@ -96,6 +96,10 @@ class AutorizacaoInventarioTests(TestCase):
 
                 for rota in (
                     reverse("inventario:equipamento_novo"),
+                    reverse(
+                        "inventario:equipamento_editar",
+                        args=[equipamento.pk],
+                    ),
                     reverse("inventario:equipamento_importar"),
                     reverse("inventario:equipamento_modelo_csv"),
                 ):
@@ -125,7 +129,7 @@ class AutorizacaoInventarioTests(TestCase):
         self.assertFalse(Equipamento.objects.filter(pk=equipamento.pk).exists())
 
     def test_interface_do_administrador_exibe_acoes_e_resumo(self):
-        self.criar_equipamento()
+        equipamento = self.criar_equipamento()
         self.client.force_login(self.administrador)
 
         resposta = self.client.get(reverse("inventario:equipamento_lista"))
@@ -133,6 +137,10 @@ class AutorizacaoInventarioTests(TestCase):
         self.assertContains(resposta, "Resumo do inventário")
         self.assertContains(resposta, "Novo equipamento")
         self.assertContains(resposta, "Importar CSV")
+        self.assertContains(
+            resposta,
+            reverse("inventario:equipamento_editar", args=[equipamento.pk]),
+        )
         self.assertContains(resposta, "data-delete-trigger")
         self.assertContains(resposta, "Cadastrar usuário")
 
@@ -147,6 +155,7 @@ class AutorizacaoInventarioTests(TestCase):
                 self.assertNotContains(resposta, "Resumo do inventário")
                 self.assertNotContains(resposta, "Novo equipamento")
                 self.assertNotContains(resposta, "Importar CSV")
+                self.assertNotContains(resposta, "Editar")
                 self.assertNotContains(resposta, "data-delete-trigger")
                 self.assertNotContains(resposta, "Cadastrar usuário")
                 self.assertContains(resposta, "Equipamentos")

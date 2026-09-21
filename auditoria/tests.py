@@ -186,6 +186,59 @@ class AuditoriaInventarioTests(TestCase):
         self.assertEqual(registro.resultado, RegistroAuditoria.Resultado.FALHA)
         self.assertEqual(registro.entidade_id, "")
 
+    def test_edicao_bem_sucedida_registra_usuario_e_equipamento(self):
+        equipamento = Equipamento.objects.create(
+            numero_patrimonio="PAT-AUD-EDIT-001",
+            tipo=self.tipo,
+            local=self.local,
+        )
+        dados = self.dados_equipamento("PAT-AUD-EDIT-001")
+        dados["descricao"] = "Descrição atualizada"
+
+        resposta = self.client.post(
+            reverse("inventario:equipamento_editar", args=[equipamento.pk]),
+            dados,
+        )
+
+        registro = RegistroAuditoria.objects.get(
+            acao=AcaoAuditoria.EQUIPAMENTO_EDITADO
+        )
+        self.assertRedirects(resposta, reverse("inventario:equipamento_lista"))
+        self.assertEqual(registro.usuario, self.usuario)
+        self.assertEqual(registro.resultado, RegistroAuditoria.Resultado.SUCESSO)
+        self.assertEqual(registro.entidade, "inventario.Equipamento")
+        self.assertEqual(registro.entidade_id, str(equipamento.pk))
+
+    def test_edicao_invalida_registra_falha_sem_persistir_alteracoes(self):
+        equipamento = Equipamento.objects.create(
+            numero_patrimonio="PAT-AUD-EDIT-002",
+            descricao="Descrição original",
+            tipo=self.tipo,
+            local=self.local,
+        )
+        Equipamento.objects.create(
+            numero_patrimonio="PAT-AUD-EDIT-003",
+            tipo=self.tipo,
+            local=self.local,
+        )
+        dados = self.dados_equipamento("PAT-AUD-EDIT-003")
+        dados["descricao"] = "Descrição inválida"
+
+        resposta = self.client.post(
+            reverse("inventario:equipamento_editar", args=[equipamento.pk]),
+            dados,
+        )
+
+        equipamento.refresh_from_db()
+        registro = RegistroAuditoria.objects.get(
+            acao=AcaoAuditoria.EQUIPAMENTO_EDITADO
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(registro.resultado, RegistroAuditoria.Resultado.FALHA)
+        self.assertEqual(registro.entidade_id, str(equipamento.pk))
+        self.assertEqual(equipamento.numero_patrimonio, "PAT-AUD-EDIT-002")
+        self.assertEqual(equipamento.descricao, "Descrição original")
+
     def test_importacao_bem_sucedida_registra_um_evento_para_o_lote(self):
         conteudo = "\n".join(
             (
