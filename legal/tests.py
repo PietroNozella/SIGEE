@@ -121,8 +121,8 @@ class DocumentosLegaisTests(TestCase):
         )
         aceite = AceiteDocumentosLegais.objects.get()
         self.assertEqual(aceite.usuario, self.usuario)
-        self.assertEqual(aceite.versao_termos, "1.0")
-        self.assertEqual(aceite.versao_privacidade, "1.0")
+        self.assertEqual(aceite.versao_termos, "2.0")
+        self.assertEqual(aceite.versao_privacidade, "2.0")
         self.assertIsNotNone(aceite.aceito_em)
         self.assertTrue(usuario_possui_aceite_vigente(self.usuario))
 
@@ -155,7 +155,7 @@ class DocumentosLegaisTests(TestCase):
 
         self.assertEqual(resposta.status_code, 200)
 
-    @override_settings(TERMOS_USO_VERSAO="2.0")
+    @override_settings(TERMOS_USO_VERSAO="3.0")
     def test_nova_versao_exige_novo_aceite(self):
         AceiteDocumentosLegais.objects.create(
             usuario=self.usuario,
@@ -176,20 +176,20 @@ class DocumentosLegaisTests(TestCase):
 
     def test_nao_registra_aceite_quando_a_versao_muda_apos_exibir_formulario(self):
         formulario_exibido = self.client.get(reverse("legal:aceite_documentos"))
-        self.assertEqual(formulario_exibido.context["versao_termos"], "1.0")
+        self.assertEqual(formulario_exibido.context["versao_termos"], "2.0")
 
-        with self.settings(TERMOS_USO_VERSAO="2.0"):
+        with self.settings(TERMOS_USO_VERSAO="3.0"):
             resposta = self.client.post(
                 reverse("legal:aceite_documentos"),
                 self.dados_aceite(
-                    versao_termos="1.0",
-                    versao_privacidade="1.0",
+                    versao_termos="2.0",
+                    versao_privacidade="2.0",
                 ),
             )
 
         self.assertEqual(resposta.status_code, 200)
         self.assertContains(resposta, "Os documentos foram atualizados")
-        self.assertEqual(resposta.context["versao_termos"], "2.0")
+        self.assertEqual(resposta.context["versao_termos"], "3.0")
         self.assertFalse(AceiteDocumentosLegais.objects.exists())
         self.assertFalse(
             RegistroAuditoria.objects.filter(
@@ -205,8 +205,8 @@ class DocumentosLegaisTests(TestCase):
             with transaction.atomic():
                 AceiteDocumentosLegais.objects.create(
                     usuario=self.usuario,
-                    versao_termos="1.0",
-                    versao_privacidade="1.0",
+                    versao_termos="2.0",
+                    versao_privacidade="2.0",
                 )
 
     def test_aceite_gera_evento_de_auditoria(self):
@@ -248,3 +248,34 @@ class AceiteDocumentosLegaisAdminTests(TestCase):
         self.assertFalse(model_admin.has_add_permission(request))
         self.assertFalse(model_admin.has_change_permission(request))
         self.assertFalse(model_admin.has_delete_permission(request))
+
+
+class TransparenciaPublicaTests(TestCase):
+    def test_documentos_exibem_versao_data_fornecedores_e_direitos(self):
+        politica = self.client.get(reverse("legal:politica_privacidade"))
+        termos = self.client.get(reverse("legal:termos_de_uso"))
+
+        self.assertContains(politica, "Versão 2.0")
+        self.assertContains(politica, "21/09/2026")
+        self.assertContains(politica, "Vercel")
+        self.assertContains(politica, "Supabase")
+        self.assertContains(politica, "Direitos dos titulares")
+        self.assertContains(termos, "Legislação e contato")
+        self.assertContains(termos, "vigente desde 21/09/2026")
+
+    def test_paginas_publicas_nao_carregam_fontes_ou_css_de_terceiros(self):
+        for nome_rota in (
+            "login",
+            "password_reset",
+            "legal:termos_de_uso",
+            "legal:politica_privacidade",
+        ):
+            with self.subTest(nome_rota=nome_rota):
+                resposta = self.client.get(reverse(nome_rota))
+                self.assertNotContains(resposta, "fonts.googleapis.com")
+                self.assertNotContains(resposta, "fonts.gstatic.com")
+                self.assertNotContains(resposta, "cdn.jsdelivr.net")
+                self.assertContains(
+                    resposta,
+                    "/static/vendor/bootstrap/bootstrap.min.css",
+                )

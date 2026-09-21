@@ -427,26 +427,37 @@ class AuditoriaAutenticacaoTests(TestCase):
         registrar_aceite_vigente(cls.usuario)
 
     def test_login_bem_sucedido_registra_usuario(self):
-        autenticado = self.client.login(
-            username="usuario_autenticacao",
-            password="senha-segura-123",
+        resposta = self.client.post(
+            reverse("login"),
+            {
+                "username": "usuario_autenticacao",
+                "password": "senha-segura-123",
+            },
         )
 
         registro = RegistroAuditoria.objects.get(
             acao=AcaoAuditoria.LOGIN_REALIZADO
         )
-        self.assertTrue(autenticado)
+        self.assertEqual(resposta.status_code, 302)
+        self.assertEqual(
+            self.client.session.get("_auth_user_id"),
+            str(self.usuario.pk),
+        )
         self.assertEqual(registro.usuario, self.usuario)
         self.assertEqual(registro.resultado, RegistroAuditoria.Resultado.SUCESSO)
 
     def test_login_invalido_registra_falha_anonima(self):
-        autenticado = self.client.login(
-            username="usuario_autenticacao",
-            password="senha-incorreta",
+        resposta = self.client.post(
+            reverse("login"),
+            {
+                "username": "usuario_autenticacao",
+                "password": "senha-incorreta",
+            },
         )
 
         registro = RegistroAuditoria.objects.get(acao=AcaoAuditoria.LOGIN_FALHOU)
-        self.assertFalse(autenticado)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIsNone(self.client.session.get("_auth_user_id"))
         self.assertIsNone(registro.usuario)
         self.assertEqual(registro.resultado, RegistroAuditoria.Resultado.FALHA)
         self.assertFalse(hasattr(registro, "credentials"))

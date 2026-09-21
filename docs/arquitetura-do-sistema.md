@@ -14,11 +14,11 @@ A solução é organizada em camadas para separar responsabilidades sem introduz
 
 | Camada | Tecnologias e responsabilidades |
 |---|---|
-| Apresentação | Navegador, Django Templates, HTML5, CSS3, Bootstrap 5 e JavaScript pontual para a interface e a responsividade. |
+| Apresentação | Navegador, Django Templates, HTML5, CSS3, Bootstrap 5 servido localmente e JavaScript pontual para a interface e a responsividade. |
 | Aplicação | Python 3.12 e Django 5.2 LTS para roteamento, autenticação, autorização, validações e regras de negócio. |
 | Persistência | Django ORM para consultar e gravar dados no PostgreSQL, com Django Migrations para controlar a evolução do esquema. |
-| Integração externa | BrasilAPI para consultar feriados nacionais durante o processo de reserva. |
-| Infraestrutura | Aplicação Django prevista na Vercel e PostgreSQL hospedado no Supabase. |
+| Integração externa | BrasilAPI para consultar feriados nacionais durante a reserva e Gmail SMTP para recuperação de senha. |
+| Infraestrutura | Aplicação Django na Vercel e PostgreSQL hospedado no Supabase. |
 
 ## Atores e controle de acesso
 
@@ -28,7 +28,7 @@ O controle de acesso previsto utiliza os recursos nativos `Django Authentication
 
 ## Camada de apresentação
 
-As páginas são renderizadas no servidor por meio de Django Templates. O Django processa a requisição, consulta os dados necessários e devolve o HTML ao navegador. Bootstrap 5 e CSS complementam a apresentação e a responsividade, enquanto JavaScript é empregado somente em interações pontuais no cliente.
+As páginas são renderizadas no servidor por meio de Django Templates. O Django processa a requisição, consulta os dados necessários e devolve o HTML ao navegador. Bootstrap 5 e CSS complementam a apresentação e a responsividade, enquanto JavaScript é empregado somente em interações pontuais no cliente. Bootstrap e fontes são entregues pelos arquivos estáticos do próprio projeto, evitando que o navegador envie metadados a CDNs apenas para renderizar a interface.
 
 Essa decisão mantém a interface integrada ao monólito Django e evita a complexidade de um frontend SPA separado para o escopo do projeto.
 
@@ -65,12 +65,13 @@ Os controles de segurança afetam todas as camadas da solução e incluem:
 - comunicação por HTTPS e TLS no ambiente publicado;
 - segredos e credenciais armazenados em variáveis de ambiente;
 - autenticação por sessão e uso seguro de cookies;
+- bloqueio temporário de tentativas repetidas de login;
 - autorização baseada em grupos e permissões;
 - proteção CSRF nos fluxos autenticados;
 - validação das entradas no servidor;
 - registro básico de acessos e ações relevantes para auditoria.
 
-Credenciais, chaves e dados sensíveis não devem ser armazenados no código-fonte nem enviados aos templates ou ao JavaScript do cliente.
+Credenciais, chaves e dados sensíveis não devem ser armazenados no código-fonte nem enviados aos templates ou ao JavaScript do cliente. O inventário dos fluxos e fornecedores está em [Governança e inventário de dados pessoais](governanca-dados-pessoais.md).
 
 ## Fluxo principal de uma requisição
 
@@ -80,8 +81,8 @@ De forma resumida, uma operação segue o fluxo:
 2. O Django recebe a requisição e verifica a autenticação e as permissões aplicáveis.
 3. O backend valida os dados e executa as regras de negócio.
 4. O Django ORM consulta ou atualiza o banco de dados.
-5. Quando necessário em uma reserva, o backend consulta a BrasilAPI.
-6. O Django renderiza o template e devolve a resposta HTML ao navegador.
+5. Quando necessário em uma reserva, o backend consulta a BrasilAPI; na recuperação de senha, usa o SMTP configurado.
+6. O Django renderiza o template, resolve os arquivos estáticos locais e devolve a resposta HTML ao navegador.
 
 O fluxo principal pode ser representado por **Usuário → Navegador → Django → Regras de negócio → Django ORM → PostgreSQL**, com a integração complementar **Django ↔ BrasilAPI**.
 
@@ -99,4 +100,4 @@ A implantação da aplicação na Vercel permanece condicionada à validação d
 | Recursos nativos do Django para autenticação e autorização | Evitam duplicação de mecanismos de identidade e facilitam a aplicação de permissões no servidor. | A configuração de grupos e permissões precisa ser mantida pela própria aplicação. |
 | Supabase somente para hospedar o PostgreSQL | Fornece infraestrutura gerenciada para o banco sem alterar o modelo de autenticação definido. | Recursos como Supabase Auth e políticas RLS não fazem parte da solução. |
 | BrasilAPI como integração não bloqueante | Acrescenta informação sobre feriados sem comprometer o fluxo principal de reserva. | A aplicação precisa tratar falhas e tempo limite e continuar funcionando sem a resposta externa. |
-| Vercel como implantação prevista | Mantém a infraestrutura enxuta para o escopo do SIGEE. | A compatibilidade operacional com Django e migrations precisa ser comprovada antes da adoção definitiva. |
+| Vercel como implantação | Mantém a infraestrutura enxuta para o escopo do SIGEE. | Logs, região, suboperadores e migrations precisam ser acompanhados no processo de implantação. |
