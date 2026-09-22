@@ -71,7 +71,7 @@ O SIGEE utiliza uma arquitetura web monolítica com Django e renderização no s
 | **Aplicação** | Python 3.12, Django 5.2 LTS, Django ORM, Authentication e Groups/Permissions. |
 | **Persistência** | SQLite no desenvolvimento local e PostgreSQL configurado por `DATABASE_URL`, com Supabase na infraestrutura do projeto. |
 | **Implantação** | Aplicação publicada na Vercel com HTTPS. |
-| **Segurança** | Sessões, proteção CSRF, validação no servidor, hash de senhas, cookies seguros em produção e auditoria. |
+| **Segurança** | Sessões, proteção CSRF, bloqueio temporário de tentativas, validação no servidor, hash de senhas, cookies seguros em produção e auditoria. |
 | **Integração externa** | BrasilAPI para consulta informativa e não bloqueante de feriados nacionais durante a reserva. |
 
 ## Execução local
@@ -107,6 +107,10 @@ Edite o arquivo `.env`, defina uma chave local em `DJANGO_SECRET_KEY` e escolha 
 | `DJANGO_ALLOWED_HOSTS` | Não | Lista de hosts permitidos, separados por vírgula. |
 | `DATABASE_URL` | Não | Conexão PostgreSQL; sem valor, utiliza SQLite local. |
 | `SIGEE_CONTATO_PRIVACIDADE` | Não | E-mail exibido nos documentos de privacidade. |
+| `DJANGO_SESSION_COOKIE_AGE` | Não | Duração máxima da sessão em segundos; padrão de 14 dias. |
+| `DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE` | Não | Encerra a sessão ao fechar o navegador quando definido como `True`. |
+| `DJANGO_AXES_FAILURE_LIMIT` | Não | Quantidade de falhas antes do bloqueio; padrão `5`. |
+| `DJANGO_AXES_COOLOFF_MINUTES` | Não | Duração do bloqueio temporário; padrão `15` minutos. |
 
 ### Preparação e inicialização
 
@@ -125,7 +129,7 @@ Execute `configurar_perfis` depois das migrations. O comando é idempotente e ma
 
 ## Testes
 
-A suíte automatizada cobre autenticação, autorização, inventário, importação CSV, usuários, documentos legais, auditoria, reservas, disponibilidade, conflitos, cancelamento e contingência da BrasilAPI.
+A suíte automatizada cobre autenticação, bloqueio de tentativas, autorização, inventário, importação CSV, usuários, documentos legais, auditoria, reservas, disponibilidade, conflitos, cancelamento, direitos dos titulares e contingência da BrasilAPI.
 
 Para validar o projeto com SQLite:
 
@@ -137,10 +141,13 @@ python manage.py test
 
 ## Funcionalidades disponíveis nesta entrega
 
+- [x] cadastro, importação, consulta, edição e inativação de equipamentos;
 - [x] reservas próprias por Professor, com quantidade e controle de disponibilidade;
 - [x] prevenção de conflitos e bloqueio de períodos inválidos;
 - [x] cancelamento das próprias reservas;
 - [x] consulta informativa de feriados nacionais pela BrasilAPI.
+- [x] transparência de privacidade, inventário de dados e aceite versionado;
+- [x] comandos assistidos para exportação, anonimização e descarte controlado.
 
 ## Roadmap
 
@@ -159,3 +166,7 @@ python manage.py test
 - [Auditoria de acessos e ações](docs/auditoria.md)
 - [Segurança](docs/evidencias-seguranca.md)
 - [Privacidade e termos](docs/privacidade-e-termos.md)
+- [Governança e inventário de dados pessoais](docs/governanca-dados-pessoais.md)
+- [Plano de retenção e descarte](docs/plano-retencao-descarte.md)
+- [Procedimento para direitos dos titulares](docs/procedimento-direitos-titulares.md)
+- [Plano de resposta a incidentes](docs/plano-resposta-incidentes.md)

@@ -13,10 +13,14 @@ A auditoria cobre atualmente:
 - download do modelo de importação CSV;
 - cadastro individual de equipamento;
 - importação de equipamentos por CSV;
+- edição de equipamento;
 - exclusão definitiva de equipamento sem histórico;
 - inativação de equipamento com histórico preservado;
 - cadastro controlado de contas funcionais;
-- criação e cancelamento de reservas próprias pelo Professor.
+- criação e cancelamento de reservas próprias pelo Professor;
+- exportação de dados de uma conta para atendimento ao titular;
+- anonimização de conta;
+- limpeza confirmada de auditorias, aceites e sessões expiradas.
 
 As funcionalidades futuras devem registrar seus próprios eventos quando forem implementadas. A auditoria de manutenção e utilização pedagógica continua pendente enquanto esses fluxos não existirem no código.
 
@@ -47,11 +51,15 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `MODELO_CSV_BAIXADO` | O modelo de importação é baixado. | Sucesso |
 | `EQUIPAMENTO_CADASTRADO` | O cadastro individual é aceito ou rejeitado. | Sucesso ou falha |
 | `EQUIPAMENTOS_IMPORTADOS` | Um lote CSV é aceito ou rejeitado. | Sucesso ou falha |
+| `EQUIPAMENTO_EDITADO` | Uma alteração de equipamento é aceita. | Sucesso |
 | `EQUIPAMENTO_EXCLUIDO` | Um equipamento sem histórico é excluído. | Sucesso |
 | `EQUIPAMENTO_INATIVADO` | Um equipamento com histórico é inativado. | Sucesso |
 | `USUARIO_CADASTRADO` | O cadastro controlado de uma conta é aceito ou rejeitado. | Sucesso ou falha |
 | `RESERVA_CRIADA` | O Professor cria uma reserva própria. | Sucesso |
 | `RESERVA_CANCELADA` | O Professor cancela uma reserva própria. | Sucesso |
+| `DADOS_TITULAR_EXPORTADOS` | Um conjunto de dados é preparado para atendimento ao titular. | Sucesso |
+| `USUARIO_ANONIMIZADO` | Uma conta comum é desativada e tem identificadores diretos substituídos. | Sucesso |
+| `DADOS_EXPIRADOS_REMOVIDOS` | Uma limpeza confirmada remove registros segundo datas de corte explícitas. | Sucesso |
 
 Uma tentativa de login inválida é registrada sem vincular o nome de usuário informado a uma conta. Consultas registram que houve uso de filtros, mas não armazenam os termos pesquisados. A importação registra um evento para o lote e não copia o conteúdo do arquivo. No cadastro de contas, a auditoria identifica o Administrador responsável e, em caso de sucesso, o identificador da conta criada, sem copiar nome, e-mail, perfil ou senha.
 
@@ -93,19 +101,11 @@ Os testes dos arquivos `auditoria/tests.py` e `auditoria/test_consulta.py` verif
 - rejeição de perfis não autorizados e do Superuser técnico;
 - consulta, filtros, intervalo de datas e paginação para o Administrador.
 
-Em 19 de setembro de 2026, a suíte integrada da branch de reservas foi executada com banco de testes isolado:
+O resultado integrado mais recente está registrado em [Evidências de autenticação e autorização](evidencias-seguranca.md). Para reproduzi-lo:
 
 ```powershell
 $env:DATABASE_URL=''
 .\.venv\Scripts\python.exe manage.py test
-```
-
-Resultado observado:
-
-```text
-Ran 152 tests
-OK
-System check identified no issues (0 silenced).
 ```
 
 ## Rastreabilidade
@@ -117,6 +117,7 @@ System check identified no issues (0 silenced).
 | Acessos negados devem ser auditados | `auditoria/middleware.py` |
 | Operações atuais do inventário devem ser auditadas | `inventario/views.py` |
 | Cadastro controlado de contas deve ser auditado | `usuarios/views.py` e `auditoria/tests.py` |
+| Operações de privacidade devem ser auditadas | `usuarios/management/commands/` e `usuarios/test_privacidade.py` |
 | Consulta restrita ao Administrador | `auditoria/views.py`, `usuarios/permissoes.py` e `templates/base.html` |
 | Consulta somente leitura | `auditoria/admin.py` e `templates/auditoria/registro_lista.html` |
 | Evidência automatizada | `auditoria/tests.py` e `auditoria/test_consulta.py` |
@@ -129,7 +130,7 @@ O módulo atual implementa auditoria básica. Permanecem fora do recorte atual:
 - alertas e análise automática de comportamento;
 - registro de IP, dispositivo ou localização;
 - mecanismos criptográficos de encadeamento ou assinatura dos eventos;
-- política automática de retenção e descarte;
+- agendamento automático de retenção e descarte;
 - auditoria de módulos que ainda não foram implementados.
 
-Esses itens não são necessários para considerar atendido o recorte atual e somente devem ser acrescentados mediante requisito aprovado.
+O descarte existe como comando manual com simulação, confirmação e datas de corte explícitas. Nenhum prazo é aplicado automaticamente enquanto a política institucional não for aprovada.

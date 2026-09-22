@@ -7,6 +7,11 @@ app_name = "inventario"
 urlpatterns = [
     path("", views.equipamento_lista, name="equipamento_lista"),
     path("novo/", views.equipamento_novo, name="equipamento_novo"),
+    path(
+        "<int:equipamento_id>/editar/",
+        views.equipamento_editar,
+        name="equipamento_editar",
+    ),
     path("importar/", views.equipamento_importar, name="equipamento_importar"),
     path(
         "importar/modelo.csv/",
