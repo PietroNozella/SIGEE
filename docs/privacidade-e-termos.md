@@ -1,6 +1,6 @@
 # Termos de Uso, privacidade e aceite
 
-Este documento descreve a implementação do `RS-12` no SIGEE e relaciona os dados tratados, as finalidades, os controles adotados e as evidências verificáveis no repositório. O Termo de Uso e a Política de Privacidade são apresentados como documentos do produto e não identificam integrantes do projeto como agentes de tratamento.
+Este documento descreve a implementação do `RS-12` no SIGEE e relaciona os dados tratados, as finalidades, os controles adotados e as evidências verificáveis no repositório. O Termo de Uso e a Política de Privacidade são apresentados como documentos do produto. A identificação definitiva da controladora e dos demais agentes depende da implantação concreta.
 
 ## Responsabilidades
 
@@ -10,15 +10,7 @@ O SIGEE não presume uma base legal única para todos os tratamentos. A institui
 
 ## Dados e finalidades representados no sistema
 
-| Categoria | Dados representados | Finalidade no SIGEE | Evidência atual |
-|---|---|---|---|
-| Conta e perfil | Nome, sobrenome, e-mail, nome de usuário, situação da conta, grupo funcional, datas técnicas e senha protegida por hash | Identificar e autenticar o usuário, administrar contas e aplicar permissões | `usuarios/forms.py`, Django `User`, `Group` e `Permission` |
-| Sessão e proteção de formulários | Identificador de sessão e token CSRF em cookies técnicos | Manter a sessão autenticada e impedir requisições forjadas | `config/settings.py` e middlewares do Django |
-| Auditoria | Conta responsável, código da ação, resultado, data e hora, entidade e identificador do registro afetado | Segurança, rastreabilidade e apuração de ações relevantes | `auditoria/models.py`, `auditoria/services.py` e `auditoria/eventos.py` |
-| Movimentação | Equipamento, operador, destinatário, tipo, data e hora, vínculo com retirada e observação | Preservar o histórico de retirada e devolução | `movimentacoes/models.py` |
-| Aceite dos documentos | Conta, versão dos Termos, versão da Política e data e hora | Comprovar quais documentos foram apresentados e confirmados | `legal/models.py` e `legal/services.py` |
-
-Campos livres de inventário e movimentação não devem ser utilizados para registrar dados pessoais excessivos ou dados pessoais sensíveis sem necessidade e autorização institucional.
+O inventário completo, incluindo conta, sessão, proteção contra abuso, recuperação de senha, reservas, movimentações, auditoria, aceite, campos livres, infraestrutura e fornecedores, está em [Governança e inventário de dados pessoais](governanca-dados-pessoais.md). Campos livres não devem ser usados para registrar dados pessoais excessivos ou sensíveis sem necessidade e autorização institucional.
 
 ## Fluxo implementado
 
@@ -40,21 +32,24 @@ Quando a instituição adotar o consentimento como hipótese legal para uma fina
 ## Medidas implementadas
 
 - autenticação e hash de senha pelos recursos nativos do Django;
+- bloqueio temporário após tentativas repetidas de login, por nome de usuário e sem persistência do endereço IP pelo SIGEE;
 - autorização no servidor com grupos e permissões;
 - proteção CSRF nos formulários `POST`;
-- cookies de sessão e CSRF marcados como seguros quando `DEBUG=False`;
+- cookies de sessão e CSRF com `SameSite=Lax`, sessão inacessível a JavaScript e marcação `Secure` quando `DEBUG=False`;
 - redirecionamento para HTTPS quando `DEBUG=False`;
 - validação de entradas no servidor;
 - minimização dos registros de auditoria, sem senha, hash, token, conteúdo de formulário ou termos pesquisados;
 - proteção das referências de auditoria e aceite com `PROTECT`;
 - bloqueio de inclusão, edição e exclusão de aceites pelo Django Admin;
-- controle de versão dos documentos e nova confirmação após atualização.
+- controle de versão dos documentos e nova confirmação após atualização;
+- Bootstrap e fontes servidos localmente, sem requisições do navegador a Google Fonts ou jsDelivr;
+- comandos controlados para exportação, anonimização e descarte, com simulação antes das ações destrutivas.
 
-Essas medidas reduzem riscos, mas não substituem a configuração segura da infraestrutura, o controle institucional de acessos, a definição de prazos de retenção, o atendimento aos titulares e a resposta a incidentes.
+Essas medidas reduzem riscos, mas não substituem a configuração segura da infraestrutura e as decisões institucionais. As rotinas propostas estão em [Retenção e descarte](plano-retencao-descarte.md), [Direitos dos titulares](procedimento-direitos-titulares.md) e [Resposta a incidentes](plano-resposta-incidentes.md).
 
 ## Evidências automatizadas
 
-Os testes de `legal/tests.py` verificam:
+Os testes de `legal/tests.py` e `usuarios/test_privacidade.py` verificam:
 
 - acesso público ao Termo e à Política;
 - links na tela de login;
@@ -66,19 +61,17 @@ Os testes de `legal/tests.py` verificam:
 - rejeição de um formulário exibido antes de uma mudança de versão;
 - ausência de duplicidade para a mesma combinação de versões;
 - registro do evento de auditoria;
-- proteção do aceite e bloqueio de alterações no Django Admin.
+- proteção do aceite e bloqueio de alterações no Django Admin;
+- transparência sobre fornecedores, retenção e direitos;
+- ausência de Google Fonts e jsDelivr nas páginas públicas;
+- bloqueio de tentativas repetidas sem persistir IP ou senha;
+- exportação, anonimização, invalidação de sessões e descarte controlado.
 
-Em 11 de setembro de 2026, a suíte integrada foi executada com SQLite isolado para testes:
+Para reproduzir a suíte integrada com SQLite isolado:
 
 ```powershell
 $env:DATABASE_URL=''
 .\.venv\Scripts\python.exe manage.py test
 ```
 
-Resultado observado:
-
-```text
-Ran 102 tests
-OK
-System check identified no issues (0 silenced).
-```
+O resultado mais recente é mantido em [Evidências de autenticação e autorização](evidencias-seguranca.md).

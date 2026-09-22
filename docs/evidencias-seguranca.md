@@ -1,6 +1,6 @@
-# Evidências de autenticação e autorização
+# Evidências de autenticação, autorização e privacidade
 
-Este documento reúne evidências reproduzíveis dos incrementos de segurança associados ao `RF-01`, ao `RNF-01`, ao `RS-01` e ao `RS-07`. As verificações usam dados sintéticos e banco de testes isolado do Django.
+Este documento reúne evidências reproduzíveis dos incrementos de segurança e privacidade associados ao `RF-01`, ao `RNF-01` e ao baseline `RS-01` a `RS-12`. As verificações usam dados sintéticos e banco de testes isolado do Django.
 
 ## Resultado dos cenários de segurança
 
@@ -15,6 +15,9 @@ Este documento reúne evidências reproduzíveis dos incrementos de segurança a
 | Logout invalidando a sessão | `GET` no logout retorna `405`; `POST` encerra a sessão e uma nova tentativa de abrir a listagem volta ao login. | `AutenticacaoTests.test_logout_aceita_somente_post_e_impede_retorno_direto` | Passou |
 | Solicitação de recuperação | Conta ativa recebe e-mail em texto e HTML; e-mail inexistente ou conta inativa recebe a mesma confirmação pública sem mensagem enviada. | `RecuperacaoSenhaTests.test_email_existente_recebe_link_em_texto_e_html` e `test_email_inexistente_ou_conta_inativa_recebe_resposta_neutra` | Passou |
 | Redefinição segura | Link válido altera a senha, gera auditoria e não pode ser reutilizado; link expirado é rejeitado. | `RecuperacaoSenhaTests.test_link_valido_redefine_senha_e_nao_pode_ser_reutilizado` e `test_link_expirado_e_rejeitado` | Passou |
+| Tentativas repetidas | O terceiro erro no cenário reduzido bloqueia novas tentativas, não persiste IP e não mantém a senha informada. | `ProtecaoTentativasLoginTests.test_bloqueia_temporariamente_sem_persistir_ip_ou_senha` | Passou |
+| Transparência pública | Termos e Política informam versão, fornecedores, retenção e direitos, sem Google Fonts ou jsDelivr. | `TransparenciaPublicaTests` | Passou |
+| Direitos dos titulares | Exportação omite senha, anonimização exige confirmação e preserva histórico, e descarte atua somente após datas de corte explícitas. | `DireitosTitularesCommandsTests` | Passou |
 
 As verificações de autorização são realizadas nas views. A ausência de botões no template é somente uma orientação de interface e não substitui o bloqueio da URL ou do `POST`.
 
@@ -50,7 +53,7 @@ OK
 System check identified no issues (0 silenced).
 ```
 
-A suíte completa também foi executada em 16 de setembro de 2026 com SQLite, isolada do banco publicado:
+A suíte completa foi executada em 21 de setembro de 2026 com SQLite, isolada do banco publicado:
 
 ```powershell
 $env:DATABASE_URL=''
@@ -58,10 +61,12 @@ python manage.py test --verbosity 1
 ```
 
 ```text
-Ran 112 tests in 18.280s
+Ran 173 tests in 26.955s
 OK
-System check identified no issues (0 silenced).
+System check identified no issues (1 silenced).
 ```
+
+O check silenciado é `axes.W006`. A configuração por nome de usuário sem IP é intencional para minimizar dados; o bloqueio continua abrangendo origens diferentes para a mesma conta.
 
 ## Regressão do inventário
 
@@ -91,22 +96,26 @@ Essa regressão cobre patrimônio único, formulário e listagem, filtros, indic
 | Recuperação de senha | `PasswordResetView`, `PasswordResetConfirmView`, `PasswordResetForm`, `SetPasswordForm` e gerador de token nativo do Django. |
 | CSRF | `CsrfViewMiddleware` e `{% csrf_token %}` nos formulários `POST` de login, logout, cadastro e exclusão. |
 | Acesso direto | Resposta `403` para usuário autenticado sem permissão e redirecionamento ao login para anônimo. |
+| Proteção contra abuso | `django-axes`, limite configurável, bloqueio temporário e identificação somente pelo nome de usuário. |
+| Direitos e retenção | Comandos `exportar_dados_usuario`, `anonimizar_usuario` e `limpar_dados_expirados`, com testes de simulação e confirmação. |
+| Minimização no navegador | Bootstrap e fontes servidos pelo próprio projeto, sem Google Fonts ou jsDelivr nas páginas públicas. |
 
 ## Verificação do HTTPS publicado
 
-Foi consultado `https://sigee-psi.vercel.app/login/` em 10 de setembro de 2026. O servidor respondeu por HTTPS e apresentou o cabeçalho:
+O ambiente publicado usa HTTPS e apresentou o cabeçalho:
 
 ```text
 Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
 Server: Vercel
 ```
 
-O transporte HTTPS e a política HSTS foram confirmados. Entretanto, a rota retornou `HTTP 404` tanto em `HEAD` quanto em `GET`. Portanto, essa evidência confirma a camada HTTPS da hospedagem, mas ainda não comprova a disponibilidade da tela de login publicada. É necessário realizar ou corrigir o deploy antes de usar o ambiente publicado como evidência funcional na versão final do TCC.
+O transporte HTTPS e a política HSTS foram confirmados. Como esta branch ainda não foi implantada, os controles novos precisam de nova verificação funcional após o deploy.
 
 ## Limites da evidência
 
 - Os testes automatizados usam banco isolado e dados sintéticos.
 - MFA não foi implementado e permanece fora do recorte atual.
 - O envio real depende da configuração de um provedor SMTP no ambiente publicado; os testes usam o backend de e-mail em memória.
-- Bloqueio ou atraso progressivo por tentativas de login não foi implementado; o requisito permanece candidato e ainda depende de confirmação.
+- O bloqueio é por nome de usuário e não substitui MFA ou proteção de infraestrutura contra ataques distribuídos.
 - A auditoria de ações foi integrada posteriormente em módulo próprio, com registro persistente e consulta restrita ao Administrador funcional, conforme as [evidências de auditoria](auditoria.md).
+- Hipóteses legais, prazos de retenção e identidade dos agentes continuam sujeitos à validação institucional e não são comprovados por testes técnicos.

@@ -9,6 +9,7 @@ Este documento descreve os incrementos implementados do `RF-01` e do `RS-07`. O 
 3. O Django valida as credenciais e, quando válidas, inicia a sessão.
 4. O usuário retorna à página indicada por `next` ou, na ausência desse parâmetro, à listagem de equipamentos.
 5. O logout aceita somente `POST`, encerra a sessão e redireciona para o login.
+6. Após cinco tentativas inválidas para o mesmo nome de usuário, o acesso fica bloqueado por quinze minutos, inclusive se a senha correta for informada durante esse intervalo.
 
 A mensagem para credenciais inválidas é neutra e não informa se o nome de usuário existe. Não há cadastro público.
 
@@ -54,12 +55,11 @@ O comando cria os grupos ausentes e substitui suas permissões pela matriz ofici
 | Proteção CSRF | O token CSRF permite ao Django rejeitar requisições `POST` forjadas por outro site, incluindo login, recuperação e logout. | Não armazena senha nem identifica a sessão do usuário. |
 | Cookie de sessão | O navegador mantém um identificador de sessão; os dados da sessão permanecem no servidor. O cookie permite associar requisições posteriores ao usuário autenticado. | Não criptografa o tráfego e não substitui a verificação de permissões. |
 | HTTPS | Criptografa a comunicação entre navegador e servidor no ambiente publicado, protegendo credenciais e cookies durante o transporte. | Não substitui hash de senha, CSRF ou autorização no servidor. |
+| Bloqueio de tentativas | O `django-axes` limita tentativas repetidas por nome de usuário. O SIGEE não persiste o endereço IP nesse controle e mascara a senha registrada pelo middleware. | Não substitui MFA, senha forte, monitoramento ou proteção do provedor contra ataques distribuídos. |
 
 ## Limite dos incrementos
 
-Os incrementos de autenticação cobrem as rotas atuais do inventário e a criação de contas. A auditoria foi implementada em um incremento separado e usa a mesma matriz de grupos e permissões. Listagem, edição ou inativação de usuários, reservas, movimentações funcionais, manutenção e BrasilAPI permanecem fora deste trabalho.
-
-Também não foram implementados autenticação multifator (MFA) e bloqueio ou atraso progressivo após tentativas inválidas ou solicitações repetidas de recuperação. MFA está fora do recorte atual; a proteção contra tentativas abusivas permanece candidata no `RS-06`.
+Os incrementos de autenticação cobrem as rotas atuais e a criação de contas. A auditoria usa a mesma matriz de grupos e permissões. A aplicação não possui MFA nem limitação específica para solicitações repetidas de recuperação de senha; esses controles permanecem fora do recorte atual.
 
 ## Síntese para o TCC
 
@@ -67,8 +67,8 @@ O incremento de segurança do SIGEE utiliza o sistema nativo de autenticação d
 
 A autorização é representada pelos grupos `Administrador`, `Operador` e `Professor`, associados às permissões do Django conforme a [matriz de acesso](matriz-de-acesso.md). As verificações permanecem no servidor, inclusive para acessos diretos e requisições `POST`. A interface oculta ações não autorizadas apenas como orientação visual.
 
-As senhas são processadas pelos formulários e hashers do Django; não há criptografia própria nem armazenamento da senha em texto puro. A recuperação usa o gerador de tokens do framework, resposta pública neutra, prazo de uma hora e invalidação após a troca. A proteção CSRF é aplicada aos formulários `POST`, e o cookie de sessão associa as requisições posteriores ao usuário autenticado. No ambiente publicado, a comunicação é oferecida sobre HTTPS e a hospedagem apresenta HSTS; a disponibilidade atual das rotas precisa ser confirmada após novo deploy.
+As senhas são processadas pelos formulários e hashers do Django; não há criptografia própria nem armazenamento da senha em texto puro. A recuperação usa o gerador de tokens do framework, resposta pública neutra, prazo de uma hora e invalidação após a troca. A proteção CSRF é aplicada aos formulários `POST`, o cookie de sessão associa as requisições posteriores ao usuário autenticado e tentativas repetidas são bloqueadas temporariamente. No ambiente publicado, a comunicação é oferecida sobre HTTPS e a hospedagem apresenta HSTS.
 
 ## Evidência automatizada
 
-Os testes verificam o formulário nativo, o hash da senha, a sessão, a mensagem neutra, `next`, a configuração idempotente dos grupos, a matriz de acesso, o cadastro controlado e o fluxo de recuperação com token válido, expirado e já utilizado. Os comandos, cenários e resultados observados estão registrados em [Evidências de autenticação e autorização](evidencias-seguranca.md).
+Os testes verificam o formulário nativo, o hash da senha, a sessão, a mensagem neutra, `next`, o bloqueio temporário sem IP, a configuração idempotente dos grupos, a matriz de acesso, o cadastro controlado e o fluxo de recuperação com token válido, expirado e já utilizado. Os comandos, cenários e resultados observados estão registrados em [Evidências de autenticação e autorização](evidencias-seguranca.md).

@@ -5,7 +5,7 @@
 {% block content %}
 <article class="legal-document" aria-labelledby="legal-title">
     <header class="legal-document-header">
-        <span class="legal-eyebrow">Versão {{ versao_termos }}</span>
+        <span class="legal-eyebrow">Versão {{ versao_termos }} — vigente desde {{ data_vigencia_termos }}</span>
         <h1 id="legal-title">Termos de Uso</h1>
         <p>Regras aplicáveis ao acesso e ao uso do SIGEE.</p>
     </header>
@@ -19,6 +19,7 @@
     <section>
         <h2>2. Acesso ao sistema</h2>
         <p>O cadastro não é público. As contas são criadas de forma controlada e recebem um dos perfis funcionais previstos: Administrador, Operador ou Professor. Cada usuário deve utilizar somente a conta que lhe foi atribuída e manter sua senha em sigilo.</p>
+        <p>O escopo atual destina as contas a profissionais autorizados e não prevê contas para alunos, crianças ou adolescentes. Qualquer ampliação desse público exige avaliação específica e atualização destes Termos.</p>
     </section>
 
     <section>
@@ -38,23 +39,34 @@
     </section>
 
     <section>
-        <h2>5. Registros e auditoria</h2>
+        <h2>5. Conteúdo e propriedade intelectual</h2>
+        <p>O usuário permanece responsável pela pertinência e licitude das informações que inserir e deve evitar dados pessoais excessivos em descrições e observações. O software, a identidade visual e os materiais do SIGEE permanecem sujeitos aos direitos de seus respectivos titulares e às licenças aplicáveis.</p>
+    </section>
+
+    <section>
+        <h2>6. Registros e auditoria</h2>
         <p>Para proteger o ambiente e assegurar a rastreabilidade, o SIGEE registra eventos de autenticação, acessos negados, ações relevantes e o aceite destes documentos. Esses registros podem ser utilizados para segurança, suporte, apuração de incidentes, cumprimento de obrigações e exercício regular de direitos.</p>
     </section>
 
     <section>
-        <h2>6. Disponibilidade e limitações</h2>
+        <h2>7. Disponibilidade, suporte e encerramento</h2>
         <p>O SIGEE pode passar por atualizações, manutenções programadas ou interrupções necessárias à segurança e à continuidade do serviço. A instituição e os usuários são responsáveis pela qualidade e pela licitude dos dados inseridos, bem como pelo uso do sistema de acordo com suas atribuições.</p>
+        <p>A conta pode ser inativada quando o vínculo institucional terminar, houver solicitação cabível do titular ou ocorrer uso incompatível com estes Termos. A preservação ou anonimização dos registros relacionados seguirá o Plano de Retenção e Descarte.</p>
     </section>
 
     <section>
-        <h2>7. Aceite e atualização</h2>
+        <h2>8. Uso indevido</h2>
+        <p>O uso indevido pode resultar em bloqueio temporário, inativação da conta, preservação de evidências e comunicação à instituição responsável, sempre de forma proporcional e sem excluir os direitos assegurados pela legislação.</p>
+    </section>
+
+    <section>
+        <h2>9. Aceite e atualização</h2>
         <p>O acesso às áreas internas depende do aceite da versão vigente destes Termos e da confirmação de leitura da Política de Privacidade. O sistema registra o usuário, as versões aceitas e a data e hora. Quando uma das versões for alterada, um novo aceite será solicitado.</p>
     </section>
 
     <section>
-        <h2>8. Contato</h2>
-        <p>Dúvidas sobre estes Termos ou sobre o uso do SIGEE podem ser encaminhadas para <a href="mailto:{{ contato_privacidade }}">{{ contato_privacidade }}</a>.</p>
+        <h2>10. Legislação e contato</h2>
+        <p>Estes Termos são interpretados de acordo com a legislação brasileira e não afastam direitos legalmente assegurados. Dúvidas podem ser encaminhadas para <a href="mailto:{{ contato_privacidade }}">{{ contato_privacidade }}</a>.</p>
     </section>
 </article>
 {% endblock %}

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
@@ -38,6 +39,13 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_AGE = int(os.getenv("DJANGO_SESSION_COOKIE_AGE", "1209600"))
+SESSION_EXPIRE_AT_BROWSER_CLOSE = (
+    os.getenv("DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE", "False").lower() == "true"
+)
 
 DEFAULT_ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sigee-psi.vercel.app"]
 configured_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
@@ -58,6 +66,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'axes',
     'auditoria',
     'inventario',
     'legal',
@@ -76,7 +85,30 @@ MIDDLEWARE = [
     'auditoria.middleware.AuditoriaAcessoNegadoMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'axes.middleware.AxesMiddleware',
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# Limita tentativas por nome de usuário sem persistir endereço IP. Os valores
+# permanecem configuráveis para permitir validação institucional antes do deploy.
+AXES_FAILURE_LIMIT = int(os.getenv("DJANGO_AXES_FAILURE_LIMIT", "5"))
+AXES_COOLOFF_TIME = timedelta(
+    minutes=int(os.getenv("DJANGO_AXES_COOLOFF_MINUTES", "15"))
+)
+AXES_USE_ATTEMPT_EXPIRATION = True
+AXES_RESET_ON_SUCCESS = True
+AXES_DISABLE_ACCESS_LOG = True
+AXES_LOCKOUT_PARAMETERS = ["username"]
+AXES_CLIENT_IP_CALLABLE = lambda request: None
+
+# A configuração por usuário é uma escolha consciente de minimização: evita
+# persistir endereços IP no Axes, conforme a própria orientação de privacidade
+# da biblioteca. O bloqueio continua válido entre origens diferentes.
+SILENCED_SYSTEM_CHECKS = ["axes.W006"]
 
 ROOT_URLCONF = 'config.urls'
 
@@ -176,8 +208,10 @@ DEFAULT_FROM_EMAIL = os.getenv(
     "SIGEE <nao-responda@sigee.local>",
 )
 
-TERMOS_USO_VERSAO = "1.0"
-POLITICA_PRIVACIDADE_VERSAO = "1.0"
+TERMOS_USO_VERSAO = "2.0"
+TERMOS_USO_DATA_VIGENCIA = "21/09/2026"
+POLITICA_PRIVACIDADE_VERSAO = "2.0"
+POLITICA_PRIVACIDADE_DATA_VIGENCIA = "21/09/2026"
 CONTATO_PRIVACIDADE = os.getenv(
     "SIGEE_CONTATO_PRIVACIDADE",
     "suporte.sigee@gmail.com",

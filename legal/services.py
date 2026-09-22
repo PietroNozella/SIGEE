@@ -32,6 +32,10 @@ def contexto_documentos():
     versao_termos, versao_privacidade = versoes_atuais()
     return {
         "versao_termos": versao_termos,
+        "data_vigencia_termos": settings.TERMOS_USO_DATA_VIGENCIA,
         "versao_privacidade": versao_privacidade,
+        "data_vigencia_privacidade": (
+            settings.POLITICA_PRIVACIDADE_DATA_VIGENCIA
+        ),
         "contato_privacidade": settings.CONTATO_PRIVACIDADE,
     }
