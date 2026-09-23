@@ -13,7 +13,12 @@ from usuarios.permissoes import e_professor_funcional
 
 from .forms import DisponibilidadeReservaForm, ReservaForm
 from .models import Reserva
-from .services import cancelar_reserva, consultar_disponibilidade, criar_reserva
+from .services import (
+    cancelar_reserva,
+    consultar_disponibilidade,
+    criar_reserva,
+    expirar_reservas_vencidas,
+)
 
 
 def _exigir_professor_funcional(user):
@@ -44,6 +49,7 @@ def _adicionar_erros_validacao(form, erro):
 def reserva_lista(request):
     _exigir_professor_funcional(request.user)
 
+    expirar_reservas_vencidas()
     agora = timezone.now()
     reservas = (
         Reserva.objects.filter(professor=request.user)

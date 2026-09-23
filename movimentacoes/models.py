@@ -3,6 +3,10 @@ from django.db import models
 
 
 class Movimentacao(models.Model):
+    class Tipo(models.TextChoices):
+        RETIRADA = "RETIRADA", "Retirada"
+        DEVOLUCAO = "DEVOLUCAO", "Devolução"
+
     equipamento = models.ForeignKey(
         "inventario.Equipamento",
         on_delete=models.PROTECT,
@@ -18,8 +22,15 @@ class Movimentacao(models.Model):
         on_delete=models.PROTECT,
         related_name="movimentacoes_recebidas",
     )
-    tipo = models.CharField(max_length=20)
+    tipo = models.CharField(max_length=20, choices=Tipo.choices)
     data_hora = models.DateTimeField(auto_now_add=True)
+    reserva = models.ForeignKey(
+        "reservas.Reserva",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="movimentacoes",
+    )
     retirada_origem = models.ForeignKey(
         "self",
         on_delete=models.PROTECT,

@@ -51,7 +51,70 @@ def _equipamentos_disponiveis(
     return equipamentos
 
 
+def _possui_retirada_vinculada(reserva):
+    from movimentacoes.models import Movimentacao
+
+    return Movimentacao.objects.filter(
+        reserva=reserva,
+        tipo=Movimentacao.Tipo.RETIRADA,
+    ).exists()
+
+
+def _expirar_reserva_bloqueada(reserva, agora):
+    if reserva.status != Reserva.Status.ATIVA:
+        return False
+    if reserva.inicio + Reserva.TOLERANCIA_RETIRADA > agora:
+        return False
+    if _possui_retirada_vinculada(reserva):
+        return False
+
+    reserva.status = Reserva.Status.EXPIRADA
+    reserva.save(update_fields=("status", "data_atualizacao"))
+
+    if not RegistroAuditoria.objects.filter(
+        acao=AcaoAuditoria.RESERVA_EXPIRADA,
+        entidade="reservas.Reserva",
+        entidade_id=str(reserva.pk),
+    ).exists():
+        registrar_evento(
+            usuario=None,
+            acao=AcaoAuditoria.RESERVA_EXPIRADA,
+            resultado=RegistroAuditoria.Resultado.SUCESSO,
+            entidade="reservas.Reserva",
+            entidade_id=reserva.pk,
+        )
+
+    return True
+
+
+def expirar_reservas_vencidas(agora=None):
+    agora = agora or timezone.now()
+    limite = agora - Reserva.TOLERANCIA_RETIRADA
+    candidatos = list(
+        Reserva.objects.filter(
+            status=Reserva.Status.ATIVA,
+            inicio__lte=limite,
+        ).values_list("pk", flat=True)
+    )
+
+    expiradas = 0
+    for reserva_id in candidatos:
+        with transaction.atomic():
+            try:
+                reserva = Reserva.objects.select_for_update().get(
+                    pk=reserva_id,
+                    status=Reserva.Status.ATIVA,
+                )
+            except Reserva.DoesNotExist:
+                continue
+            if _expirar_reserva_bloqueada(reserva, agora):
+                expiradas += 1
+
+    return expiradas
+
+
 def consultar_disponibilidade(*, professor, tipo_equipamento, local, inicio, fim):
+    expirar_reservas_vencidas()
     reserva = Reserva(
         professor=professor,
         tipo_equipamento=tipo_equipamento,
@@ -92,6 +155,8 @@ def criar_reserva(
         )
     if getattr(local, "pk", None) is None:
         raise ValidationError({"local": "Selecione um local cadastrado."})
+
+    expirar_reservas_vencidas()
 
     # A primeira validação evita uma chamada externa quando os dados locais já
     # são inválidos. O período é validado novamente dentro da transação para
@@ -188,24 +253,38 @@ def cancelar_reserva(*, professor, reserva):
     if reserva.professor_id != professor.pk:
         raise ValidationError("A reserva só pode ser cancelada pelo próprio Professor.")
 
+    expirou_durante_cancelamento = False
     with transaction.atomic():
         reserva_bloqueada = Reserva.objects.select_for_update().get(
             pk=reserva.pk,
             professor=professor,
         )
-        if reserva_bloqueada.status != Reserva.Status.ATIVA:
+        if reserva_bloqueada.status == Reserva.Status.CANCELADA:
             raise ValidationError("Esta reserva já está cancelada.")
+        if reserva_bloqueada.status == Reserva.Status.EXPIRADA:
+            raise ValidationError("Esta reserva já expirou e não pode ser cancelada.")
+        if reserva_bloqueada.status != Reserva.Status.ATIVA:
+            raise ValidationError("Esta reserva não está ativa.")
+        if _expirar_reserva_bloqueada(reserva_bloqueada, timezone.now()):
+            expirou_durante_cancelamento = True
+        elif _possui_retirada_vinculada(reserva_bloqueada):
+            raise ValidationError(
+                "Esta reserva já possui retirada registrada e não pode ser cancelada."
+            )
+        else:
+            reserva_bloqueada.status = Reserva.Status.CANCELADA
+            reserva_bloqueada.full_clean()
+            reserva_bloqueada.save(update_fields=("status", "data_atualizacao"))
 
-        reserva_bloqueada.status = Reserva.Status.CANCELADA
-        reserva_bloqueada.full_clean()
-        reserva_bloqueada.save(update_fields=("status", "data_atualizacao"))
+            registrar_evento(
+                usuario=professor,
+                acao=AcaoAuditoria.RESERVA_CANCELADA,
+                resultado=RegistroAuditoria.Resultado.SUCESSO,
+                entidade="reservas.Reserva",
+                entidade_id=reserva_bloqueada.pk,
+            )
 
-        registrar_evento(
-            usuario=professor,
-            acao=AcaoAuditoria.RESERVA_CANCELADA,
-            resultado=RegistroAuditoria.Resultado.SUCESSO,
-            entidade="reservas.Reserva",
-            entidade_id=reserva_bloqueada.pk,
-        )
+    if expirou_durante_cancelamento:
+        raise ValidationError("Esta reserva já expirou e não pode ser cancelada.")
 
     return reserva_bloqueada
