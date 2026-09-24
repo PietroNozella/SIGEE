@@ -1491,6 +1491,11 @@ textarea:focus-visible,
     background: #fcebee;
 }
 
+.reservation-status-expirada {
+    color: #5f4b00;
+    background: #fff3c4;
+}
+
 .reservation-table {
     min-width: 720px;
 }

@@ -17,6 +17,7 @@ from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from inventario.models import Categoria, Equipamento, Local, TipoEquipamento
 from legal.services import registrar_aceite_vigente
+from movimentacoes.models import Movimentacao
 from usuarios.permissoes import GRUPO_OPERADOR, GRUPO_PROFESSOR
 
 from .brasilapi import (
@@ -28,7 +29,12 @@ from .brasilapi import (
     consultar_feriados_no_periodo,
 )
 from .models import Reserva, ReservaEquipamento
-from .services import cancelar_reserva, consultar_disponibilidade, criar_reserva
+from .services import (
+    cancelar_reserva,
+    consultar_disponibilidade,
+    criar_reserva,
+    expirar_reservas_vencidas,
+)
 
 
 class RespostaHTTPFake(BytesIO):
@@ -274,6 +280,86 @@ class CriarReservaServiceTests(ReservaBaseTests):
         consultar_feriados.assert_not_called()
 
 
+class ExpirarReservasVencidasTests(ReservaBaseTests):
+    def setUp(self):
+        super().setUp()
+        self.equipamento_2 = self.criar_equipamento("RES-002")
+
+    def test_expira_exatamente_no_limite_e_audita_uma_vez(self):
+        agora = self.inicio + Reserva.TOLERANCIA_RETIRADA
+        reserva = self.salvar_reserva_com_itens(
+            inicio=self.inicio,
+            fim=self.fim,
+        )
+
+        primeira_execucao = expirar_reservas_vencidas(agora=agora)
+        segunda_execucao = expirar_reservas_vencidas(agora=agora)
+
+        reserva.refresh_from_db()
+        self.assertEqual(primeira_execucao, 1)
+        self.assertEqual(segunda_execucao, 0)
+        self.assertEqual(reserva.status, Reserva.Status.EXPIRADA)
+        self.assertEqual(
+            RegistroAuditoria.objects.filter(
+                acao=AcaoAuditoria.RESERVA_EXPIRADA,
+                entidade="reservas.Reserva",
+                entidade_id=str(reserva.pk),
+            ).count(),
+            1,
+        )
+
+    def test_nao_expira_antes_da_tolerancia(self):
+        agora = self.inicio + Reserva.TOLERANCIA_RETIRADA - timedelta(seconds=1)
+        reserva = self.salvar_reserva_com_itens()
+
+        quantidade = expirar_reservas_vencidas(agora=agora)
+
+        reserva.refresh_from_db()
+        self.assertEqual(quantidade, 0)
+        self.assertEqual(reserva.status, Reserva.Status.ATIVA)
+
+    def test_retirada_vinculada_impede_expiracao(self):
+        reserva = self.salvar_reserva_com_itens()
+        Movimentacao.objects.create(
+            equipamento=self.equipamento,
+            operador=self.operador,
+            destinatario=self.professor,
+            tipo=Movimentacao.Tipo.RETIRADA,
+            reserva=reserva,
+        )
+
+        quantidade = expirar_reservas_vencidas(
+            agora=self.inicio + Reserva.TOLERANCIA_RETIRADA
+        )
+
+        reserva.refresh_from_db()
+        self.assertEqual(quantidade, 0)
+        self.assertEqual(reserva.status, Reserva.Status.ATIVA)
+
+    def test_expiracao_libera_todo_o_lote_na_consulta_de_disponibilidade(self):
+        self.salvar_reserva_com_itens(
+            equipamentos=[self.equipamento, self.equipamento_2]
+        )
+        agora = self.inicio + Reserva.TOLERANCIA_RETIRADA
+        consulta_inicio = agora + timedelta(minutes=1)
+        consulta_fim = consulta_inicio + timedelta(minutes=30)
+
+        with (
+            patch("reservas.services.timezone.now", return_value=agora),
+            patch("reservas.models.timezone.now", return_value=agora),
+        ):
+            disponiveis = consultar_disponibilidade(
+                professor=self.professor,
+                tipo_equipamento=self.tipo,
+                local=self.local,
+                inicio=consulta_inicio,
+                fim=consulta_fim,
+            )
+
+        self.assertEqual(disponiveis, 2)
+        self.assertFalse(Reserva.objects.filter(status=Reserva.Status.ATIVA).exists())
+
+
 class CancelarReservaServiceTests(ReservaBaseTests):
     def test_professor_cancela_reserva_propria_com_auditoria(self):
         reserva = self.salvar_reserva_com_itens(); cancelada = cancelar_reserva(professor=self.professor, reserva=reserva)
@@ -283,6 +369,39 @@ class CancelarReservaServiceTests(ReservaBaseTests):
         outro = get_user_model().objects.create_user(username="outro-professor", password="senha-segura-123"); outro.groups.add(Group.objects.get(name=GRUPO_PROFESSOR)); reserva = self.salvar_reserva_com_itens(professor=outro)
         with self.assertRaisesMessage(ValidationError, "A reserva só pode ser cancelada pelo próprio Professor."): cancelar_reserva(professor=self.professor, reserva=reserva)
         reserva.refresh_from_db(); self.assertEqual(reserva.status, Reserva.Status.ATIVA)
+
+    def test_post_direto_nao_cancela_reserva_que_ja_expirou(self):
+        agora = timezone.now()
+        inicio = agora - Reserva.TOLERANCIA_RETIRADA
+        reserva = self.salvar_reserva_com_itens(
+            inicio=inicio,
+            fim=inicio + timedelta(hours=2),
+        )
+
+        with (
+            patch("reservas.services.timezone.now", return_value=agora),
+            self.assertRaisesMessage(ValidationError, "Esta reserva já expirou"),
+        ):
+            cancelar_reserva(professor=self.professor, reserva=reserva)
+
+        reserva.refresh_from_db()
+        self.assertEqual(reserva.status, Reserva.Status.EXPIRADA)
+
+    def test_nao_cancela_reserva_com_retirada_vinculada(self):
+        reserva = self.salvar_reserva_com_itens()
+        Movimentacao.objects.create(
+            equipamento=self.equipamento,
+            operador=self.operador,
+            destinatario=self.professor,
+            tipo=Movimentacao.Tipo.RETIRADA,
+            reserva=reserva,
+        )
+
+        with self.assertRaisesMessage(ValidationError, "retirada registrada"):
+            cancelar_reserva(professor=self.professor, reserva=reserva)
+
+        reserva.refresh_from_db()
+        self.assertEqual(reserva.status, Reserva.Status.ATIVA)
 
 
 class ReservaFrontendTests(ReservaBaseTests):
@@ -388,3 +507,23 @@ class ReservaFrontendTests(ReservaBaseTests):
 
     def test_cancelamento_exige_post(self):
         reserva = self.salvar_reserva_com_itens(); self.assertEqual(self.client.get(reverse("reservas:reserva_cancelar", args=(reserva.pk,))).status_code, 405)
+
+    def test_lista_sincroniza_e_exibe_reserva_expirada_sem_cancelamento(self):
+        inicio = timezone.now() - Reserva.TOLERANCIA_RETIRADA - timedelta(minutes=1)
+        reserva = self.salvar_reserva_com_itens(
+            inicio=inicio,
+            fim=inicio + timedelta(hours=2),
+        )
+
+        resposta = self.client.get(
+            reverse("reservas:reserva_lista"),
+            {"status": Reserva.Status.EXPIRADA},
+        )
+
+        reserva.refresh_from_db()
+        self.assertEqual(reserva.status, Reserva.Status.EXPIRADA)
+        self.assertContains(resposta, "Expirada")
+        self.assertNotContains(
+            resposta,
+            reverse("reservas:reserva_cancelar", args=(reserva.pk,)),
+        )
