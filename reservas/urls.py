@@ -14,6 +14,11 @@ urlpatterns = [
         name="reserva_disponibilidade",
     ),
     path(
+        "feriados/",
+        views.reserva_feriados,
+        name="reserva_feriados",
+    ),
+    path(
         "<int:reserva_id>/cancelar/",
         views.reserva_cancelar,
         name="reserva_cancelar",

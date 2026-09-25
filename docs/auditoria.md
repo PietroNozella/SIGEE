@@ -17,7 +17,7 @@ A auditoria cobre atualmente:
 - exclusão definitiva de equipamento sem histórico;
 - inativação de equipamento com histórico preservado;
 - cadastro controlado de contas funcionais;
-- criação e cancelamento de reservas próprias pelo Professor;
+- criação, cancelamento e expiração automática de reservas próprias pelo Professor;
 - exportação de dados de uma conta para atendimento ao titular;
 - anonimização de conta;
 - limpeza confirmada de auditorias, aceites e sessões expiradas.
@@ -57,6 +57,7 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `USUARIO_CADASTRADO` | O cadastro controlado de uma conta é aceito ou rejeitado. | Sucesso ou falha |
 | `RESERVA_CRIADA` | O Professor cria uma reserva própria. | Sucesso |
 | `RESERVA_CANCELADA` | O Professor cancela uma reserva própria. | Sucesso |
+| `RESERVA_EXPIRADA` | O sistema expira uma reserva ativa sem retirada após 30 minutos do início. | Sucesso |
 | `DADOS_TITULAR_EXPORTADOS` | Um conjunto de dados é preparado para atendimento ao titular. | Sucesso |
 | `USUARIO_ANONIMIZADO` | Uma conta comum é desativada e tem identificadores diretos substituídos. | Sucesso |
 | `DADOS_EXPIRADOS_REMOVIDOS` | Uma limpeza confirmada remove registros segundo datas de corte explícitas. | Sucesso |

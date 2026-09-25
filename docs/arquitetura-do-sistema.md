@@ -54,7 +54,7 @@ As migrations registram a criação e a evolução do esquema. Elas fazem parte 
 
 ## Integração com a BrasilAPI
 
-Durante a criação de uma reserva, o backend deverá consultar a API de Feriados Nacionais da BrasilAPI por HTTPS. A resposta em JSON terá caráter informativo. Falhas, indisponibilidade ou tempo limite da integração não deverão impedir a conclusão da reserva.
+Ao abrir o calendário da reserva, o frontend solicita ao backend os feriados nacionais do ano exibido para destacá-los com legenda; fins de semana e datas passadas são desativados localmente. Durante a consulta prévia do período, o backend volta a consultar por HTTPS a API de Feriados Nacionais da BrasilAPI e apresenta o resultado no diálogo de confirmação antes da persistência. O feriado tem caráter informativo, e falhas, indisponibilidade ou tempo limite da integração não impedem a conclusão da reserva.
 
 A consulta será feita pelo backend, evitando que regras e detalhes da integração dependam diretamente do navegador.
 

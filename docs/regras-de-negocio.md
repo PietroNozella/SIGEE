@@ -12,7 +12,7 @@ Este documento registra as 19 regras de negócio confirmadas para o SIGEE. Elas 
 - **RN-08 — Retirada e devolução por operador:** somente usuários com perfil autorizado de Operador podem registrar retirada e devolução física.
 - **RN-09 — Retirada com ou sem reserva prévia:** equipamento disponível pode ser retirado sem reserva, desde que a movimentação seja registrada com as informações necessárias à rastreabilidade.
 - **RN-10 — Devolução vinculada à retirada:** a devolução exige uma retirada em aberto correspondente e pode ser registrada por qualquer Operador autorizado, mesmo que outro Operador tenha registrado a retirada. Depois da devolução, o equipamento retorna à situação disponível, salvo outro impedimento registrado.
-- **RN-11 — Reserva vencida:** quando o período da reserva é ultrapassado sem retirada registrada, a reserva deixa de bloquear a disponibilidade conforme a política de tolerância definida pelo sistema.
+- **RN-11 — Reserva vencida:** quando são decorridos 30 minutos do horário inicial sem retirada registrada, a reserva ativa expira integralmente (todo o lote) e deixa de bloquear a disponibilidade. A expiração não se aplica a reservas canceladas e é impedida quando existe movimentação de retirada vinculada à reserva.
 - **RN-12 — Cancelamento de reserva:** o Professor pode cancelar uma reserva própria enquanto a retirada não tiver sido registrada.
 - **RN-13 — Identificação dos responsáveis:** toda retirada registra o usuário que realizou a operação, o destinatário, a data e a hora. O destinatário pode ser qualquer usuário funcional ativo do SIGEE, independentemente de pertencer ao grupo Administrador, Operador ou Professor.
 - **RN-14 — Devolução com necessidade de manutenção:** quando um problema é identificado na devolução, o Operador descreve a ocorrência e encaminha o equipamento para manutenção. O sistema cria automaticamente uma manutenção pendente e mantém o equipamento indisponível para uso e reserva. O acompanhamento e a conclusão da intervenção são responsabilidade de um Administrador.
@@ -20,7 +20,7 @@ Este documento registra as 19 regras de negócio confirmadas para o SIGEE. Elas 
 - **RN-16 — Vinculação pedagógica com ou sem reserva:** a associação pedagógica pode ser registrada em utilizações originadas de reserva ou de retirada sem reserva, preservando a movimentação.
 - **RN-17 — Indicadores baseados em registros pedagógicos:** indicadores pedagógicos são calculados somente a partir de registros efetivamente vinculados a turma, disciplina e atividade pedagógica.
 - **RN-18 — Cadastro controlado de usuários:** o SIGEE não permite cadastro público; novas contas de Administrador, Operador e Professor são criadas por um Administrador. O primeiro Administrador é configurado por meio de uma conta técnica de Django Superuser.
-- **RN-19 — Validade temporal e dias permitidos da reserva:** a data e a hora inicial da reserva não podem estar no passado. A data atual é permitida quando o horário inicial ainda não tiver passado. Reservas cujo período inclua sábado ou domingo são impedidas. A coincidência com feriado nacional consultado pela BrasilAPI gera somente aviso informativo e não impede a reserva.
+- **RN-19 — Validade temporal e dias permitidos da reserva:** a data e a hora inicial da reserva não podem estar no passado. A data atual é permitida quando o horário inicial ainda não tiver passado. Reservas cujo período inclua sábado ou domingo são impedidas. Antes da efetivação da reserva, a coincidência com feriado nacional consultado pela BrasilAPI é informada no diálogo de confirmação e não impede a reserva.
 
 ## Decisão de modelagem da reserva em lote
 
@@ -35,7 +35,3 @@ Este documento registra as 19 regras de negócio confirmadas para o SIGEE. Elas 
 - Cada conta funcional pertence a exatamente um grupo: Administrador, Operador ou Professor.
 
 As ações permitidas para cada grupo estão consolidadas na [Matriz de acesso](matriz-de-acesso.md).
-
-## Pendência de detalhamento
-
-A duração da tolerância mencionada na `RN-11` ainda precisa ser definida antes da implementação dessa regra. Nenhum valor foi presumido neste documento.

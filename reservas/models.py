@@ -27,9 +27,12 @@ def periodo_inclui_fim_de_semana(inicio, fim):
 
 
 class Reserva(models.Model):
+    TOLERANCIA_RETIRADA = timedelta(minutes=30)
+
     class Status(models.TextChoices):
         ATIVA = "ATIVA", "Ativa"
         CANCELADA = "CANCELADA", "Cancelada"
+        EXPIRADA = "EXPIRADA", "Expirada"
 
     tipo_equipamento = models.ForeignKey(
         "inventario.TipoEquipamento",

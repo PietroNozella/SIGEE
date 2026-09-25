@@ -54,7 +54,9 @@ Nesses casos, nenhuma movimentação parcial deve permanecer salva e a situaçã
 
 ### Correspondência com o modelo atual
 
-O modelo `Movimentacao` já possui referências para equipamento, Operador e destinatário, além de tipo, data e hora, retirada de origem e observação. A implementação do fluxo ainda precisa acrescentar validações explícitas, escolhas controladas para o tipo de movimentação, atualização consistente da situação do equipamento, permissões, interface e testes.
+O modelo `Movimentacao` já possui referências para equipamento, Operador e destinatário, tipos controlados de retirada e devolução, data e hora, retirada de origem, observação e uma referência opcional para a reserva de origem. A implementação do fluxo ainda precisa acrescentar validações explícitas, atualização consistente da situação do equipamento, permissões, interface e testes.
+
+Quando a retirada tiver origem em uma reserva, o serviço futuro deve bloquear a mesma `Reserva` antes de criar as movimentações do lote, confirmar que ela permanece ativa e gravar todas as retiradas de forma atômica. Esse contrato evita que a expiração da RN-11 ocorra concorrentemente com a retirada e impede estados parciais no lote.
 
 ### Critério de aceite do fluxo
 
