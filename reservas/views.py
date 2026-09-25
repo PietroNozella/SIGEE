@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -11,6 +13,7 @@ from django.views.decorators.http import require_GET, require_POST
 from inventario.models import Local, TipoEquipamento
 from usuarios.permissoes import e_professor_funcional
 
+from .brasilapi import consultar_feriados_no_periodo
 from .forms import DisponibilidadeReservaForm, ReservaForm
 from .models import Reserva
 from .services import (
@@ -124,7 +127,7 @@ def reserva_nova(request):
 
     if request.method == "POST" and form.is_valid():
         try:
-            resultado = criar_reserva(
+            criar_reserva(
                 professor=request.user,
                 tipo_equipamento=form.cleaned_data["tipo_equipamento"],
                 local=form.cleaned_data["local"],
@@ -136,24 +139,6 @@ def reserva_nova(request):
             _adicionar_erros_validacao(form, erro)
         else:
             messages.success(request, "Reserva criada com sucesso.", extra_tags="reserva")
-            if resultado.consulta_feriados.feriados:
-                feriados = ", ".join(
-                    f"{item.nome} ({item.data:%d/%m/%Y})"
-                    for item in resultado.consulta_feriados.feriados
-                )
-                messages.warning(
-                    request,
-                    f"O período inclui feriado nacional: {feriados}. "
-                    "A reserva foi mantida.",
-                    extra_tags="reserva",
-                )
-            if not resultado.consulta_feriados.completa:
-                messages.warning(
-                    request,
-                    "A reserva foi criada, mas não foi possível consultar todos "
-                    "os feriados nacionais na BrasilAPI.",
-                    extra_tags="reserva",
-                )
             return redirect("reservas:reserva_lista")
 
     return render(request, "reservas/reserva_form.html", {"form": form})
@@ -192,7 +177,56 @@ def reserva_disponibilidade(request):
         )
         return JsonResponse({"erro": mensagens[0]}, status=400)
 
-    return JsonResponse({"disponiveis": disponiveis})
+    inicio_local = timezone.localtime(form.cleaned_data["inicio"])
+    fim_local = timezone.localtime(form.cleaned_data["fim"])
+    consulta_feriados = consultar_feriados_no_periodo(
+        inicio_local.date(),
+        fim_local.date(),
+    )
+
+    return JsonResponse(
+        {
+            "disponiveis": disponiveis,
+            "consulta_feriados": {
+                "completa": consulta_feriados.completa,
+                "feriados": [
+                    {
+                        "data": feriado.data.isoformat(),
+                        "nome": feriado.nome,
+                    }
+                    for feriado in consulta_feriados.feriados
+                ],
+            },
+        }
+    )
+
+
+@login_required
+@permission_required("reservas.add_reserva", raise_exception=True)
+@require_GET
+def reserva_feriados(request):
+    _exigir_professor_funcional(request.user)
+
+    try:
+        ano = int(request.GET.get("ano", ""))
+        inicio_ano = date(ano, 1, 1)
+        fim_ano = date(ano, 12, 31)
+    except (OverflowError, TypeError, ValueError):
+        return JsonResponse({"erro": "Informe um ano válido."}, status=400)
+
+    consulta = consultar_feriados_no_periodo(inicio_ano, fim_ano)
+    return JsonResponse(
+        {
+            "completa": consulta.completa,
+            "feriados": [
+                {
+                    "data": feriado.data.isoformat(),
+                    "nome": feriado.nome,
+                }
+                for feriado in consulta.feriados
+            ],
+        }
+    )
 
 
 @login_required

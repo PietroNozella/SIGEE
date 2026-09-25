@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Exists, OuterRef
@@ -11,14 +9,7 @@ from auditoria.services import registrar_evento
 from inventario.models import Equipamento, Local, TipoEquipamento
 from usuarios.permissoes import e_professor_funcional
 
-from .brasilapi import ConsultaFeriados, consultar_feriados_no_periodo
 from .models import Reserva, ReservaEquipamento
-
-
-@dataclass(frozen=True)
-class ResultadoCriacaoReserva:
-    reserva: Reserva
-    consulta_feriados: ConsultaFeriados
 
 
 def _equipamentos_disponiveis(
@@ -158,9 +149,6 @@ def criar_reserva(
 
     expirar_reservas_vencidas()
 
-    # A primeira validação evita uma chamada externa quando os dados locais já
-    # são inválidos. O período é validado novamente dentro da transação para
-    # proteger contra alterações concorrentes enquanto a BrasilAPI é consultada.
     reserva = Reserva(
         professor=professor,
         tipo_equipamento=tipo_equipamento,
@@ -170,13 +158,6 @@ def criar_reserva(
         fim=fim,
     )
     reserva.full_clean()
-
-    inicio_local = timezone.localtime(inicio)
-    fim_local = timezone.localtime(fim)
-    consulta_feriados = consultar_feriados_no_periodo(
-        inicio_local.date(),
-        fim_local.date(),
-    )
 
     with transaction.atomic():
         try:
@@ -239,10 +220,7 @@ def criar_reserva(
             entidade_id=reserva.pk,
         )
 
-    return ResultadoCriacaoReserva(
-        reserva=reserva,
-        consulta_feriados=consulta_feriados,
-    )
+    return reserva
 
 
 def cancelar_reserva(*, professor, reserva):

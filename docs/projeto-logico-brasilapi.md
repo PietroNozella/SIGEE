@@ -2,11 +2,11 @@
 
 > **Status: integração, interface do Professor e testes automatizados implementados.**
 
-O cliente HTTP, a validação da resposta externa, o serviço de criação da reserva e a apresentação dos avisos na interface do Professor estão implementados e cobertos por testes automatizados.
+O cliente HTTP, a validação da resposta externa, a consulta anual usada pelo calendário, a consulta prévia integrada à disponibilidade e a apresentação dos avisos no diálogo de confirmação estão implementados e cobertos por testes automatizados.
 
 ## Objetivo
 
-Durante a reserva, informar ao Professor quando o período escolhido coincidir com um feriado nacional. O aviso é informativo: a ocorrência do feriado e a indisponibilidade da API não bloqueiam a reserva.
+Antes de efetivar a reserva, informar ao Professor no diálogo de confirmação quando o período escolhido coincidir com um feriado nacional. O aviso é informativo: a ocorrência do feriado e a indisponibilidade da API não bloqueiam a reserva.
 
 ## Relação com as validações da reserva
 
@@ -17,18 +17,24 @@ Assim, feriado e fim de semana possuem efeitos diferentes: o feriado retornado p
 ## Fluxo implementado
 
 ```text
-Professor informa período da reserva
+Professor abre o calendário da reserva
         ↓
-SIGEE identifica os anos envolvidos
+SIGEE consulta os feriados do ano exibido
         ↓
-Consulta feriados nacionais na BrasilAPI
+Calendário destaca feriados e desativa fins de semana e datas passadas
         ↓
-Compara datas com o período
+Professor informa o período da reserva
         ↓
-Exibe aviso informativo
+SIGEE valida o período e consulta a disponibilidade e o feriado selecionado
         ↓
-Se a API falhar, registra a falha e permite continuar a reserva
+Exibe o aviso no diálogo de confirmação, quando necessário
+        ↓
+Professor decide se confirma a reserva
+        ↓
+SIGEE revalida os dados locais e efetiva a reserva
 ```
+
+Se a API falhar, o diálogo informa que a consulta não foi concluída e permite continuar normalmente.
 
 ## Contrato externo implementado
 
@@ -56,13 +62,14 @@ Exemplo reduzido do formato observado:
 
 ## Processamento lógico
 
-1. Receber o tipo/modelo, o local, a quantidade, a data e os horários inicial e final validados pelo formulário de reserva. A quantidade é resolvida pela disponibilidade das unidades físicas do tipo e local escolhidos, independentemente da consulta de feriados.
-2. Identificar todos os anos abrangidos pelo período, sem repetir anos.
-3. Consultar o endpoint uma vez para cada ano, uma única vez por solicitação de reserva em lote.
-4. Validar cada resposta antes de utilizar seus dados.
-5. Converter `date` para data e selecionar os feriados compreendidos entre o início e o fim, inclusive.
-6. Exibir os nomes e as datas encontradas como aviso informativo.
-7. Manter a reserva disponível, com ou sem feriados e mesmo quando a consulta externa falhar.
+1. Ao abrir ou trocar o ano do calendário, receber o ano solicitado e consultar o endpoint com tempo limite explícito.
+2. Devolver ao calendário somente a data e o nome dos feriados. A interface os destaca com legenda, mantém feriados selecionáveis e desativa datas passadas e fins de semana.
+3. Durante a consulta prévia de disponibilidade, receber o tipo/modelo, o local, a data e os horários inicial e final validados. A quantidade é resolvida pelas unidades físicas do tipo e local escolhidos, independentemente da consulta de feriados.
+4. Identificar todos os anos abrangidos pelo período, sem repetir anos, e consultar o endpoint para cada ano necessário.
+5. Validar cada resposta, converter `date` e selecionar os feriados compreendidos entre o início e o fim, inclusive.
+6. Devolver a disponibilidade e o resultado da consulta de feriados para o formulário.
+7. Exibir os nomes e as datas encontradas no diálogo antes da confirmação final.
+8. Ao confirmar, revalidar período, disponibilidade e permissões no servidor antes de persistir a reserva.
 
 ## Resposta inválida e contingência
 
@@ -79,11 +86,11 @@ Esse registro técnico de falha não representa a implementação da auditoria f
 
 ## Saída interna implementada
 
-A camada de reserva recebe:
+O endpoint de consulta prévia devolve:
 
 - lista de feriados encontrados, contendo somente data e nome necessários para o aviso;
 - indicação de consulta completa ou indisponível;
-- mensagem informativa apropriada para a interface.
+- quantidade de unidades disponíveis para o período.
 
 Nenhuma resposta da BrasilAPI será usada para decidir disponibilidade do equipamento, detectar conflito de reservas ou impedir a persistência.
 
@@ -92,6 +99,7 @@ Nenhuma resposta da BrasilAPI será usada para decidir disponibilidade do equipa
 - período sem feriado;
 - período contendo um ou mais feriados;
 - feriado em dia útil com aviso, sem bloqueio da reserva;
+- resposta prévia com feriado e estrutura do aviso no diálogo de confirmação;
 - período abrangendo dois anos;
 - timeout e erro de rede;
 - status HTTP inesperado;

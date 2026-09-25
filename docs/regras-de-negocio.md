@@ -20,7 +20,7 @@ Este documento registra as 19 regras de negócio confirmadas para o SIGEE. Elas 
 - **RN-16 — Vinculação pedagógica com ou sem reserva:** a associação pedagógica pode ser registrada em utilizações originadas de reserva ou de retirada sem reserva, preservando a movimentação.
 - **RN-17 — Indicadores baseados em registros pedagógicos:** indicadores pedagógicos são calculados somente a partir de registros efetivamente vinculados a turma, disciplina e atividade pedagógica.
 - **RN-18 — Cadastro controlado de usuários:** o SIGEE não permite cadastro público; novas contas de Administrador, Operador e Professor são criadas por um Administrador. O primeiro Administrador é configurado por meio de uma conta técnica de Django Superuser.
-- **RN-19 — Validade temporal e dias permitidos da reserva:** a data e a hora inicial da reserva não podem estar no passado. A data atual é permitida quando o horário inicial ainda não tiver passado. Reservas cujo período inclua sábado ou domingo são impedidas. A coincidência com feriado nacional consultado pela BrasilAPI gera somente aviso informativo e não impede a reserva.
+- **RN-19 — Validade temporal e dias permitidos da reserva:** a data e a hora inicial da reserva não podem estar no passado. A data atual é permitida quando o horário inicial ainda não tiver passado. Reservas cujo período inclua sábado ou domingo são impedidas. Antes da efetivação da reserva, a coincidência com feriado nacional consultado pela BrasilAPI é informada no diálogo de confirmação e não impede a reserva.
 
 ## Decisão de modelagem da reserva em lote
 
