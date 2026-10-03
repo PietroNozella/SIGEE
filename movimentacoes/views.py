@@ -1,18 +1,27 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
-from usuarios.permissoes import pode_registrar_retirada
+from inventario.models import Equipamento
+from usuarios.permissoes import pode_registrar_devolucao, pode_registrar_retirada
 
-from .forms import ConsultaRetiradaForm, RetiradaSemReservaForm
-from .services import equipamentos_disponiveis_para_retirada, registrar_retirada_sem_reserva
+from .forms import ConsultaRetiradaForm, DevolucaoForm, RetiradaSemReservaForm
+from .models import Movimentacao
+from .services import (
+    equipamentos_disponiveis_para_retirada,
+    grupos_devolucao,
+    registrar_devolucoes,
+    registrar_retirada_sem_reserva,
+    retiradas_do_grupo,
+)
 
 
 def _dados_disponibilidade(consulta):
@@ -122,4 +131,89 @@ def retirada_sem_reserva(request):
         "form": form, "disponibilidade": disponibilidade,
         "selecionados": selecionados,
         "erros_consulta": erros_consulta,
+    })
+
+
+@login_required
+@require_GET
+def devolucao_lista(request):
+    if not pode_registrar_devolucao(request.user):
+        raise PermissionDenied
+    busca = request.GET.get("busca", "").strip()
+    pagina = Paginator(grupos_devolucao(busca), 15).get_page(request.GET.get("pagina"))
+    grupos = list(pagina.object_list)
+    referencias = Movimentacao.objects.select_related(
+        "equipamento__tipo", "destinatario", "operador",
+    ).in_bulk([grupo["retirada_id"] for grupo in grupos])
+    for grupo in grupos:
+        grupo["retirada"] = referencias[grupo["retirada_id"]]
+        grupo["devolvidas"] = grupo["total"] - grupo["pendentes"]
+    pagina.object_list = grupos
+    parametros = request.GET.copy()
+    parametros.pop("pagina", None)
+    return render(request, "movimentacoes/devolucao_lista.html", {
+        "pagina": pagina, "busca": busca, "parametros_paginacao": parametros.urlencode(),
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def devolucao_registrar(request, retirada_id):
+    if not pode_registrar_devolucao(request.user):
+        raise PermissionDenied
+    retirada = get_object_or_404(
+        Movimentacao.objects.select_related(
+            "equipamento__tipo", "equipamento__local", "destinatario", "operador",
+        ),
+        pk=retirada_id, tipo=Movimentacao.Tipo.RETIRADA,
+    )
+    grupo = retiradas_do_grupo(retirada)
+    form = DevolucaoForm(
+        request.POST if request.method == "POST" else None,
+        retiradas=grupo.filter(devolvida=False),
+    )
+    if request.method == "POST":
+        if form.is_valid():
+            try:
+                devolucoes = registrar_devolucoes(
+                    operador=request.user, retirada_id=retirada.pk,
+                    retiradas_ids=[item.pk for item in form.cleaned_data["retiradas"]],
+                    observacao=form.cleaned_data["observacao"],
+                )
+            except ValidationError as erro:
+                form.add_error(None, erro)
+            except IntegrityError:
+                form.add_error(
+                    None, "Não foi possível registrar a devolução. Nenhuma alteração foi salva. "
+                    "Atualize o lote e tente novamente.",
+                )
+            else:
+                impedidos = sum(
+                    not item.equipamento.ativo or item.equipamento.situacao == Equipamento.Situacao.MANUTENCAO
+                    for item in devolucoes
+                )
+                complemento = (
+                    "Equipamentos inativos ou em manutenção mantiveram seu impedimento."
+                    if impedidos else "Os equipamentos devolvidos estão disponíveis."
+                )
+                messages.success(
+                    request, f"Devolução de {len(devolucoes)} equipamento(s) registrada com sucesso. {complemento}",
+                )
+                return redirect("movimentacoes:devolucao_lista")
+        registrar_evento(
+            usuario=request.user, acao=AcaoAuditoria.DEVOLUCAO_REGISTRADA,
+            resultado=RegistroAuditoria.Resultado.FALHA,
+            entidade="movimentacoes.Movimentacao", entidade_id=retirada.pk,
+        )
+    unidades = list(grupo.order_by("equipamento__numero_patrimonio", "pk"))
+    abertas = [item for item in unidades if not item.devolvida]
+    selecionados = (
+        request.POST.getlist("retiradas") if request.method == "POST"
+        else [str(item.pk) for item in abertas]
+    )
+    return render(request, "movimentacoes/devolucao_form.html", {
+        "retirada": retirada, "form": form, "devolvida": not abertas,
+        "unidades": unidades, "selecionados": selecionados,
+        "total": len(unidades), "pendentes": len(abertas), "devolvidas": len(unidades) - len(abertas),
+        "referencia_id": min(item.pk for item in unidades),
     })

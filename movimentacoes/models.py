@@ -39,11 +39,22 @@ class Movimentacao(models.Model):
         related_name="devolucoes",
     )
     observacao = models.TextField(blank=True)
+    lote_retirada = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
 
     class Meta:
         ordering = ["-data_hora"]
         verbose_name = "movimentação"
         verbose_name_plural = "movimentações"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["retirada_origem"], condition=models.Q(tipo="DEVOLUCAO"),
+                name="mov_devolucao_unica_origem",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(tipo="DEVOLUCAO") | models.Q(retirada_origem__isnull=False),
+                name="mov_devolucao_exige_origem",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.tipo} - {self.equipamento}"

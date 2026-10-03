@@ -1,6 +1,6 @@
 # Matriz de acesso
 
-Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permissões referentes às rotas atuais do inventário, ao cadastro de usuários, à consulta de auditoria, às reservas próprias e à retirada sem reserva estão implementadas; as demais ações continuam planejadas.
+Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permissões referentes às rotas atuais do inventário, ao cadastro de usuários, à consulta de auditoria, às reservas próprias, à retirada sem reserva e à devolução básica estão implementadas; as demais ações continuam planejadas.
 
 ## Princípios
 
@@ -49,9 +49,9 @@ O comando `python manage.py configurar_perfis`, executado depois de `migrate`, a
 | Grupo | Permissões atuais |
 |---|---|
 | Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auditoria.view_registroauditoria` |
-| Operador | `view_equipamento`, `movimentacoes.add_movimentacao` (retirada sem reserva) |
+| Operador | `view_equipamento`, `movimentacoes.add_movimentacao` (retirada sem reserva e devolução básica) |
 | Professor | `view_equipamento`, `add_reserva`, `view_reserva`, `change_reserva` |
 
 As permissões das funcionalidades futuras serão acrescentadas somente quando suas respectivas rotas forem implementadas.
 
-A rota `/movimentacoes/retirada/` exige conta ativa, sem privilégios de Superuser, pertencente exclusivamente ao grupo Operador e com `movimentacoes.add_movimentacao`. A verificação ocorre na view e no serviço de gravação, inclusive em acesso direto à URL. Devolução e retirada vinculada a reserva ainda não possuem rotas funcionais.
+As rotas `/movimentacoes/retirada/`, `/movimentacoes/devolucao/` e `/movimentacoes/devolucao/<retirada_id>/` exigem conta ativa, sem privilégios de Superuser, pertencente exclusivamente ao grupo Operador e com `movimentacoes.add_movimentacao`. A verificação ocorre nas views e nos serviços de gravação, inclusive em acesso direto à URL. Qualquer Operador autorizado pode devolver uma unidade, mesmo quando outro Operador registrou a retirada. Retirada vinculada à reserva e encaminhamento para manutenção ainda não possuem rotas funcionais.

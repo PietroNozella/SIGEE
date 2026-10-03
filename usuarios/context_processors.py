@@ -4,6 +4,7 @@ from .permissoes import (
     pode_cadastrar_usuario,
     pode_consultar_auditoria,
     pode_registrar_retirada,
+    pode_registrar_devolucao,
 )
 
 
@@ -14,4 +15,5 @@ def permissoes_funcionais(request):
         "pode_cadastrar_usuario": pode_cadastrar_usuario(request.user),
         "pode_consultar_auditoria": pode_consultar_auditoria(request.user),
         "pode_registrar_retirada": pode_registrar_retirada(request.user),
+        "pode_registrar_devolucao": pode_registrar_devolucao(request.user),
     }

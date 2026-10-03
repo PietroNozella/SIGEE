@@ -70,6 +70,10 @@ def pode_registrar_retirada(user):
     return e_operador_funcional(user) and user.has_perm(PERMISSAO_REGISTRAR_RETIRADA)
 
 
+def pode_registrar_devolucao(user):
+    return e_operador_funcional(user) and user.has_perm("movimentacoes.add_movimentacao")
+
+
 def usuarios_funcionais_ativos():
     # Conta com grupos adicionais também viola a atribuição exclusiva da RN-18.
     return (

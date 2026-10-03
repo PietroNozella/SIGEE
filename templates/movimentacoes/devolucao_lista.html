@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar devolução | SIGEE{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    <header class="page-header">
+        <div><h1>Registrar devolução</h1><p>Localize a retirada e confirme todos os equipamentos recebidos de uma só vez.</p></div>
+    </header>
+    <section class="inventory-card" aria-labelledby="returns-heading">
+        <h2 class="visually-hidden" id="returns-heading">Grupos com devolução pendente</h2>
+        <form class="reservation-filter-toolbar" method="get">
+            <div class="reservation-filter-field">
+                <label for="busca">Patrimônio, equipamento ou destinatário</label>
+                <input class="form-control" id="busca" type="search" name="busca" value="{{ busca }}" placeholder="Busque uma retirada em aberto">
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-primary-sigee" type="submit">Buscar</button>
+                {% if busca %}<a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_lista' %}">Limpar</a>{% endif %}
+            </div>
+        </form>
+        {% if pagina.object_list %}
+        <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Grupos com devolução pendente; use rolagem horizontal em telas pequenas">
+            <table class="table inventory-table mb-0">
+                <caption class="visually-hidden">Retiradas e reservas com unidades ainda não devolvidas</caption>
+                <thead><tr><th scope="col">Retirada ou reserva</th><th scope="col">Destinatário</th><th scope="col">Unidades</th><th scope="col">Data da retirada</th><th scope="col">Ação</th></tr></thead>
+                <tbody>{% for grupo in pagina %}<tr>
+                    <td>
+                        <strong>{% if grupo.retirada.reserva_id %}Reserva #{{ grupo.retirada.reserva_id }}{% elif grupo.retirada.lote_retirada %}Retirada #{{ grupo.retirada_id }}{% else %}Pendências anteriores{% endif %}</strong>
+                        <span class="table-metadata">{% if grupo.tipos == 1 %}{{ grupo.retirada.equipamento.tipo.nome }}{% else %}{{ grupo.tipos }} tipos/modelos{% endif %}</span>
+                        {% if grupo.total == 1 %}<span class="table-metadata">{{ grupo.retirada.equipamento.numero_patrimonio }}</span>{% endif %}
+                        {% if not grupo.retirada.reserva_id and not grupo.retirada.lote_retirada %}<span class="table-metadata">Sem identificação do lote original</span>{% endif %}
+                    </td>
+                    <td>{{ grupo.retirada.destinatario.get_full_name|default:grupo.retirada.destinatario.username }}<span class="table-metadata">{{ grupo.retirada.destinatario.username }}</span></td>
+                    <td><strong>{{ grupo.pendentes }} em aberto</strong><span class="table-metadata">{{ grupo.devolvidas }} devolvidas de {{ grupo.total }}</span></td>
+                    <td>{{ grupo.inicio|date:"d/m/Y H:i" }}{% if not grupo.retirada.reserva_id and not grupo.retirada.lote_retirada %}<span class="table-metadata">Desde a primeira retirada</span>{% endif %}</td>
+                    <td><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_registrar' grupo.retirada_id %}" aria-label="Conferir devolução para {{ grupo.retirada.destinatario.get_full_name|default:grupo.retirada.destinatario.username }}, {{ grupo.pendentes }} unidades em aberto">Conferir devolução</a></td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        <footer class="inventory-pagination">
+            <p>Mostrando {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }} grupos com devolução pendente</p>
+            {% if pagina.paginator.num_pages > 1 %}<nav aria-label="Paginação de grupos com devolução pendente"><ul class="pagination mb-0">
+                <li class="page-item{% if not pagina.has_previous %} disabled{% endif %}">{% if pagina.has_previous %}<a class="page-link" href="?{% if parametros_paginacao %}{{ parametros_paginacao }}&amp;{% endif %}pagina={{ pagina.previous_page_number }}">Anterior</a>{% else %}<span class="page-link" aria-disabled="true">Anterior</span>{% endif %}</li>
+                <li class="page-item{% if not pagina.has_next %} disabled{% endif %}">{% if pagina.has_next %}<a class="page-link" href="?{% if parametros_paginacao %}{{ parametros_paginacao }}&amp;{% endif %}pagina={{ pagina.next_page_number }}">Próxima</a>{% else %}<span class="page-link" aria-disabled="true">Próxima</span>{% endif %}</li>
+            </ul></nav>{% endif %}
+        </footer>
+        {% else %}
+        <div class="empty-state" role="status">
+            <h2>{% if busca %}Nenhuma retirada encontrada{% else %}Nenhuma retirada em aberto{% endif %}</h2>
+            <p>{% if busca %}Revise a busca ou consulte todas as retiradas em aberto.{% else %}As retiradas aparecem aqui enquanto aguardam a devolução.{% endif %}</p>
+            {% if busca %}<a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_lista' %}">Ver todas</a>{% endif %}
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

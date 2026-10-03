@@ -56,7 +56,7 @@ O SIGEE não possui cadastro público. As contas são criadas por usuários auto
 | Perfil | Acesso disponível atualmente |
 |---|---|
 | **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, consulta o resumo e acessa a auditoria. |
-| **Operador** | Consulta o inventário e registra retirada sem reserva em lote, por tipo/modelo e local, conferindo os patrimônios. |
+| **Operador** | Consulta o inventário, registra retirada sem reserva em lote e confirma devolução integral ou parcial, conferindo os patrimônios e preservando cada retirada original. |
 | **Professor** | Consulta os equipamentos e a disponibilidade, cria reservas próprias em lote e cancela as próprias reservas. |
 
 Consulte os detalhes de autorização na [matriz de acesso](docs/matriz-de-acesso.md).
@@ -146,13 +146,14 @@ python manage.py test
 - [x] prevenção de conflitos e bloqueio de períodos inválidos;
 - [x] cancelamento das próprias reservas;
 - [x] retirada sem reserva em lote por Operador, com quantidade, conferência dos patrimônios e atualização atômica para em uso;
+- [x] devolução básica em lote ou parcial por qualquer Operador autorizado, com seleção dos patrimônios, vínculo individual à retirada, auditoria e proteção contra duplicidade;
 - [x] consulta informativa de feriados nacionais pela BrasilAPI.
 - [x] transparência de privacidade, inventário de dados e aceite versionado;
 - [x] comandos assistidos para exportação, anonimização e descarte controlado.
 
 ## Roadmap
 
-- [ ] retirada e devolução de equipamentos;
+- [ ] retirada vinculada à reserva, devolução com problema (RN-14), histórico completo e validação do ambiente publicado;
 - [ ] registro e acompanhamento de manutenções;
 - [ ] vinculação da utilização ao contexto pedagógico;
 - [ ] indicadores de utilização pedagógica.

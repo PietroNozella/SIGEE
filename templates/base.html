@@ -40,9 +40,15 @@
                 </a>
                 {% endif %}
                 {% if pode_registrar_retirada %}
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'movimentacoes' %} is-active{% endif %}" href="{% url 'movimentacoes:retirada_sem_reserva' %}"{% if request.resolver_match.namespace == 'movimentacoes' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.url_name == 'retirada_sem_reserva' %} is-active{% endif %}" href="{% url 'movimentacoes:retirada_sem_reserva' %}"{% if request.resolver_match.url_name == 'retirada_sem_reserva' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
                     Registrar retirada
+                </a>
+                {% endif %}
+                {% if pode_registrar_devolucao %}
+                <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' %} is-active{% endif %}" href="{% url 'movimentacoes:devolucao_lista' %}"{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
+                    Registrar devolução
                 </a>
                 {% endif %}
             {% else %}

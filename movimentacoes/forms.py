@@ -4,11 +4,40 @@ from django.contrib.auth import get_user_model
 from inventario.models import Equipamento, Local, TipoEquipamento
 from usuarios.permissoes import usuarios_funcionais_ativos
 
+from .models import Movimentacao
+
 
 class DestinatarioRetiradaField(forms.ModelChoiceField):
     def label_from_instance(self, usuario):
         nome = usuario.get_full_name() or usuario.username
         return f"{nome} ({usuario.username})"
+
+
+class DevolucaoForm(forms.Form):
+    retiradas = forms.ModelMultipleChoiceField(
+        label="Patrimônios recebidos", queryset=Movimentacao.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        error_messages={
+            "required": "Marque pelo menos um patrimônio recebido.",
+            "invalid_choice": "Uma unidade selecionada já foi devolvida ou não pertence a este grupo. Revise a lista.",
+            "invalid_pk_value": "Selecione unidades válidas deste grupo.",
+        },
+    )
+    observacao = forms.CharField(
+        label="Observação", required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+
+    def __init__(self, *args, retiradas, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["retiradas"].queryset = retiradas
+        self.initial.setdefault("retiradas", list(retiradas.values_list("pk", flat=True)))
+
+    def clean_retiradas(self):
+        valores = self.fields["retiradas"].widget.value_from_datadict(self.data, self.files, "retiradas")
+        if len(valores) != len(self.cleaned_data["retiradas"]):
+            raise forms.ValidationError("Não repita o mesmo patrimônio na devolução.")
+        return self.cleaned_data["retiradas"]
 
 
 class ConsultaRetiradaForm(forms.Form):

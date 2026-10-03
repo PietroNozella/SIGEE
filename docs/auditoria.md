@@ -19,6 +19,7 @@ A auditoria cobre atualmente:
 - cadastro controlado de contas funcionais;
 - criação, cancelamento e expiração automática de reservas próprias pelo Professor;
 - retirada sem reserva por Operador;
+- devolução básica vinculada à retirada por Operador;
 - exportação de dados de uma conta para atendimento ao titular;
 - anonimização de conta;
 - limpeza confirmada de auditorias, aceites e sessões expiradas.
@@ -60,13 +61,14 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `RESERVA_CANCELADA` | O Professor cancela uma reserva própria. | Sucesso |
 | `RESERVA_EXPIRADA` | O sistema expira uma reserva ativa sem retirada após 30 minutos do início. | Sucesso |
 | `RETIRADA_REGISTRADA` | O Operador registra uma retirada sem reserva ou o formulário é rejeitado. | Sucesso ou falha |
+| `DEVOLUCAO_REGISTRADA` | O Operador registra uma devolução vinculada à retirada ou a tentativa é rejeitada. | Sucesso ou falha |
 | `DADOS_TITULAR_EXPORTADOS` | Um conjunto de dados é preparado para atendimento ao titular. | Sucesso |
 | `USUARIO_ANONIMIZADO` | Uma conta comum é desativada e tem identificadores diretos substituídos. | Sucesso |
 | `DADOS_EXPIRADOS_REMOVIDOS` | Uma limpeza confirmada remove registros segundo datas de corte explícitas. | Sucesso |
 
 Uma tentativa de login inválida é registrada sem vincular o nome de usuário informado a uma conta. Consultas registram que houve uso de filtros, mas não armazenam os termos pesquisados. A importação registra um evento para o lote e não copia o conteúdo do arquivo. No cadastro de contas, a auditoria identifica o Administrador responsável e, em caso de sucesso, o identificador da conta criada, sem copiar nome, e-mail, perfil ou senha.
 
-Na retirada, o evento de sucesso referencia a movimentação e é salvo na mesma transação que ela e a atualização do equipamento. Uma falha nessa gravação desfaz as três alterações. Formulários inválidos geram um evento de falha sem copiar destinatário ou observação; acessos negados seguem o middleware existente.
+Na retirada e na devolução, o evento de sucesso referencia a nova movimentação e é salvo na mesma transação que ela e a atualização do equipamento. Uma falha nessa gravação desfaz as três alterações. Tentativas inválidas geram separadamente um evento de falha sem copiar destinatário ou observação; acessos negados seguem o middleware existente. Na devolução rejeitada pela view, o evento de falha referencia a retirada consultada.
 
 ## Controle de acesso e consulta
 
