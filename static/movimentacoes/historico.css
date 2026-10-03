@@ -1,0 +1,8 @@
+.history-filter-toolbar { flex-wrap: wrap; }
+.history-filter-toolbar .reservation-filter-field { flex: 1 1 180px; min-width: 0; }
+.history-filter-toolbar .reservation-filter-field:first-of-type { flex-basis: 260px; }
+.inventory-table tr:target { background-color: var(--sigee-primary-soft); }
+@media (max-width: 767.98px) {
+    .history-filter-toolbar .reservation-filter-field { flex: none; width: 100%; }
+    .history-filter-toolbar .reservation-filter-field:first-of-type { flex-basis: auto; }
+}

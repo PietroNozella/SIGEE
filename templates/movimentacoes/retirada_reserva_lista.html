@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Reservas | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content">
+    <header class="page-header">
+        <div><h1>Reservas</h1><p>Confira as reservas dos Professores para entregar os lotes. Para uma entrega sem reserva, use Registrar retirada.</p></div>
+        <a class="btn btn-primary-sigee" href="{% url 'movimentacoes:retirada_sem_reserva' %}">Registrar retirada</a>
+    </header>
+    <section class="inventory-card" aria-labelledby="reserved-heading">
+        <h2 class="visually-hidden" id="reserved-heading">Reservas para conferência</h2>
+        <form class="reservation-filter-toolbar" method="get">
+            <div class="reservation-filter-field"><label for="busca">Reserva, Professor, patrimônio ou equipamento</label><input class="form-control" id="busca" name="busca" type="search" value="{{ busca }}" placeholder="Busque uma reserva"></div>
+            <div class="reservation-filter-field"><label for="status">Situação da reserva</label><select class="form-select" name="status" id="status"><option value=""{% if not status %} selected{% endif %}>Todas</option>{% for valor, rotulo in status_choices %}<option value="{{ valor }}"{% if status == valor %} selected{% endif %}>{{ rotulo }}</option>{% endfor %}</select></div>
+            <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Buscar</button><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_lista' %}">Limpar</a></div>
+        </form>
+        {% if pagina.object_list %}
+        <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Reservas; use rolagem horizontal em telas pequenas">
+            <table class="table inventory-table mb-0"><caption class="visually-hidden">Reservas com unidades físicas alocadas</caption>
+                <thead><tr><th scope="col">Reserva e Professor</th><th scope="col">Equipamento e local</th><th scope="col">Período</th><th scope="col">Unidades</th><th scope="col">Situação</th><th scope="col">Ação</th></tr></thead>
+                <tbody>{% for reserva in pagina %}<tr>
+                    <td><strong>Reserva #{{ reserva.pk }}</strong><span class="table-metadata">{{ reserva.professor.get_full_name|default:reserva.professor.username }} ({{ reserva.professor.username }})</span></td>
+                    <td>{{ reserva.tipo_equipamento.nome }}<span class="table-metadata">{{ reserva.local.nome }}</span></td>
+                    <td>{{ reserva.inicio|date:"d/m/Y H:i" }}<span class="table-metadata">Até {{ reserva.fim|date:"d/m/Y H:i" }}</span></td>
+                    <td>{{ reserva.quantidade }}</td><td>{{ reserva.get_status_display }}{% if reserva.retirada_registrada %}<span class="table-metadata">Retirada registrada</span>{% endif %}</td>
+                    <td><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_registrar' reserva.pk %}">Conferir reserva</a></td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        {% include "movimentacoes/_paginacao.html" %}
+        {% else %}<div class="empty-state" role="status"><h2>Nenhuma reserva encontrada</h2><p>Revise a busca e a situação selecionada.</p></div>{% endif %}
+    </section>
+</div>
+{% endblock %}

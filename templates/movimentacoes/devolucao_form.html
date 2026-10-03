@@ -6,7 +6,7 @@
 {% block content %}
 <div class="page-content form-page">
     <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">
-        <a href="{% url 'movimentacoes:devolucao_lista' %}">Retiradas em aberto</a><span aria-hidden="true">/</span><span aria-current="page">Conferir devolução</span>
+        <a href="{% url 'movimentacoes:devolucao_lista' %}">Em uso</a><span aria-hidden="true">/</span><span aria-current="page">Conferir devolução</span>
     </nav>
     <header class="page-header form-page-header">
         <div><h1>Conferir devolução</h1><p>Todos os patrimônios em aberto vêm marcados. Desmarque as unidades que ainda não foram recebidas.</p></div>
@@ -28,8 +28,8 @@
         </div>
         {% if not retirada.reserva_id and not retirada.lote_retirada %}<p class="form-help">Estes registros são anteriores à identificação de lotes. As pendências deste destinatário estão reunidas aqui; confira o patrimônio e a data de cada retirada.</p>{% endif %}
         {% if devolvida %}
-        <div class="validation-summary" role="status"><p>Todas as unidades deste grupo já foram devolvidas. Consulte a lista de retiradas em aberto.</p></div>
-        <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_lista' %}">Voltar à lista</a></div>
+        <div class="validation-summary" role="status"><p>Todas as unidades deste grupo já foram devolvidas.</p></div>
+        <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_lista' %}">Voltar para Em uso</a>{% if pode_consultar_historico %}<a class="btn btn-primary-sigee" href="{% url 'movimentacoes:historico_lista' %}?retirada={{ retirada.pk }}">Consultar histórico</a>{% endif %}</div>
         {% else %}
         <form method="post" novalidate data-return-form>
             {% csrf_token %}

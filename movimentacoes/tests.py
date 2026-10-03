@@ -107,7 +107,7 @@ class RetiradaSemReservaTests(TestCase):
             "reserva": "999",
             "retirada_origem": "999",
         }, follow=True)
-        self.assertRedirects(resposta, self.url)
+        self.assertRedirects(resposta, reverse("movimentacoes:devolucao_lista"))
         self.assertContains(resposta, "Retirada de 1 equipamento(s) registrada com sucesso")
         self.assertContains(resposta, 'data-auto-dismiss="true"')
         retirada = Movimentacao.objects.get()
@@ -179,17 +179,22 @@ class RetiradaSemReservaTests(TestCase):
             self.assertRedirects(resposta, reverse("login") + "?next=" + self.url)
         self.assert_sem_retirada()
 
-    def test_get_nao_grava_e_sidebar_do_operador_oferece_retirada(self):
+    def test_navegacao_do_operador_agrupa_retiradas_em_reservas_sem_gravar(self):
         resposta = self.client.get(self.url)
         self.assertEqual(resposta.status_code, 200)
-        self.assertContains(resposta, 'href="' + self.url + '"')
         self.assertContains(resposta, "Registrar retirada")
         navegacao = resposta.content.decode().split('<nav class="sidebar-navigation"')[1].split("</nav>")[0]
-        self.assertIn("Equipamentos", navegacao)
-        for opcao in ("Visão geral", "Reservas", "Manutenções", "Gestão educacional",
+        self.assertEqual(navegacao.count('<a '), 4)
+        for opcao in ("Equipamentos", "Reservas", "Em uso", "Histórico"):
+            self.assertIn(opcao, navegacao)
+        self.assertIn(f'href="{reverse("movimentacoes:retirada_reserva_lista")}" aria-current="page"', navegacao)
+        self.assertNotIn(f'href="{self.url}"', navegacao)
+        for opcao in ("Visão geral", "Registrar retirada", "Registrar devolução", "Manutenções", "Gestão educacional",
                       "Uso pedagógico", "Turmas", "Disciplinas", "Atividades",
                       "Administração", "Usuários", "Configurações", "Auditoria"):
             self.assertNotIn(opcao, navegacao)
+        reservas = self.client.get(reverse("movimentacoes:retirada_reserva_lista"))
+        self.assertContains(reservas, f'href="{self.url}">Registrar retirada</a>')
         self.assert_sem_retirada()
 
     def test_post_exige_csrf(self):

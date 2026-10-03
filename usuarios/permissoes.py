@@ -28,10 +28,12 @@ PERMISSOES_POR_GRUPO = {
         "inventario.view_resumo_inventario",
         PERMISSAO_CADASTRAR_USUARIO,
         PERMISSAO_CONSULTAR_AUDITORIA,
+        "movimentacoes.view_movimentacao",
     ),
     GRUPO_OPERADOR: (
         "inventario.view_equipamento",
         PERMISSAO_REGISTRAR_RETIRADA,
+        "movimentacoes.view_movimentacao",
     ),
     GRUPO_PROFESSOR: (
         "inventario.view_equipamento",
@@ -72,6 +74,14 @@ def pode_registrar_retirada(user):
 
 def pode_registrar_devolucao(user):
     return e_operador_funcional(user) and user.has_perm("movimentacoes.add_movimentacao")
+
+
+def pode_consultar_historico(user):
+    return (
+        user.is_authenticated and user.is_active and not user.is_superuser
+        and (e_administrador_funcional(user) or e_operador_funcional(user))
+        and user.has_perm("movimentacoes.view_movimentacao")
+    )
 
 
 def usuarios_funcionais_ativos():

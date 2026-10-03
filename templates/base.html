@@ -7,6 +7,7 @@
     <title>{% block title %}SIGEE{% endblock %}</title>
     <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261003.1">
+    {% block extra_styles %}{% endblock %}
 </head>
 <body>
     <a class="skip-link" href="#conteudo-principal">Ir para o conteúdo principal</a>
@@ -40,15 +41,15 @@
                 </a>
                 {% endif %}
                 {% if pode_registrar_retirada %}
-                <a class="side-nav-item{% if request.resolver_match.url_name == 'retirada_sem_reserva' %} is-active{% endif %}" href="{% url 'movimentacoes:retirada_sem_reserva' %}"{% if request.resolver_match.url_name == 'retirada_sem_reserva' %} aria-current="page"{% endif %}>
-                    <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
-                    Registrar retirada
+                <a class="side-nav-item{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or request.resolver_match.url_name == 'retirada_sem_reserva' %} is-active{% endif %}" href="{% url 'movimentacoes:retirada_reserva_lista' %}"{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or request.resolver_match.url_name == 'retirada_sem_reserva' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
+                    Reservas
                 </a>
                 {% endif %}
                 {% if pode_registrar_devolucao %}
                 <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' %} is-active{% endif %}" href="{% url 'movimentacoes:devolucao_lista' %}"{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' %} aria-current="page"{% endif %}>
-                    <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
-                    Registrar devolução
+                    <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">
+                    Em uso
                 </a>
                 {% endif %}
             {% else %}
@@ -76,7 +77,7 @@
                 <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
                 Registrar retirada
             </a>
-            {% else %}
+            {% elif not pode_consultar_historico %}
             <span class="side-nav-item is-disabled" aria-disabled="true">
                 <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
                 Movimentações
@@ -127,6 +128,12 @@
                 <img src="{% static 'inventario/icons/settings.svg' %}" alt="" aria-hidden="true">
                 Configurações
             </span>
+            {% endif %}
+            {% if pode_consultar_historico %}
+            <a class="side-nav-item{% if request.resolver_match.url_name == 'historico_lista' %} is-active{% endif %}" href="{% url 'movimentacoes:historico_lista' %}"{% if request.resolver_match.url_name == 'historico_lista' %} aria-current="page"{% endif %}>
+                <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
+                {% if e_operador %}Histórico{% else %}Histórico de movimentações{% endif %}
+            </a>
             {% endif %}
         </nav>
 

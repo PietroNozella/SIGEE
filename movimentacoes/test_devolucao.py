@@ -199,6 +199,9 @@ class DevolucaoTests(TestCase):
         for campo in ("equipamento", "destinatario", "operador", "retirada_origem", "data_hora", "reserva"):
             self.assertNotContains(resposta, f'name="{campo}"')
         self.assertContains(resposta, "Registrar devolução")
+        self.assertContains(resposta, f'href="{self.lista}">Em uso</a>')
+        lista = self.client.get(self.lista)
+        self.assertContains(lista, "<h1>Em uso</h1>", html=True)
         self.assert_aberta()
 
     def test_retirada_inexistente_na_url_e_no_servico_nao_altera_dados(self):

@@ -5,14 +5,140 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Case, CharField, Count, Exists, Max, Min, OuterRef, Q, Value, When
 from django.db.models.functions import Cast, Concat
+from django.utils import timezone
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from inventario.models import Equipamento
+from reservas.models import Reserva
+from reservas.services import _expirar_reserva_bloqueada
 from usuarios.permissoes import pode_registrar_devolucao, pode_registrar_retirada, usuarios_funcionais_ativos
 
 from .models import Movimentacao
+
+
+def reservas_para_retirada(*, busca="", status=Reserva.Status.ATIVA):
+    retiradas = Movimentacao.objects.filter(
+        reserva_id=OuterRef("pk"), tipo=Movimentacao.Tipo.RETIRADA,
+    )
+    reservas = Reserva.objects.select_related("professor", "tipo_equipamento", "local").annotate(
+        retirada_registrada=Exists(retiradas),
+        nome_professor=Concat("professor__first_name", Value(" "), "professor__last_name"),
+    )
+    if status:
+        reservas = reservas.filter(status=status)
+    if busca:
+        criterio = (
+            Q(professor__username__icontains=busca) | Q(nome_professor__icontains=busca)
+            | Q(tipo_equipamento__nome__icontains=busca) | Q(local__nome__icontains=busca)
+            | Q(itens__equipamento__numero_patrimonio__icontains=busca)
+        )
+        if busca.isdecimal():
+            criterio |= Q(pk=busca)
+        reservas = reservas.filter(criterio).distinct()
+    return reservas.order_by("inicio", "pk")
+
+
+def registrar_retirada_reserva(*, operador, reserva_id, observacao=""):
+    if not operador.is_authenticated:
+        raise PermissionDenied
+    operador_atual = get_user_model().objects.filter(pk=operador.pk).first()
+    if operador_atual is None or not pode_registrar_retirada(operador_atual):
+        raise PermissionDenied
+
+    expirou = False
+    movimentacoes = []
+    with transaction.atomic():
+        # O cancelamento e a expiração bloqueiam esta mesma linha antes de agir.
+        try:
+            reserva = Reserva.objects.select_for_update().get(pk=reserva_id)
+        except Reserva.DoesNotExist as erro:
+            raise ValidationError("A reserva informada não existe.") from erro
+        if reserva.status != Reserva.Status.ATIVA:
+            raise ValidationError("Esta reserva está cancelada ou expirada e não pode ser retirada.")
+        if Movimentacao.objects.filter(reserva=reserva, tipo=Movimentacao.Tipo.RETIRADA).exists():
+            raise ValidationError("Esta reserva já possui retirada registrada.")
+        agora = timezone.now()
+        if agora < reserva.inicio:
+            raise ValidationError("A retirada só pode ser registrada a partir do início da reserva.")
+        if _expirar_reserva_bloqueada(reserva, agora):
+            # Como no cancelamento, a expiração legítima persiste com sua auditoria.
+            # A tentativa de retirada não grava movimentações nem altera unidades.
+            expirou = True
+        else:
+            destinatario = usuarios_funcionais_ativos().filter(
+                pk=reserva.professor_id, groups__name="Professor",
+            ).first()
+            if destinatario is None:
+                raise ValidationError("O Professor desta reserva precisa estar ativo e possuir somente o perfil Professor.")
+            ids = list(reserva.itens.select_for_update().order_by("pk").values_list("equipamento_id", flat=True))
+            if not ids or len(ids) != reserva.quantidade or len(set(ids)) != len(ids):
+                raise ValidationError("As unidades alocadas não correspondem à quantidade da reserva. Nenhuma alteração foi salva.")
+            equipamentos = list(Equipamento.objects.select_for_update().filter(pk__in=ids).order_by("pk"))
+            if len(equipamentos) != len(ids):
+                raise ValidationError("Uma unidade alocada não está mais cadastrada.")
+            for equipamento in equipamentos:
+                if (
+                    equipamento.tipo_id != reserva.tipo_equipamento_id
+                    or equipamento.local_id != reserva.local_id
+                    or not equipamento.ativo
+                    or equipamento.situacao != Equipamento.Situacao.DISPONIVEL
+                ):
+                    raise ValidationError(
+                        f"O patrimônio {equipamento.numero_patrimonio} está indisponível, inativo "
+                        "ou não corresponde ao tipo/local da reserva. Nenhuma alteração foi salva."
+                    )
+            lote = uuid4()
+            for equipamento in equipamentos:
+                movimentacao = Movimentacao(
+                    equipamento=equipamento, operador=operador_atual,
+                    destinatario=destinatario, tipo=Movimentacao.Tipo.RETIRADA,
+                    reserva=reserva, lote_retirada=lote, observacao=observacao,
+                )
+                movimentacao.full_clean()
+                movimentacao.save()
+                equipamento.situacao = Equipamento.Situacao.EM_USO
+                equipamento.save(update_fields=("situacao", "data_atualizacao"))
+                registrar_evento(
+                    usuario=operador_atual, acao=AcaoAuditoria.RETIRADA_REGISTRADA,
+                    resultado=RegistroAuditoria.Resultado.SUCESSO,
+                    entidade="movimentacoes.Movimentacao", entidade_id=movimentacao.pk,
+                )
+                movimentacoes.append(movimentacao)
+    if expirou:
+        raise ValidationError("Esta reserva expirou após os 30 minutos de tolerância. Nenhum equipamento foi retirado.")
+    return movimentacoes
+
+
+def consultar_historico(filtros):
+    movimentacoes = Movimentacao.objects.select_related(
+        "equipamento__tipo", "operador", "destinatario", "retirada_origem",
+    ).prefetch_related("devolucoes").order_by("-data_hora", "-pk")
+    if filtros.get("busca"):
+        busca = filtros["busca"]
+        movimentacoes = movimentacoes.annotate(
+            nome_operador=Concat("operador__first_name", Value(" "), "operador__last_name"),
+            nome_destinatario=Concat("destinatario__first_name", Value(" "), "destinatario__last_name"),
+        ).filter(
+            Q(equipamento__numero_patrimonio__icontains=busca) | Q(equipamento__tipo__nome__icontains=busca)
+            | Q(operador__username__icontains=busca) | Q(destinatario__username__icontains=busca)
+            | Q(nome_operador__icontains=busca) | Q(nome_destinatario__icontains=busca)
+        )
+    if filtros.get("tipo"):
+        movimentacoes = movimentacoes.filter(tipo=filtros["tipo"])
+    if filtros.get("reserva"):
+        movimentacoes = movimentacoes.filter(reserva_id=filtros["reserva"])
+    if filtros.get("retirada"):
+        movimentacoes = movimentacoes.filter(
+            Q(pk=filtros["retirada"], tipo=Movimentacao.Tipo.RETIRADA)
+            | Q(retirada_origem_id=filtros["retirada"]),
+        )
+    if filtros.get("inicio"):
+        movimentacoes = movimentacoes.filter(data_hora__date__gte=filtros["inicio"])
+    if filtros.get("fim"):
+        movimentacoes = movimentacoes.filter(data_hora__date__lte=filtros["fim"])
+    return movimentacoes
 
 
 def equipamentos_disponiveis_para_retirada(*, tipo_equipamento, local=None):

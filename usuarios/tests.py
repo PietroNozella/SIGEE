@@ -56,7 +56,7 @@ class ConfigurarPerfisCommandTests(TestCase):
         )
         self.assertSetEqual(
             set(grupo.permissions.values_list("codename", flat=True)),
-            {"view_equipamento", "add_movimentacao"},
+            {"view_equipamento", "add_movimentacao", "view_movimentacao"},
         )
 
     def test_comando_falha_claramente_quando_permissao_nao_existe(self):

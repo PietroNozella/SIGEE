@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Registrar devolução | SIGEE{% endblock %}
+{% block title %}Em uso | SIGEE{% endblock %}
 
 {% block content %}
 <div class="page-content">
     <header class="page-header">
-        <div><h1>Registrar devolução</h1><p>Localize a retirada e confirme todos os equipamentos recebidos de uma só vez.</p></div>
+        <div><h1>Em uso</h1><p>Consulte os equipamentos ainda não devolvidos, agrupados por retirada ou reserva. Abra um lote para confirmar a devolução total ou parcial.</p></div>
     </header>
     <section class="inventory-card" aria-labelledby="returns-heading">
         <h2 class="visually-hidden" id="returns-heading">Grupos com devolução pendente</h2>
@@ -48,8 +48,9 @@
         {% else %}
         <div class="empty-state" role="status">
             <h2>{% if busca %}Nenhuma retirada encontrada{% else %}Nenhuma retirada em aberto{% endif %}</h2>
-            <p>{% if busca %}Revise a busca ou consulte todas as retiradas em aberto.{% else %}As retiradas aparecem aqui enquanto aguardam a devolução.{% endif %}</p>
+            <p>{% if busca %}Revise a busca ou consulte todas as retiradas em aberto.{% else %}As retiradas aparecem aqui enquanto aguardam a devolução. Os lotes já devolvidos podem ser consultados no Histórico.{% endif %}</p>
             {% if busca %}<a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_lista' %}">Ver todas</a>{% endif %}
+            {% if not busca and pode_consultar_historico %}<a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:historico_lista' %}">Consultar histórico</a>{% endif %}
         </div>
         {% endif %}
     </section>

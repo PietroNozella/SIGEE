@@ -11,9 +11,11 @@ from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from inventario.models import Equipamento
-from usuarios.permissoes import pode_registrar_devolucao, pode_registrar_retirada
+from usuarios.permissoes import pode_consultar_historico, pode_registrar_devolucao, pode_registrar_retirada
+from reservas.models import Reserva
+from reservas.services import expirar_reservas_vencidas
 
-from .forms import ConsultaRetiradaForm, DevolucaoForm, RetiradaSemReservaForm
+from .forms import ConsultaRetiradaForm, DevolucaoForm, HistoricoFiltroForm, RetiradaReservaForm, RetiradaSemReservaForm
 from .models import Movimentacao
 from .services import (
     equipamentos_disponiveis_para_retirada,
@@ -21,7 +23,77 @@ from .services import (
     registrar_devolucoes,
     registrar_retirada_sem_reserva,
     retiradas_do_grupo,
+    consultar_historico,
+    registrar_retirada_reserva,
+    reservas_para_retirada,
 )
+
+
+@login_required
+@require_GET
+def historico_lista(request):
+    if not pode_consultar_historico(request.user):
+        raise PermissionDenied
+    form = HistoricoFiltroForm(request.GET)
+    registros = consultar_historico(form.cleaned_data) if form.is_valid() else Movimentacao.objects.none()
+    pagina = Paginator(registros, 25).get_page(request.GET.get("pagina"))
+    parametros = request.GET.copy()
+    parametros.pop("pagina", None)
+    return render(request, "movimentacoes/historico_lista.html", {
+        "form": form, "pagina": pagina, "parametros_paginacao": parametros.urlencode(),
+    })
+
+
+@login_required
+@require_GET
+def retirada_reserva_lista(request):
+    if not pode_registrar_retirada(request.user):
+        raise PermissionDenied
+    expirar_reservas_vencidas()
+    busca = request.GET.get("busca", "").strip()
+    status = request.GET.get("status", Reserva.Status.ATIVA)
+    if status not in ["", *Reserva.Status.values]:
+        status = Reserva.Status.ATIVA
+    pagina = Paginator(reservas_para_retirada(busca=busca, status=status), 15).get_page(request.GET.get("pagina"))
+    parametros = request.GET.copy()
+    parametros.pop("pagina", None)
+    return render(request, "movimentacoes/retirada_reserva_lista.html", {
+        "pagina": pagina, "busca": busca, "status": status, "status_choices": Reserva.Status.choices,
+        "parametros_paginacao": parametros.urlencode(),
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def retirada_reserva_registrar(request, reserva_id):
+    if not pode_registrar_retirada(request.user):
+        raise PermissionDenied
+    reserva = get_object_or_404(Reserva.objects.select_related("professor", "tipo_equipamento", "local"), pk=reserva_id)
+    form = RetiradaReservaForm(request.POST if request.method == "POST" else None)
+    if request.method == "POST":
+        if form.is_valid():
+            try:
+                movimentacoes = registrar_retirada_reserva(
+                    operador=request.user, reserva_id=reserva.pk, observacao=form.cleaned_data["observacao"],
+                )
+            except ValidationError as erro:
+                form.add_error(None, erro)
+            except IntegrityError:
+                form.add_error(None, "Não foi possível registrar a retirada. Nenhuma alteração foi salva. Tente novamente.")
+            else:
+                messages.success(request, f"Retirada da reserva #{reserva.pk} registrada: {len(movimentacoes)} equipamento(s) em uso.")
+                return redirect("movimentacoes:devolucao_lista")
+        registrar_evento(
+            usuario=request.user, acao=AcaoAuditoria.RETIRADA_REGISTRADA,
+            resultado=RegistroAuditoria.Resultado.FALHA,
+            entidade="reservas.Reserva", entidade_id=reserva.pk,
+        )
+        reserva.refresh_from_db()
+    unidades = reserva.itens.select_related("equipamento__tipo", "equipamento__local").order_by("equipamento__numero_patrimonio")
+    retirada = Movimentacao.objects.filter(reserva=reserva, tipo=Movimentacao.Tipo.RETIRADA).order_by("pk").first()
+    return render(request, "movimentacoes/retirada_reserva_form.html", {
+        "reserva": reserva, "unidades": unidades, "form": form, "retirada": retirada,
+    })
 
 
 def _dados_disponibilidade(consulta):
@@ -115,7 +187,7 @@ def retirada_sem_reserva(request):
                     f"Retirada de {len(movimentacoes)} equipamento(s) registrada com sucesso. "
                     "Os equipamentos estão em uso.",
                 )
-                return redirect("movimentacoes:retirada_sem_reserva")
+                return redirect("movimentacoes:devolucao_lista")
 
         registrar_evento(
             usuario=request.user, acao=AcaoAuditoria.RETIRADA_REGISTRADA,

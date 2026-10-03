@@ -40,6 +40,44 @@ class DevolucaoForm(forms.Form):
         return self.cleaned_data["retiradas"]
 
 
+class RetiradaReservaForm(forms.Form):
+    observacao = forms.CharField(
+        label="Observação", required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+    )
+
+
+class HistoricoFiltroForm(forms.Form):
+    busca = forms.CharField(
+        label="Patrimônio, equipamento ou pessoa", required=False,
+        widget=forms.TextInput(attrs={"class": "form-control", "type": "search"}),
+    )
+    tipo = forms.ChoiceField(
+        label="Movimentação", required=False,
+        choices=[("", "Todas")] + list(Movimentacao.Tipo.choices),
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    reserva = forms.IntegerField(
+        label="Número da reserva", required=False, min_value=1,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    retirada = forms.IntegerField(required=False, min_value=1, widget=forms.HiddenInput)
+    inicio = forms.DateField(
+        label="De", required=False,
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    fim = forms.DateField(
+        label="Até", required=False,
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+
+    def clean(self):
+        dados = super().clean()
+        if dados.get("inicio") and dados.get("fim") and dados["fim"] < dados["inicio"]:
+            self.add_error("fim", "A data final deve ser igual ou posterior à inicial.")
+        return dados
+
+
 class ConsultaRetiradaForm(forms.Form):
     tipo_equipamento = forms.ModelChoiceField(
         label="Tipo/modelo do equipamento", queryset=TipoEquipamento.objects.none(),

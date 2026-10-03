@@ -6,7 +6,7 @@
 {% block content %}
 <div class="page-content form-page">
     <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">
-        <a href="{% url 'inventario:equipamento_lista' %}">Equipamentos</a>
+        <a href="{% url 'movimentacoes:retirada_reserva_lista' %}">Reservas</a>
         <span aria-hidden="true">/</span>
         <span aria-current="page">Retirada sem reserva</span>
     </nav>
@@ -83,7 +83,7 @@
                 </div>
             </fieldset>
             <div class="form-actions">
-                <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_lista' %}">Cancelar</a>
+                <a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_lista' %}">Cancelar</a>
                 <button class="btn btn-primary-sigee" type="submit" data-withdrawal-submit>Conferir retirada</button>
             </div>
         </form>

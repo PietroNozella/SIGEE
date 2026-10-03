@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'movimentacoes/historico.css' %}">{% endblock %}
+{% block title %}{% if e_operador %}Histórico{% else %}Histórico de movimentações{% endif %} | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content">
+    <header class="page-header"><div><h1>{% if e_operador %}Histórico{% else %}Histórico de movimentações{% endif %}</h1><p>Consulte retiradas e devoluções, inclusive as já encerradas. Os registros são apresentados do mais recente ao mais antigo.</p></div></header>
+    <section class="inventory-card" aria-labelledby="history-heading">
+        <h2 class="visually-hidden" id="history-heading">Movimentações registradas</h2>
+        <form class="reservation-filter-toolbar history-filter-toolbar" method="get">
+            {{ form.retirada }}
+            {% for field in form.visible_fields %}<div class="reservation-filter-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<p class="field-error" role="alert">{{ error }}</p>{% endfor %}</div>{% endfor %}
+            <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Filtrar</button><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:historico_lista' %}">Limpar</a></div>
+        </form>
+        {% if form.retirada.value %}<p class="form-help px-3">Exibindo a retirada #{{ form.retirada.value }} e sua devolução vinculada.</p>{% endif %}
+        {% if pagina.object_list %}
+        <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Histórico; use rolagem horizontal em telas pequenas">
+            <table class="table inventory-table mb-0">
+                <caption class="visually-hidden">Histórico somente para consulta; data e hora no fuso local do sistema</caption>
+                <thead><tr><th scope="col">Registro e patrimônio</th><th scope="col">Movimentação</th><th scope="col">Data e hora</th><th scope="col">Operador</th><th scope="col">Destinatário</th><th scope="col">Origem e vínculos</th></tr></thead>
+                <tbody>{% for registro in pagina %}<tr id="mov-{{ registro.pk }}" tabindex="-1">
+                    <td><strong>#{{ registro.pk }} · {{ registro.equipamento.numero_patrimonio }}</strong><span class="table-metadata">{{ registro.equipamento.tipo.nome }}</span>{% if registro.observacao %}<details><summary>Observação</summary><p>{{ registro.observacao }}</p></details>{% endif %}</td>
+                    <td>{{ registro.get_tipo_display }}</td>
+                    <td>{{ registro.data_hora|date:"d/m/Y H:i:s" }}</td>
+                    <td>{{ registro.operador.get_full_name|default:registro.operador.username }}<span class="table-metadata">{{ registro.operador.username }}</span></td>
+                    <td>{{ registro.destinatario.get_full_name|default:registro.destinatario.username }}<span class="table-metadata">{{ registro.destinatario.username }}</span></td>
+                    <td>{% if registro.reserva_id %}<a href="?reserva={{ registro.reserva_id }}">Reserva #{{ registro.reserva_id }}</a>{% else %}<span class="table-metadata">Sem reserva</span>{% endif %}
+                        {% if registro.retirada_origem_id %}<span class="table-metadata"><a href="?retirada={{ registro.retirada_origem_id }}#mov-{{ registro.retirada_origem_id }}">Retirada #{{ registro.retirada_origem_id }}</a></span>{% else %}{% for devolucao in registro.devolucoes.all %}<span class="table-metadata"><a href="?retirada={{ registro.pk }}#mov-{{ devolucao.pk }}">Devolução #{{ devolucao.pk }}</a></span>{% endfor %}{% endif %}
+                    </td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        {% include "movimentacoes/_paginacao.html" %}
+        {% else %}<div class="empty-state" role="status"><h2>{% if form.errors %}Revise os filtros{% else %}Nenhuma movimentação encontrada{% endif %}</h2><p>{% if form.errors %}Corrija os campos indicados e consulte novamente.{% else %}Não há registros que correspondam aos filtros informados.{% endif %}</p></div>{% endif %}
+    </section>
+</div>
+{% endblock %}
