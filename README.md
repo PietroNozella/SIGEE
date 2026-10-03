@@ -55,11 +55,13 @@ O SIGEE não possui cadastro público. As contas são criadas por usuários auto
 
 | Perfil | Acesso disponível atualmente |
 |---|---|
-| **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, consulta o resumo e acessa a auditoria. |
-| **Operador** | Consulta o inventário, registra retirada sem reserva em lote e confirma devolução integral ou parcial, conferindo os patrimônios e preservando cada retirada original. |
+| **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, consulta o resumo, a auditoria e o histórico de movimentações. |
+| **Operador** | Consulta equipamentos e reservas, registra retirada em lote com ou sem reserva, confirma devolução integral ou parcial e consulta o histórico de movimentações. |
 | **Professor** | Consulta os equipamentos e a disponibilidade, cria reservas próprias em lote e cancela as próprias reservas. |
 
 Consulte os detalhes de autorização na [matriz de acesso](docs/matriz-de-acesso.md).
+
+A navegação do Operador reúne **Equipamentos**, **Reservas**, **Em uso** e **Histórico**. Em Reservas, o botão Registrar retirada abre a entrega sem reserva; em Em uso, são conferidos os lotes pendentes de devolução.
 
 ## Arquitetura
 
@@ -146,14 +148,17 @@ python manage.py test
 - [x] prevenção de conflitos e bloqueio de períodos inválidos;
 - [x] cancelamento das próprias reservas;
 - [x] retirada sem reserva em lote por Operador, com quantidade, conferência dos patrimônios e atualização atômica para em uso;
+- [x] retirada integral das unidades alocadas à reserva, do início até antes dos 30 minutos de tolerância;
 - [x] devolução básica em lote ou parcial por qualquer Operador autorizado, com seleção dos patrimônios, vínculo individual à retirada, auditoria e proteção contra duplicidade;
+- [x] histórico de retiradas e devoluções para Administrador e Operador, com filtros, paginação e vínculos de origem;
 - [x] consulta informativa de feriados nacionais pela BrasilAPI.
 - [x] transparência de privacidade, inventário de dados e aceite versionado;
 - [x] comandos assistidos para exportação, anonimização e descarte controlado.
 
 ## Roadmap
 
-- [ ] retirada vinculada à reserva, devolução com problema (RN-14), histórico completo e validação do ambiente publicado;
+- [ ] devolução com problema e encaminhamento para manutenção (RN-14);
+- [ ] validação de concorrência em PostgreSQL e do ambiente publicado;
 - [ ] registro e acompanhamento de manutenções;
 - [ ] vinculação da utilização ao contexto pedagógico;
 - [ ] indicadores de utilização pedagógica.

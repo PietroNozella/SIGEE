@@ -68,6 +68,14 @@ System check identified no issues (1 silenced).
 
 O check silenciado é `axes.W006`. A configuração por nome de usuário sem IP é intencional para minimizar dados; o bloqueio continua abrangendo origens diferentes para a mesma conta.
 
+### Estado local mais recente — 03/10/2026
+
+O commit local `98c7a39`, na branch `feat/retirada-sem-reserva`, inclui retirada vinculada à reserva, histórico com filtros e paginação e organização da navegação do Operador. Ainda não foi publicado nem integrado à `main`. Não exige novas migrations além das `0003` e `0004` já presentes.
+
+A última suíte completa executada antes desse commit teve **291 testes: 285 aprovados e 6 de concorrência ignorados no SQLite**. `manage.py check`, `makemigrations --check --dry-run` e `git diff --check` passaram. A interface foi conferida localmente no desktop e no celular; a retirada válida de reserva foi verificada pelos testes automatizados, sem registrar uma entrega antecipada nas reservas locais futuras.
+
+Permanecem pendentes concorrência em PostgreSQL, validação publicada, revisão cruzada e devolução com problema (RN-14). RF-05/RF-06 não são declarados totalmente concluídos. Os registros abaixo preservam os resultados e as pendências existentes em cada etapa anterior.
+
 ### Validação local de movimentações — 03/10/2026
 
 Na branch `feat/retirada-sem-reserva`, a retirada em lote foi consolidada no commit local `2aa4a8e7e147ccd8b9f5ff50c3a9ae6173c146cf`, após 221 testes: 220 aprovados e 1 de concorrência ignorado no SQLite. A devolução básica foi implementada posteriormente e, naquela revisão inicial, ainda estava sem commit.
