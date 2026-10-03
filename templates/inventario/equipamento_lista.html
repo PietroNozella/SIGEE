@@ -8,7 +8,9 @@
     <header class="page-header">
         <div>
             <h1>Equipamentos</h1>
-            {% if perms.inventario.add_equipamento %}
+            {% if lista_tipos %}
+                <p>Expanda um tipo/modelo para consultar os patrimônios e a situação de cada unidade.</p>
+            {% elif perms.inventario.add_equipamento %}
                 <p>Cadastre, consulte e filtre os equipamentos do inventário.</p>
             {% else %}
                 <p>Consulte e filtre os equipamentos do inventário.</p>
@@ -52,7 +54,7 @@
     {% endif %}
 
     <section class="inventory-card" aria-labelledby="inventory-heading">
-        <h2 class="visually-hidden" id="inventory-heading">Lista de equipamentos</h2>
+        <h2 class="visually-hidden" id="inventory-heading">{% if lista_tipos %}Tipos/modelos de equipamentos{% else %}Lista de equipamentos{% endif %}</h2>
 
         <form class="filter-toolbar" method="get" role="search">
             <div class="filter-search">
@@ -94,12 +96,15 @@
             <div class="filter-actions">
                 <button class="btn btn-primary-sigee" type="submit">Filtrar</button>
                 {% if ha_filtros %}
-                    <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_lista' %}">Limpar</a>
+                    <a class="btn btn-secondary-sigee" href="{{ url_limpar }}">Limpar</a>
                 {% endif %}
             </div>
         </form>
 
         {% if pagina.object_list %}
+            {% if lista_tipos %}
+                {% include "inventario/_tipos_operador.html" %}
+            {% else %}
             <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Tabela de equipamentos; use rolagem horizontal em telas pequenas">
                 <table class="table inventory-table mb-0">
                     <thead>
@@ -190,10 +195,11 @@
                     </tbody>
                 </table>
             </div>
+            {% endif %}
 
             <footer class="inventory-pagination">
                 <p>
-                    Mostrando {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }} {% if e_professor %}grupos de equipamentos{% else %}equipamentos{% endif %}
+                    Mostrando {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }} {% if lista_tipos %}tipos/modelos{% elif e_professor %}grupos de equipamentos{% else %}equipamentos{% endif %}
                 </p>
                 {% if pagina.paginator.num_pages > 1 %}
                     <nav aria-label="Paginação de equipamentos">
@@ -229,7 +235,7 @@
                 {% else %}
                     <h2>Nenhum equipamento encontrado</h2>
                     <p>Revise os filtros informados e tente novamente.</p>
-                    <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_lista' %}">Limpar filtros</a>
+                    <a class="btn btn-secondary-sigee" href="{{ url_limpar }}">Limpar filtros</a>
                 {% endif %}
             </div>
         {% endif %}
@@ -293,4 +299,7 @@
     </dialog>
     {% endif %}
 </div>
+{% endblock %}
+{% block extra_scripts %}
+{% if lista_tipos %}<link rel="stylesheet" href="{% static 'inventario/css/operador.css' %}?v=20261003.1">{% endif %}
 {% endblock %}

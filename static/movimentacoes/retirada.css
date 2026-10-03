@@ -1,0 +1,16 @@
+.withdrawal-consult { margin: 24px 0; }
+.withdrawal-selection { min-width: 0; padding: 0; border: 0; }
+.withdrawal-selection legend { font-size: 16px; font-weight: 600; }
+.withdrawal-table-wrap { max-height: 360px; overflow: auto; border: 1px solid var(--sigee-border); border-radius: 8px; }
+.withdrawal-table { margin: 0; font-size: 13px; }
+.withdrawal-table thead { position: sticky; top: 0; z-index: 1; }
+.withdrawal-table th { background: var(--sigee-background); font-weight: 600; }
+.withdrawal-table td, .withdrawal-table th { padding: 12px; vertical-align: middle; }
+.withdrawal-table td:nth-child(2) { white-space: nowrap; }
+.withdrawal-table tr:has(input:checked) td { background: var(--sigee-primary-soft); }
+.withdrawal-table input { width: 20px; height: 20px; cursor: pointer; }
+.withdrawal-confirm-dialog { width: min(calc(100% - 32px), 560px); max-height: calc(100vh - 32px); overflow: auto; }
+.withdrawal-confirm-dialog h2 { font-size: 20px; font-weight: 600; }
+.withdrawal-confirm-details dt { font-size: 13px; color: var(--sigee-muted); }
+.withdrawal-confirm-details dd { margin-bottom: 12px; overflow-wrap: anywhere; }
+.withdrawal-confirm-patrimonies ul { max-height: 180px; overflow: auto; padding-left: 24px; margin-top: 8px; }

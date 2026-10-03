@@ -1,3 +1,7 @@
+from django.contrib.auth import get_user_model
+from django.db.models import Count
+
+
 GRUPO_ADMINISTRADOR = "Administrador"
 GRUPO_OPERADOR = "Operador"
 GRUPO_PROFESSOR = "Professor"
@@ -13,6 +17,7 @@ PERMISSAO_CONSULTAR_AUDITORIA = "auditoria.view_registroauditoria"
 PERMISSAO_CRIAR_RESERVA = "reservas.add_reserva"
 PERMISSAO_CONSULTAR_RESERVA = "reservas.view_reserva"
 PERMISSAO_ALTERAR_RESERVA = "reservas.change_reserva"
+PERMISSAO_REGISTRAR_RETIRADA = "movimentacoes.add_movimentacao"
 
 PERMISSOES_POR_GRUPO = {
     GRUPO_ADMINISTRADOR: (
@@ -24,7 +29,10 @@ PERMISSOES_POR_GRUPO = {
         PERMISSAO_CADASTRAR_USUARIO,
         PERMISSAO_CONSULTAR_AUDITORIA,
     ),
-    GRUPO_OPERADOR: ("inventario.view_equipamento",),
+    GRUPO_OPERADOR: (
+        "inventario.view_equipamento",
+        PERMISSAO_REGISTRAR_RETIRADA,
+    ),
     GRUPO_PROFESSOR: (
         "inventario.view_equipamento",
         PERMISSAO_CRIAR_RESERVA,
@@ -49,6 +57,27 @@ def e_professor_funcional(user):
 
     grupos_do_usuario = set(user.groups.values_list("name", flat=True))
     return grupos_do_usuario == {GRUPO_PROFESSOR}
+
+
+def e_operador_funcional(user):
+    if not user.is_authenticated or not user.is_active or user.is_superuser:
+        return False
+
+    return set(user.groups.values_list("name", flat=True)) == {GRUPO_OPERADOR}
+
+
+def pode_registrar_retirada(user):
+    return e_operador_funcional(user) and user.has_perm(PERMISSAO_REGISTRAR_RETIRADA)
+
+
+def usuarios_funcionais_ativos():
+    # Conta com grupos adicionais também viola a atribuição exclusiva da RN-18.
+    return (
+        get_user_model().objects.filter(is_active=True, is_superuser=False)
+        .annotate(total_grupos=Count("groups"))
+        .filter(total_grupos=1, groups__name__in=GRUPOS_FUNCIONAIS)
+        .order_by("first_name", "last_name", "username")
+    )
 
 
 def pode_cadastrar_usuario(user):

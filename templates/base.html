@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}SIGEE{% endblock %}</title>
     <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20260924.6">
+    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261003.1">
 </head>
 <body>
     <a class="skip-link" href="#conteudo-principal">Ir para o conteúdo principal</a>
@@ -32,6 +32,19 @@
                     <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
                     Minhas Reservas
                 </a>
+            {% elif e_operador %}
+                {% if perms.inventario.view_equipamento %}
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
+                    Equipamentos
+                </a>
+                {% endif %}
+                {% if pode_registrar_retirada %}
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'movimentacoes' %} is-active{% endif %}" href="{% url 'movimentacoes:retirada_sem_reserva' %}"{% if request.resolver_match.namespace == 'movimentacoes' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
+                    Registrar retirada
+                </a>
+                {% endif %}
             {% else %}
             <span class="side-nav-item is-disabled" aria-disabled="true">
                 <img src="{% static 'inventario/icons/overview.svg' %}" alt="" aria-hidden="true">
@@ -52,10 +65,17 @@
                 <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
                 Reservas
             </span>
+            {% if pode_registrar_retirada %}
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'movimentacoes' %} is-active{% endif %}" href="{% url 'movimentacoes:retirada_sem_reserva' %}"{% if request.resolver_match.namespace == 'movimentacoes' %} aria-current="page"{% endif %}>
+                <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
+                Registrar retirada
+            </a>
+            {% else %}
             <span class="side-nav-item is-disabled" aria-disabled="true">
                 <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
                 Movimentações
             </span>
+            {% endif %}
             <span class="side-nav-item is-disabled" aria-disabled="true">
                 <img src="{% static 'inventario/icons/maintenance.svg' %}" alt="" aria-hidden="true">
                 Manutenções
@@ -168,7 +188,7 @@
         {% if messages %}
             <section class="flash-messages" aria-label="Mensagens do sistema">
                 {% for message in messages %}
-                    <div class="system-message system-message-{{ message.level_tag|default:'info' }}{% if 'reserva' in message.tags %} reservation-message{% endif %}" role="status"{% if 'reserva' in message.tags %} data-auto-dismiss="true"{% endif %}>
+                    <div class="system-message system-message-{{ message.level_tag|default:'info' }}{% if 'reserva' in message.tags %} reservation-message{% endif %}" role="status"{% if e_operador or 'reserva' in message.tags %} data-auto-dismiss="true"{% endif %}>
                         {{ message }}
                     </div>
                 {% endfor %}
@@ -177,6 +197,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="{% static 'inventario/js/sigee.js' %}?v=20260924.4"></script>
+    <script src="{% static 'inventario/js/sigee.js' %}?v=20261003.1"></script>
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>

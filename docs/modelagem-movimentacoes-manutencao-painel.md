@@ -33,12 +33,14 @@ Uma conta técnica de Django Superuser não é considerada um destinatário func
 
 ### Fluxo principal
 
-1. O Operador seleciona um equipamento disponível.
-2. O Operador seleciona o destinatário entre os usuários funcionais ativos.
-3. O sistema valida novamente a autorização e a disponibilidade no servidor.
-4. O sistema cria a movimentação de retirada.
-5. O sistema altera a situação do equipamento para `EM_USO`.
-6. O sistema confirma a operação e mantém o registro disponível para consulta no histórico.
+1. O Operador seleciona o tipo/modelo e o local de retirada. Quando existir apenas um local para aquele tipo, o sistema o preenche automaticamente.
+2. O sistema consulta as unidades físicas ativas e disponíveis e mostra a quantidade e os números de patrimônio.
+3. O Operador informa a quantidade. O sistema sugere essa quantidade de unidades, ordenadas por patrimônio, e permite trocar unidades pela lista de seleção.
+4. O Operador informa um destinatário e uma observação opcional para toda a entrega e confere o resumo com os patrimônios selecionados.
+5. O servidor exige quantidade positiva, patrimônios distintos e exatamente a quantidade informada, todos do mesmo tipo/modelo e local.
+6. O servidor revalida a autorização, o destinatário e os patrimônios conferidos sob bloqueio. Não substitui silenciosamente uma unidade que ficou indisponível.
+7. Em uma única transação, cria uma movimentação de retirada e seu evento de auditoria para cada equipamento e altera todas as unidades para `EM_USO`.
+8. O sistema confirma a quantidade entregue. Se qualquer unidade ou gravação falhar, nenhuma retirada ou atualização parcial permanece salva.
 
 ### Fluxos impedidos
 
@@ -54,13 +56,21 @@ Nesses casos, nenhuma movimentação parcial deve permanecer salva e a situaçã
 
 ### Correspondência com o modelo atual
 
-O modelo `Movimentacao` já possui referências para equipamento, Operador e destinatário, tipos controlados de retirada e devolução, data e hora, retirada de origem, observação e uma referência opcional para a reserva de origem. A implementação do fluxo ainda precisa acrescentar validações explícitas, atualização consistente da situação do equipamento, permissões, interface e testes.
+O modelo `Movimentacao` preserva referências para equipamento, Operador e destinatário, tipos controlados de retirada e devolução, data e hora, retirada de origem, observação e uma referência opcional para a reserva de origem. O RF-05 implementa a retirada sem reserva em lote em `/movimentacoes/retirada/`, com formulário, autorização no servidor e testes em `movimentacoes/tests.py`.
+
+O serviço `registrar_retirada_sem_reserva` reconsulta a autorização do Operador e o destinatário funcional ativo, bloqueia os patrimônios selecionados com `select_for_update()`, em ordem de chave primária, e revalida tipo/modelo, local, `ativo` e `DISPONIVEL`. Todas as movimentações `RETIRADA`, alterações para `EM_USO` e eventos de auditoria `RETIRADA_REGISTRADA` são gravados na mesma transação. O modelo continua representando uma unidade física por movimentação; uma confirmação de 30 equipamentos gera 30 movimentações e permite devoluções individuais futuras. Operador e data/hora vêm do servidor; `reserva` e `retirada_origem` permanecem vazios. Superusers técnicos não são selecionáveis, mesmo quando possuem grupo funcional.
+
+O Django Admin permite somente consultar movimentações, sem inclusão, edição ou exclusão direta. Essa restrição impede contornar a autorização funcional e a gravação consistente da retirada.
+
+**Limite de disponibilidade deste incremento:** os critérios documentados para retirada sem reserva são equipamento ativo e situação `DISPONIVEL`. Não há decisão sobre como uma retirada sem previsão de devolução interage com reservas ativas ou futuras. Este fluxo não consulta nem altera reservas e não acrescenta bloqueios por período, tipo/modelo ou local inativo. Essa interação precisa ser definida ao integrar os fluxos futuros.
+
+**Validação de concorrência:** o teste com duas conexões simultâneas exige um banco com suporte a `select_for_update`, como PostgreSQL. Ele é ignorado no SQLite, que não oferece esse bloqueio por linha. Os testes em SQLite verificam revalidação de estado, segunda retirada, autorização, entradas inválidas e rollback, mas não comprovam a serialização concorrente em PostgreSQL.
 
 Quando a retirada tiver origem em uma reserva, o serviço futuro deve bloquear a mesma `Reserva` antes de criar as movimentações do lote, confirmar que ela permanece ativa e gravar todas as retiradas de forma atômica. Esse contrato evita que a expiração da RN-11 ocorra concorrentemente com a retirada e impede estados parciais no lote.
 
 ### Critério de aceite do fluxo
 
-Um Operador consegue registrar pela interface a retirada sem reserva de um equipamento ativo e disponível para qualquer usuário funcional ativo. A movimentação preserva equipamento, Operador, destinatário, tipo, data e hora, e o equipamento passa para `EM_USO`. Tentativas sem autorização ou com equipamento ou destinatário inválido não alteram os dados.
+Um Operador consegue selecionar tipo/modelo, local e quantidade, conferir ou trocar os patrimônios sugeridos e registrar a retirada sem reserva do lote para um único usuário funcional ativo. Cada movimentação preserva equipamento, Operador, destinatário, tipo, data e hora; todos os equipamentos passam para `EM_USO`. Quantidade inválida, seleção duplicada, tipo/local divergente, indisponibilidade ou falha em qualquer parte do lote impedem alterações parciais. A interface mantém consulta e seleção por formulário também sem JavaScript.
 
 ## Devolução
 

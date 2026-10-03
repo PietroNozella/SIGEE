@@ -195,3 +195,105 @@ class AutorizacaoInventarioTests(TestCase):
         resposta = self.client.get(reverse("inventario:equipamento_lista"))
 
         self.assertIsNone(resposta.context["indicadores"])
+
+    def test_operador_agrupa_unidades_de_diferentes_locais_em_listas_recolhidas(self):
+        self.criar_equipamento("PAT-GRUPO-001")
+        Equipamento.objects.create(
+            numero_patrimonio="PAT-GRUPO-002", tipo=self.tipo,
+            local=Local.objects.get(nome="Sala multimídia"),
+            situacao=Equipamento.Situacao.EM_USO,
+        )
+        Equipamento.objects.create(
+            numero_patrimonio="PAT-GRUPO-003", tipo=self.tipo,
+            local=self.local, ativo=False, situacao=Equipamento.Situacao.MANUTENCAO,
+        )
+        self.client.force_login(self.operador)
+        resposta = self.client.get(reverse("inventario:equipamento_lista"))
+        grupos = list(resposta.context["pagina"])
+        self.assertTrue(resposta.context["lista_tipos"])
+        self.assertEqual(len(grupos), 1)
+        self.assertEqual(grupos[0]["quantidade_total"], 3)
+        self.assertEqual(len(grupos[0]["unidades"]), 3)
+        self.assertContains(resposta, '<details class="operator-equipment-group">', count=1)
+        for texto in ("PAT-GRUPO-001", "PAT-GRUPO-002", "PAT-GRUPO-003", "Inativo",
+                      "Em uso", "Manutenção", "Disponível", "Ver unidades", "Ocultar unidades"):
+            self.assertContains(resposta, texto)
+        self.assertNotContains(resposta, "?tipo=")
+        self.assertNotContains(resposta, "Quantidade disponível")
+
+    def test_operador_recebe_todas_as_unidades_separadas_por_tipo_sem_paginar_unidades(self):
+        for indice in range(35):
+            self.criar_equipamento(f"PAT-TODAS-{indice:03d}")
+        outro_tipo = TipoEquipamento.objects.create(
+            categoria=Categoria.objects.get(nome="Projetor"), nome=self.tipo.nome,
+        )
+        Equipamento.objects.create(numero_patrimonio="OUTRO-TIPO", tipo=outro_tipo, local=self.local)
+        self.client.force_login(self.operador)
+        resposta = self.client.get(reverse("inventario:equipamento_lista"))
+        grupos = {grupo["tipo_id"]: grupo for grupo in resposta.context["pagina"]}
+        self.assertEqual(len(grupos[self.tipo.pk]["unidades"]), 35)
+        self.assertEqual(grupos[self.tipo.pk]["quantidade_total"], 35)
+        self.assertEqual([u.numero_patrimonio for u in grupos[outro_tipo.pk]["unidades"]], ["OUTRO-TIPO"])
+        self.assertTrue(all(u.tipo_id == self.tipo.pk for u in grupos[self.tipo.pk]["unidades"]))
+        self.assertContains(resposta, "PAT-TODAS-034")
+        self.assertFalse(resposta.context["pagina"].has_next())
+
+    def test_operador_filtra_as_unidades_dentro_dos_grupos_por_local_e_situacao(self):
+        self.criar_equipamento("PAT-FILTRO-001")
+        em_uso = self.criar_equipamento("PAT-FILTRO-002")
+        em_uso.situacao = Equipamento.Situacao.EM_USO
+        em_uso.save(update_fields=["situacao"])
+        Equipamento.objects.create(
+            numero_patrimonio="PAT-FILTRO-003", tipo=self.tipo,
+            local=Local.objects.get(nome="Sala multimídia"),
+        )
+        self.client.force_login(self.operador)
+        url = reverse("inventario:equipamento_lista")
+        resposta = self.client.get(url, {
+            "busca": "Notebook de teste", "categoria": self.categoria.pk,
+            "local": self.local.pk, "situacao": Equipamento.Situacao.DISPONIVEL,
+        })
+        grupo = resposta.context["pagina"][0]
+        self.assertEqual(grupo["quantidade_total"], 1)
+        self.assertEqual([u.numero_patrimonio for u in grupo["unidades"]], ["PAT-FILTRO-001"])
+        self.assertContains(resposta, "PAT-FILTRO-001")
+        self.assertNotContains(resposta, "PAT-FILTRO-002")
+        self.assertNotContains(resposta, "PAT-FILTRO-003")
+        self.assertEqual(resposta.context["url_limpar"], url)
+        self.assertEqual(len(self.client.get(url).context["pagina"][0]["unidades"]), 3)
+
+    def test_operador_busca_por_patrimonio_dentro_do_grupo(self):
+        self.criar_equipamento("PAT-BUSCA-001")
+        self.criar_equipamento("PAT-BUSCA-002")
+        self.client.force_login(self.operador)
+        resposta = self.client.get(reverse("inventario:equipamento_lista"), {"busca": "PAT-BUSCA-002"})
+        grupo = resposta.context["pagina"][0]
+        self.assertEqual(grupo["quantidade_total"], 1)
+        self.assertEqual([u.numero_patrimonio for u in grupo["unidades"]], ["PAT-BUSCA-002"])
+        self.assertNotContains(resposta, "PAT-BUSCA-001")
+
+    def test_operador_pagina_tipos_carregando_somente_as_unidades_desses_grupos(self):
+        for indice in range(6):
+            tipo = TipoEquipamento.objects.create(categoria=self.categoria, nome=f"Modelo {indice}")
+            for unidade in range(2):
+                Equipamento.objects.create(
+                    numero_patrimonio=f"GRUPO-{indice}-{unidade}", tipo=tipo, local=self.local,
+                )
+        self.client.force_login(self.operador)
+        url = reverse("inventario:equipamento_lista")
+        primeira = self.client.get(url)
+        segunda = self.client.get(url, {"pagina": 2})
+        self.assertEqual(primeira.context["pagina"].paginator.count, 6)
+        self.assertEqual(len(primeira.context["pagina"]), 5)
+        self.assertEqual(len(segunda.context["pagina"]), 1)
+        self.assertTrue(all(len(g["unidades"]) == 2 for g in primeira.context["pagina"]))
+        self.assertContains(segunda, "GRUPO-5-1")
+        self.assertNotContains(primeira, "GRUPO-5-1")
+        self.assertNotContains(segunda, "GRUPO-0-0")
+
+    def test_listas_expansiveis_tambem_exigem_permissao(self):
+        url = reverse("inventario:equipamento_lista")
+        self.client.force_login(self.sem_grupo)
+        self.assertEqual(self.client.get(url).status_code, 403)
+        self.client.logout()
+        self.assertEqual(self.client.get(url).status_code, 302)

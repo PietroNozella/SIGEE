@@ -56,7 +56,7 @@ O SIGEE não possui cadastro público. As contas são criadas por usuários auto
 | Perfil | Acesso disponível atualmente |
 |---|---|
 | **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, consulta o resumo e acessa a auditoria. |
-| **Operador** | Consulta o inventário e a disponibilidade registrada dos equipamentos. |
+| **Operador** | Consulta o inventário e registra retirada sem reserva em lote, por tipo/modelo e local, conferindo os patrimônios. |
 | **Professor** | Consulta os equipamentos e a disponibilidade, cria reservas próprias em lote e cancela as próprias reservas. |
 
 Consulte os detalhes de autorização na [matriz de acesso](docs/matriz-de-acesso.md).
@@ -145,6 +145,7 @@ python manage.py test
 - [x] reservas próprias por Professor, com quantidade e controle de disponibilidade;
 - [x] prevenção de conflitos e bloqueio de períodos inválidos;
 - [x] cancelamento das próprias reservas;
+- [x] retirada sem reserva em lote por Operador, com quantidade, conferência dos patrimônios e atualização atômica para em uso;
 - [x] consulta informativa de feriados nacionais pela BrasilAPI.
 - [x] transparência de privacidade, inventário de dados e aceite versionado;
 - [x] comandos assistidos para exportação, anonimização e descarte controlado.
