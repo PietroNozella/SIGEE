@@ -68,7 +68,11 @@ A conferência pelo navegador usou banco temporário separado e conta sintética
 
 Antes de `pedagogico.0001_initial`, foi feito backup SQLite com verificação de integridade em `.tmp/backups/db-before-pedagogico-20261006-133844.sqlite3`. A migration e `configurar_perfis` foram aplicados ao SQLite local. Backup, bancos temporários, sessões de navegador e DOCX não versionado não integram os commits.
 
-Para preparar outro ambiente, realizar o backup apropriado e executar `migrate`, seguido de `configurar_perfis`. O PostgreSQL publicado não foi migrado nem validado nesta atividade.
+Para preparar outro ambiente, realizar o backup apropriado e executar `migrate`, seguido de `configurar_perfis`.
+
+Após autorização explícita, em 06/10/2026 foram aplicadas ao PostgreSQL publicado as migrations pendentes `movimentacoes.0003`, `movimentacoes.0004` e `pedagogico.0001_initial`. A pré-verificação não encontrou devoluções sem origem nem origens com devoluções duplicadas. Antes das alterações, foi salva e conferida uma cópia lógica dos dados de 23 tabelas Django, com definições de colunas e constraints, em `.tmp/backups/postgres-before-pedagogico-20261006-135250.json.gz`. Essa cópia local não é um `pg_dump`, não foi versionada e sua restauração não foi ensaiada.
+
+`configurar_perfis` foi executado no PostgreSQL; a conferência final encontrou zero migrations pendentes e nove permissões pedagógicas no Administrador. Isso comprova a preparação do banco e dos perfis; os fluxos do site publicado e os testes de concorrência ainda precisam de validação própria.
 
 Pendências: retorno do Diego; seis cenários existentes de concorrência em PostgreSQL (retiradas, devoluções e interações com reservas); validação no ambiente publicado. Os testes simulados de conflito deste módulo não comprovam concorrência real no PostgreSQL.
 
