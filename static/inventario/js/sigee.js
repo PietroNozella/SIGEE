@@ -195,8 +195,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("[data-auto-dismiss='true']").forEach((message) => {
         window.setTimeout(() => {
             message.classList.add("is-dismissing");
-            window.setTimeout(() => message.remove(), 220);
-        }, 6000);
+            window.setTimeout(() => {
+                const container = message.closest(".flash-messages");
+                message.remove();
+                if (container && !container.children.length) container.remove();
+            }, 220);
+        }, 5000);
     });
 
     const reservationForm = document.querySelector("[data-reservation-form]");

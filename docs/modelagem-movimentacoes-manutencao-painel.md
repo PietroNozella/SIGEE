@@ -33,12 +33,14 @@ Uma conta técnica de Django Superuser não é considerada um destinatário func
 
 ### Fluxo principal
 
-1. O Operador seleciona um equipamento disponível.
-2. O Operador seleciona o destinatário entre os usuários funcionais ativos.
-3. O sistema valida novamente a autorização e a disponibilidade no servidor.
-4. O sistema cria a movimentação de retirada.
-5. O sistema altera a situação do equipamento para `EM_USO`.
-6. O sistema confirma a operação e mantém o registro disponível para consulta no histórico.
+1. O Operador seleciona o tipo/modelo e o local de retirada. Quando existir apenas um local para aquele tipo, o sistema o preenche automaticamente.
+2. O sistema consulta as unidades físicas ativas e disponíveis e mostra a quantidade e os números de patrimônio.
+3. O Operador informa a quantidade. O sistema sugere essa quantidade de unidades, ordenadas por patrimônio, e permite trocar unidades pela lista de seleção.
+4. O Operador informa um destinatário e uma observação opcional para toda a entrega e confere o resumo com os patrimônios selecionados.
+5. O servidor exige quantidade positiva, patrimônios distintos e exatamente a quantidade informada, todos do mesmo tipo/modelo e local.
+6. O servidor revalida a autorização, o destinatário e os patrimônios conferidos sob bloqueio. Não substitui silenciosamente uma unidade que ficou indisponível.
+7. Em uma única transação, cria uma movimentação de retirada e seu evento de auditoria para cada equipamento e altera todas as unidades para `EM_USO`.
+8. O sistema confirma a quantidade entregue. Se qualquer unidade ou gravação falhar, nenhuma retirada ou atualização parcial permanece salva.
 
 ### Fluxos impedidos
 
@@ -54,13 +56,27 @@ Nesses casos, nenhuma movimentação parcial deve permanecer salva e a situaçã
 
 ### Correspondência com o modelo atual
 
-O modelo `Movimentacao` já possui referências para equipamento, Operador e destinatário, tipos controlados de retirada e devolução, data e hora, retirada de origem, observação e uma referência opcional para a reserva de origem. A implementação do fluxo ainda precisa acrescentar validações explícitas, atualização consistente da situação do equipamento, permissões, interface e testes.
+O modelo `Movimentacao` preserva referências para equipamento, Operador e destinatário, tipos controlados de retirada e devolução, data e hora, retirada de origem, observação e uma referência opcional para a reserva de origem. O RF-05 implementa a retirada sem reserva em lote em `/movimentacoes/retirada/`, com formulário, autorização no servidor e testes em `movimentacoes/tests.py`.
 
-Quando a retirada tiver origem em uma reserva, o serviço futuro deve bloquear a mesma `Reserva` antes de criar as movimentações do lote, confirmar que ela permanece ativa e gravar todas as retiradas de forma atômica. Esse contrato evita que a expiração da RN-11 ocorra concorrentemente com a retirada e impede estados parciais no lote.
+O serviço `registrar_retirada_sem_reserva` reconsulta a autorização do Operador e o destinatário funcional ativo, bloqueia os patrimônios selecionados com `select_for_update()`, em ordem de chave primária, e revalida tipo/modelo, local, `ativo` e `DISPONIVEL`. Todas as movimentações `RETIRADA`, alterações para `EM_USO` e eventos de auditoria `RETIRADA_REGISTRADA` são gravados na mesma transação. O modelo continua representando uma unidade física por movimentação; uma confirmação de 30 equipamentos gera 30 movimentações com o mesmo `lote_retirada`, identificado por UUID gerado no servidor. Isso permite reconhecer a entrega original e devolver todas ou somente parte das unidades. Operador e data/hora vêm do servidor; `reserva` e `retirada_origem` permanecem vazios. Superusers técnicos não são selecionáveis, mesmo quando possuem grupo funcional.
+
+O Django Admin permite somente consultar movimentações, sem inclusão, edição ou exclusão direta. Essa restrição impede contornar a autorização funcional e a gravação consistente da retirada.
+
+**Limite de disponibilidade deste incremento:** os critérios documentados para retirada sem reserva são equipamento ativo e situação `DISPONIVEL`. Não há decisão sobre como uma retirada sem previsão de devolução interage com reservas ativas ou futuras. Este fluxo não consulta nem altera reservas e não acrescenta bloqueios por período, tipo/modelo ou local inativo. Essa interação precisa ser definida ao integrar os fluxos futuros.
+
+**Validação de concorrência:** o teste com duas conexões simultâneas exige um banco com suporte a `select_for_update`, como PostgreSQL. Ele é ignorado no SQLite, que não oferece esse bloqueio por linha. Os testes em SQLite verificam revalidação de estado, segunda retirada, autorização, entradas inválidas e rollback, mas não comprovam a serialização concorrente em PostgreSQL.
 
 ### Critério de aceite do fluxo
 
-Um Operador consegue registrar pela interface a retirada sem reserva de um equipamento ativo e disponível para qualquer usuário funcional ativo. A movimentação preserva equipamento, Operador, destinatário, tipo, data e hora, e o equipamento passa para `EM_USO`. Tentativas sem autorização ou com equipamento ou destinatário inválido não alteram os dados.
+Um Operador consegue selecionar tipo/modelo, local e quantidade, conferir ou trocar os patrimônios sugeridos e registrar a retirada sem reserva do lote para um único usuário funcional ativo. Cada movimentação preserva equipamento, Operador, destinatário, tipo, data e hora; todos os equipamentos passam para `EM_USO`. Quantidade inválida, seleção duplicada, tipo/local divergente, indisponibilidade ou falha em qualquer parte do lote impedem alterações parciais. A interface mantém consulta e seleção por formulário também sem JavaScript.
+
+## Retirada vinculada à reserva
+
+O Operador localiza a reserva em `/movimentacoes/retirada/reservas/` e confere os patrimônios em `/movimentacoes/retirada/reservas/<reserva_id>/`. A entrega é integral, usa as unidades já alocadas e tem como destinatário o Professor proprietário, ativo e com perfil funcional válido. Esses vínculos, o Operador e a data/hora são obtidos no servidor.
+
+O serviço `registrar_retirada_reserva` bloqueia a mesma `Reserva` usada pelo cancelamento e pela expiração, revalida seu estado e impede retirada duplicada. A retirada exige reserva ativa e unidades ativas, disponíveis e compatíveis com o tipo/local. Só é permitida a partir do início e antes de completar os 30 minutos de tolerância; ao atingir o limite, a reserva expira com auditoria, sem retirar equipamentos.
+
+Uma transação grava as retiradas, a atualização para `EM_USO` e a auditoria de cada unidade. O lote preserva a reserva e continua compatível com devolução individual, total ou parcial. Os testes estão em `movimentacoes/test_retirada_reserva.py`; concorrência exige validação em PostgreSQL.
 
 ## Devolução
 
@@ -100,7 +116,7 @@ Uma retirada é considerada aberta enquanto não existir uma movimentação do t
 2. O sistema identifica o equipamento e o destinatário a partir da retirada original.
 3. O sistema valida novamente a autorização e confirma que a retirada permanece aberta.
 4. O sistema cria a movimentação de devolução vinculada à retirada.
-5. O sistema altera a situação do equipamento para `DISPONIVEL`.
+5. O sistema altera a situação do equipamento para `DISPONIVEL` quando não existe outro impedimento documentado.
 6. O sistema confirma a operação e preserva os dois registros no histórico.
 
 ### Fluxos impedidos
@@ -119,13 +135,25 @@ Nesses casos, nenhuma movimentação parcial deve permanecer salva e a situaçã
 
 O relacionamento `retirada_origem` do modelo `Movimentacao` permite vincular a devolução à retirada. O campo `operador` da nova movimentação registra quem recebeu a devolução, enquanto o registro original continua identificando quem realizou a retirada.
 
-A implementação ainda deve garantir que uma retirada possua no máximo uma devolução, aplicar a autorização no servidor e salvar a devolução e a mudança de situação do equipamento como uma única operação consistente.
+A devolução básica está implementada em `/movimentacoes/devolucao/`: a lista pagina grupos com unidades pendentes, por reserva quando vinculada ou pelo identificador da retirada em lote. A busca por patrimônio, tipo/modelo ou destinatário localiza o grupo inteiro; não reduz o lote às unidades encontradas pelo filtro. O resumo informa total, devolvidas e pendentes. Em `/movimentacoes/devolucao/<retirada_id>/`, o Operador confere todos os patrimônios, inicialmente com as unidades abertas marcadas, e desmarca as que não foram recebidas. Pode devolver todas, parte ou uma única unidade. A observação opcional vale para a confirmação inteira. A interface com JavaScript mostra um resumo final com quantidade e patrimônios; sem JavaScript, a seleção e a gravação continuam funcionando pelo formulário.
+
+**Registros anteriores:** a migration `0004` acrescenta `lote_retirada` opcional, sem atribuir retroativamente um UUID aos registros antigos. Proximidade de horário, mesmo tipo ou mesmo destinatário não comprovam que duas movimentações pertencem à mesma entrega. Retiradas antigas sem reserva e sem lote aparecem como “Pendências anteriores” por destinatário, com aviso explícito e data individual de cada unidade. Elas não se misturam aos novos lotes ou às reservas. Ao existir reserva vinculada, ela identifica o grupo.
+
+O serviço `registrar_devolucoes` reconsulta a autorização funcional, exige seleção não vazia e sem duplicatas, bloqueia as retiradas selecionadas e a referência do grupo em ordem de chave primária, verifica que pertencem ao grupo e que continuam abertas, e bloqueia os equipamentos também em ordem estável. Cada devolução obtém equipamento, destinatário, reserva e identificador de lote exclusivamente de sua retirada original; campos extras enviados pelo navegador não os substituem. Operador e data/hora vêm do servidor. O registro original e a reserva não são alterados. A inativação posterior do destinatário não impede receber o equipamento nem apaga sua identidade original. `registrar_devolucao` reutiliza esse serviço para receber apenas uma unidade.
+
+Todas as devoluções selecionadas, alterações dos equipamentos e eventos `DEVOLUCAO_REGISTRADA` de sucesso são gravados na mesma transação. Falhas, seleção de outro lote ou unidade já devolvida impedem a confirmação inteira, sem devolver parcialmente as demais unidades selecionadas. Unidades desmarcadas permanecem pendentes e não são alteradas. A view pode registrar separadamente uma tentativa com resultado `FALHA`, sem manter alterações de negócio. A migration `0003` acrescenta unicidade condicional de `retirada_origem` para `DEVOLUCAO` e uma restrição que exige a origem em toda devolução; a unicidade protege o banco mesmo fora do serviço. O serviço exige que a origem seja uma `RETIRADA`.
+
+**Impedimentos preservados:** a devolução não reativa equipamento inativo (RN-06) e não libera equipamento já em `MANUTENCAO` (RN-05). Nesses casos, registra o recebimento e mantém a situação existente. Para um equipamento ativo sem manutenção, retorna a `DISPONIVEL` (RN-10). Não são acrescentados bloqueios por reservas futuras nem alterações de estado da reserva; a interação entre retirada sem previsão de devolução e reservas continua sendo uma lacuna para a integração futura.
+
+**Validação:** `movimentacoes/test_devolucao.py` cobre sucesso, outro Operador, acesso direto negado, identidade e reserva originais, adulteração, duplicidade, devolução individual do lote, impedimentos existentes e rollback, além das restrições do banco. `movimentacoes/test_devolucao_lote.py` cobre 30 unidades em uma confirmação, recebimento parcial, lotes distintos do mesmo destinatário, busca que preserva o grupo, registros antigos, reserva, seleção inválida e rollback após gravar parte do lote. Os testes concorrentes de movimentações usam conexões independentes e exigem `select_for_update`; são ignorados no SQLite. As verificações locais nesse banco não comprovam concorrência em PostgreSQL nem funcionamento no ambiente publicado.
 
 ### Critério de aceite do fluxo
 
 Qualquer Operador autorizado consegue registrar pela interface a devolução correspondente a uma retirada em aberto. O histórico identifica separadamente os Operadores da retirada e da devolução, a nova movimentação referencia a retirada original e, quando não há outro impedimento, o equipamento retorna para `DISPONIVEL`. Uma segunda devolução para a mesma retirada ou uma tentativa sem autorização não altera os dados.
 
 ### Fluxo alternativo com necessidade de manutenção
+
+**Pendente neste incremento:** o encaminhamento automático previsto na RN-14 ainda não foi implementado. O formulário atual atende somente à devolução básica, sem abertura de manutenção. Painel e indicadores pedagógicos também permanecem pendentes.
 
 1. Durante a devolução, o Operador informa que o equipamento apresenta um problema.
 2. O sistema exige a descrição do problema.
@@ -135,6 +163,12 @@ Qualquer Operador autorizado consegue registrar pela interface a devolução cor
 6. O sistema confirma a devolução e informa que a manutenção aguarda o acompanhamento de um Administrador.
 
 A movimentação de devolução, a abertura da manutenção e a mudança de situação do equipamento devem ser gravadas como uma única operação consistente. Se qualquer etapa falhar, nenhuma delas deve permanecer salva.
+
+## Consulta do histórico e navegação do Operador
+
+O histórico está implementado em `/movimentacoes/historico/` para Administrador e Operador autorizados. Inclui retiradas com ou sem reserva e devoluções, inclusive encerradas, com patrimônio, equipamento, data/hora, Operador, destinatário e vínculos de origem. Oferece filtros por texto, tipo, período e reserva, paginação de 25 registros e ordenação do mais recente ao mais antigo, sem edição ou exclusão. Os testes estão em `movimentacoes/test_historico.py`.
+
+A sidebar do Operador contém Equipamentos, Reservas, Em uso e Histórico. Em Reservas, Registrar retirada abre a entrega sem reserva. Em uso apresenta lotes pendentes e permite conferir a devolução total ou parcial; não substitui o histórico. Após confirmar uma retirada, o sistema abre Em uso.
 
 ## Manutenção
 

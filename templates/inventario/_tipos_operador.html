@@ -1,0 +1,29 @@
+<div class="operator-equipment-groups">
+    {% for tipo in pagina %}
+    <details class="operator-equipment-group">
+        <summary class="operator-equipment-summary">
+            <span class="operator-equipment-name"><span class="operator-equipment-chevron" aria-hidden="true">›</span>{{ tipo.tipo__nome }}</span>
+            <span class="operator-equipment-category">{{ tipo.tipo__categoria__nome }}</span>
+            <span class="operator-equipment-count">{{ tipo.quantidade_total }} unidade{{ tipo.quantidade_total|pluralize:"s" }}{% if ha_filtros %} encontrada{{ tipo.quantidade_total|pluralize:"s" }}{% endif %}</span>
+            <span class="btn btn-secondary-sigee operator-equipment-action"><span class="operator-units-show">Ver unidades</span><span class="operator-units-hide">Ocultar unidades</span></span>
+        </summary>
+        <div class="operator-equipment-units">
+            <div class="table-responsive operator-units-scroll" tabindex="0" role="region" aria-label="Unidades de {{ tipo.tipo__nome }}; use rolagem para consultar a lista">
+                <table class="table inventory-table mb-0">
+                    <caption class="visually-hidden">Unidades de {{ tipo.tipo__nome }}</caption>
+                    <thead><tr><th scope="col">Patrimônio</th><th scope="col">Local</th><th scope="col">Situação</th></tr></thead>
+                    <tbody>
+                        {% for unidade in tipo.unidades %}
+                        <tr>
+                            <td><strong>{{ unidade.numero_patrimonio }}</strong>{% if not unidade.ativo %}<span class="inactive-label">Inativo</span>{% endif %}</td>
+                            <td>{{ unidade.local.nome }}</td>
+                            <td><span class="status-badge status-{{ unidade.situacao|lower }}">{{ unidade.get_situacao_display }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </details>
+    {% endfor %}
+</div>

@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from auditoria.eventos import AcaoAuditoria
@@ -12,7 +13,7 @@ from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from movimentacoes.models import Movimentacao
 from reservas.models import ReservaEquipamento
-from usuarios.permissoes import e_professor_funcional
+from usuarios.permissoes import e_operador_funcional, e_professor_funcional
 
 from .forms import EquipamentoForm, ImportacaoEquipamentosCSVForm
 from .importacao_csv import CABECALHOS_CSV, validar_equipamentos_csv
@@ -23,6 +24,8 @@ from .models import Categoria, Equipamento, Local
 @permission_required("inventario.view_equipamento", raise_exception=True)
 def equipamento_lista(request):
     e_professor = e_professor_funcional(request.user)
+    e_operador = e_operador_funcional(request.user)
+    lista_tipos = e_operador
     equipamentos = Equipamento.objects.select_related("tipo__categoria", "local").annotate(
         possui_historico=(
             Exists(Movimentacao.objects.filter(equipamento_id=OuterRef("pk")))
@@ -82,6 +85,7 @@ def equipamento_lista(request):
             entidade="inventario.Equipamento",
         )
 
+    unidades_fisicas = equipamentos
     if e_professor:
         equipamentos = (
             equipamentos.values(
@@ -100,12 +104,26 @@ def equipamento_lista(request):
             )
             .order_by("tipo__categoria__nome", "tipo__nome", "local__nome")
         )
+    elif lista_tipos:
+        equipamentos = (
+            equipamentos.values("tipo_id", "tipo__nome", "tipo__categoria__nome")
+            .annotate(quantidade_total=Count("id"))
+            .order_by("tipo__categoria__nome", "tipo__nome", "tipo_id")
+        )
 
     paginator = Paginator(equipamentos, 5)
     pagina = paginator.get_page(request.GET.get("pagina"))
 
     parametros = request.GET.copy()
     parametros.pop("pagina", None)
+    parametros.pop("tipo", None)
+    url_lista = reverse("inventario:equipamento_lista")
+    if lista_tipos:
+        unidades_por_tipo = {tipo["tipo_id"]: [] for tipo in pagina}
+        for unidade in unidades_fisicas.filter(tipo_id__in=unidades_por_tipo):
+            unidades_por_tipo[unidade.tipo_id].append(unidade)
+        for tipo in pagina:
+            tipo["unidades"] = unidades_por_tipo[tipo["tipo_id"]]
 
     context = {
         "pagina": pagina,
@@ -123,6 +141,8 @@ def equipamento_lista(request):
         "ha_filtros": ha_filtros,
         "total_equipamentos": total_equipamentos,
         "e_professor": e_professor,
+        "lista_tipos": lista_tipos,
+        "url_limpar": url_lista,
     }
     return render(request, "inventario/equipamento_lista.html", context)
 

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Conferir devolução | SIGEE{% endblock %}
+
+{% block content %}
+<div class="page-content form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">
+        <a href="{% url 'movimentacoes:devolucao_lista' %}">Em uso</a><span aria-hidden="true">/</span><span aria-current="page">Conferir devolução</span>
+    </nav>
+    <header class="page-header form-page-header">
+        <div><h1>Conferir devolução</h1><p>Todos os patrimônios em aberto vêm marcados. Desmarque as unidades que ainda não foram recebidas.</p></div>
+    </header>
+    <section class="form-card" aria-labelledby="return-heading">
+        <div class="form-card-header">
+            <h2 id="return-heading">{% if retirada.reserva_id %}Reserva #{{ retirada.reserva_id }}{% elif retirada.lote_retirada %}Retirada #{{ referencia_id }}{% else %}Pendências anteriores do destinatário{% endif %}</h2>
+            <p>Devolução sem necessidade de manutenção. O responsável pelo recebimento e a data e hora são registrados automaticamente.</p>
+        </div>
+        {% if form.errors %}
+        <div class="validation-summary" role="alert" tabindex="-1" data-focus-on-load>
+            <h3>Não foi possível registrar a devolução</h3>
+            <ul>{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}{% for field in form %}{% for error in field.errors %}<li><a href="#{% if field.name == 'retiradas' %}id_retiradas{% else %}{{ field.id_for_label }}{% endif %}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}</ul>
+        </div>
+        {% endif %}
+        <div class="equipment-form-grid">
+            <div class="form-field"><strong>Destinatário da retirada</strong><p data-return-recipient>{{ retirada.destinatario.get_full_name|default:retirada.destinatario.username }} ({{ retirada.destinatario.username }})</p></div>
+            <div class="form-field"><strong>Progresso da devolução</strong><p>{{ pendentes }} em aberto · {{ devolvidas }} devolvidas de {{ total }}</p></div>
+        </div>
+        {% if not retirada.reserva_id and not retirada.lote_retirada %}<p class="form-help">Estes registros são anteriores à identificação de lotes. As pendências deste destinatário estão reunidas aqui; confira o patrimônio e a data de cada retirada.</p>{% endif %}
+        {% if devolvida %}
+        <div class="validation-summary" role="status"><p>Todas as unidades deste grupo já foram devolvidas.</p></div>
+        <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_lista' %}">Voltar para Em uso</a>{% if pode_consultar_historico %}<a class="btn btn-primary-sigee" href="{% url 'movimentacoes:historico_lista' %}?retirada={{ retirada.pk }}">Consultar histórico</a>{% endif %}</div>
+        {% else %}
+        <form method="post" novalidate data-return-form>
+            {% csrf_token %}
+            <fieldset class="withdrawal-selection return-selection" id="id_retiradas" tabindex="-1"{% if form.retiradas.errors %} aria-invalid="true" aria-describedby="id_retiradas_error"{% endif %}>
+                <legend>Patrimônios recebidos</legend>
+                <div class="return-selection-controls">
+                    <label hidden data-return-select-all-label><input class="form-check-input" type="checkbox" data-return-select-all> Selecionar todas as unidades em aberto</label>
+                    <p class="form-help" data-return-count aria-live="polite">Confira as unidades marcadas antes de confirmar.</p>
+                </div>
+                {% if form.retiradas.errors %}<div class="field-error" id="id_retiradas_error">{% for error in form.retiradas.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                <p class="field-error" data-return-selection-error role="alert" hidden>Marque pelo menos um patrimônio recebido.</p>
+                <div class="withdrawal-table-wrap" tabindex="0" aria-label="Patrimônios do grupo; use rolagem para conferir todas as unidades">
+                    <table class="table withdrawal-table">
+                        <caption class="visually-hidden">Unidades não marcadas continuam pendentes de devolução</caption>
+                        <thead><tr><th scope="col">Recebido</th><th scope="col">Patrimônio e retirada</th><th scope="col">Tipo/modelo e local</th><th scope="col">Devolução</th></tr></thead>
+                        <tbody>{% for unidade in unidades %}<tr>
+                            <td>{% if not unidade.devolvida %}<input class="form-check-input" type="checkbox" name="retiradas" value="{{ unidade.pk }}" data-patrimonio="{{ unidade.equipamento.numero_patrimonio }}" aria-label="Recebido patrimônio {{ unidade.equipamento.numero_patrimonio }}"{% if unidade.pk|stringformat:"s" in selecionados %} checked{% endif %}>{% else %}<span aria-hidden="true">—</span>{% endif %}</td>
+                            <td><strong>{{ unidade.equipamento.numero_patrimonio }}</strong><span class="table-metadata">{{ unidade.data_hora|date:"d/m/Y H:i" }} · {{ unidade.operador.get_full_name|default:unidade.operador.username }}</span>{% if unidade.observacao %}<span class="table-metadata">{{ unidade.observacao }}</span>{% endif %}</td>
+                            <td>{{ unidade.equipamento.tipo.nome }}<span class="table-metadata">{{ unidade.equipamento.local.nome }}</span></td>
+                            <td>{% if unidade.devolvida %}Já devolvido{% else %}Em aberto{% endif %}</td>
+                        </tr>{% endfor %}</tbody>
+                    </table>
+                </div>
+            </fieldset>
+            <div class="form-field">
+                <label class="form-label" for="{{ form.observacao.id_for_label }}">{{ form.observacao.label }} <span class="optional-label">(opcional)</span></label>
+                {{ form.observacao }}
+                {% if form.observacao.errors %}<div class="field-error">{{ form.observacao.errors }}</div>{% endif %}
+            </div>
+            <div class="form-actions">
+                <a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_lista' %}">Cancelar</a>
+                <button class="btn btn-primary-sigee" type="submit" data-return-submit>Confirmar devolução</button>
+            </div>
+        </form>
+        {% endif %}
+    </section>
+    <dialog class="modal-exclusao withdrawal-confirm-dialog" data-return-dialog aria-labelledby="return-confirm-title">
+        <div class="modal-exclusao-conteudo">
+            <h2 id="return-confirm-title">Confirmar recebimento</h2>
+            <p><strong data-return-confirm-count></strong> equipamento(s) de <strong data-return-confirm-recipient></strong> serão devolvidos.</p>
+            <p data-return-confirm-remaining></p>
+            <div class="withdrawal-confirm-patrimonies"><strong>Patrimônios recebidos</strong><ul data-return-confirm-list></ul></div>
+        </div>
+        <footer class="modal-exclusao-acoes">
+            <button class="btn btn-secondary-sigee" type="button" data-return-confirm-cancel>Voltar</button>
+            <button class="btn btn-primary-sigee" type="button" data-return-confirm-submit>Registrar devolução</button>
+        </footer>
+    </dialog>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<link rel="stylesheet" href="{% static 'movimentacoes/retirada.css' %}?v=20261003.1">
+<link rel="stylesheet" href="{% static 'movimentacoes/devolucao.css' %}">
+<script src="{% static 'movimentacoes/devolucao.js' %}"></script>
+{% endblock %}

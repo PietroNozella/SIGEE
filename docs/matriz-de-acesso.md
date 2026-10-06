@@ -1,6 +1,6 @@
 # Matriz de acesso
 
-Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permissões referentes às rotas atuais do inventário, ao cadastro de usuários e à consulta de auditoria já estão implementadas; as demais ações continuam planejadas.
+Esta matriz registra as decisões aprovadas para atender ao `RF-01`. Estão implementadas as permissões do inventário, cadastro de usuários, auditoria, reservas próprias, retirada com ou sem reserva, devolução básica e histórico de movimentações. Manutenção, painel dedicado e uso pedagógico permanecem planejados.
 
 ## Princípios
 
@@ -23,6 +23,7 @@ Esta matriz registra as decisões aprovadas para atender ao `RF-01`. As permiss�
 | Visualizar o painel resumido e os indicadores pedagógicos | Sim | Não | Não |
 | Criar reserva própria | Não | Não | Sim |
 | Consultar e cancelar reserva própria | Não | Não | Sim |
+| Consultar reservas para conferir a entrega | Não | Sim | Não |
 | Registrar retirada e devolução | Não | Sim | Não |
 | Consultar histórico de movimentações | Sim | Sim | Não |
 | Encaminhar equipamento para manutenção durante a devolução | Não | Sim | Não |
@@ -48,8 +49,12 @@ O comando `python manage.py configurar_perfis`, executado depois de `migrate`, a
 
 | Grupo | Permissões atuais |
 |---|---|
-| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auditoria.view_registroauditoria` |
-| Operador | `view_equipamento` |
+| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auditoria.view_registroauditoria`, `movimentacoes.view_movimentacao` |
+| Operador | `view_equipamento`, `movimentacoes.add_movimentacao` (retirada com ou sem reserva e devolução básica), `movimentacoes.view_movimentacao` |
 | Professor | `view_equipamento`, `add_reserva`, `view_reserva`, `change_reserva` |
 
 As permissões das funcionalidades futuras serão acrescentadas somente quando suas respectivas rotas forem implementadas.
+
+As rotas `/movimentacoes/retirada/`, `/movimentacoes/retirada/reservas/`, `/movimentacoes/retirada/reservas/<reserva_id>/`, `/movimentacoes/devolucao/` e `/movimentacoes/devolucao/<retirada_id>/` exigem conta ativa, sem privilégios de Superuser, pertencente exclusivamente ao grupo Operador e com `movimentacoes.add_movimentacao`. A verificação ocorre nas views e nos serviços de gravação, inclusive em acesso direto à URL. Qualquer Operador autorizado pode devolver uma unidade, mesmo quando outro Operador registrou a retirada.
+
+A rota `/movimentacoes/historico/` exige conta ativa, sem Superuser, pertencente exclusivamente ao grupo Administrador ou Operador e com `movimentacoes.view_movimentacao`. O histórico permite somente consulta. O encaminhamento para manutenção permanece pendente.

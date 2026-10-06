@@ -1,0 +1,7 @@
+.return-selection { margin: 16px 0 24px; }
+.return-selection-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin: 12px 0; }
+.return-selection-controls label { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.return-selection-controls [hidden] { display: none; }
+.return-selection-controls p { margin: 0; }
+.return-selection .withdrawal-table td:nth-child(2) { white-space: normal; }
+.return-selection .withdrawal-table td:nth-child(2) strong { white-space: nowrap; }

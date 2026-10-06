@@ -68,6 +68,48 @@ System check identified no issues (1 silenced).
 
 O check silenciado é `axes.W006`. A configuração por nome de usuário sem IP é intencional para minimizar dados; o bloqueio continua abrangendo origens diferentes para a mesma conta.
 
+### Estado local mais recente — 03/10/2026
+
+O commit local `98c7a39`, na branch `feat/retirada-sem-reserva`, inclui retirada vinculada à reserva, histórico com filtros e paginação e organização da navegação do Operador. Ainda não foi publicado nem integrado à `main`. Não exige novas migrations além das `0003` e `0004` já presentes.
+
+A última suíte completa executada antes desse commit teve **291 testes: 285 aprovados e 6 de concorrência ignorados no SQLite**. `manage.py check`, `makemigrations --check --dry-run` e `git diff --check` passaram. A interface foi conferida localmente no desktop e no celular; a retirada válida de reserva foi verificada pelos testes automatizados, sem registrar uma entrega antecipada nas reservas locais futuras.
+
+Permanecem pendentes concorrência em PostgreSQL, validação publicada, revisão cruzada e devolução com problema (RN-14). RF-05/RF-06 não são declarados totalmente concluídos. Os registros abaixo preservam os resultados e as pendências existentes em cada etapa anterior.
+
+### Validação local de movimentações — 03/10/2026
+
+Na branch `feat/retirada-sem-reserva`, a retirada em lote foi consolidada no commit local `2aa4a8e7e147ccd8b9f5ff50c3a9ae6173c146cf`, após 221 testes: 220 aprovados e 1 de concorrência ignorado no SQLite. A devolução básica foi implementada posteriormente e, naquela revisão inicial, ainda estava sem commit.
+
+Após incluir a devolução, a suíte completa executou 246 testes: 244 aprovados e 2 cenários de concorrência ignorados. `manage.py check`, `makemigrations --check --dry-run` e `git diff --check` passaram. A migration `movimentacoes.0003` foi aplicada somente ao banco SQLite local, após backup.
+
+A validação pela interface com `operador.validacao` devolveu `RF05-DEV-VALID-01`, confirmando o vínculo com a retirada e a auditoria. `RF05-DEV-VALID-02`, do mesmo lote sintético, permaneceu em uso para validação manual. Os 37 equipamentos anteriores preservaram o estado. Lista e formulário foram conferidos em desktop e em viewport de 390 × 844, com tabela rolável e sem transbordamento horizontal da página.
+
+SQLite não comprova o bloqueio concorrente por linha. Os testes com duas conexões devem ser executados em PostgreSQL antes de afirmar essa validação. O ambiente publicado e a revisão cruzada por outro integrante não foram validados nesta etapa. RN-14, retirada com reserva, histórico completo e painel permanecem pendentes.
+
+### Refinamento da devolução em lote e parcial — 03/10/2026
+
+A devolução passou a agrupar as pendências por reserva ou pelo identificador comum das novas retiradas. A migration `movimentacoes.0004` adiciona `lote_retirada` opcional, sem inferir lotes históricos; os registros antigos sem reserva são apresentados como pendências por destinatário, com aviso explícito. A confirmação salva atomicamente todas as unidades selecionadas, com um vínculo à retirada e um evento de auditoria por unidade. As desmarcadas permanecem pendentes.
+
+A suíte completa executou 258 testes: 255 aprovados e 3 cenários de concorrência ignorados no SQLite. O módulo de movimentações executou 69 testes com os mesmos 3 ignorados. Há testes de devolução dos 30 equipamentos, parcial de 28 e conclusão dos 2 restantes, seleção de outro lote, seleção vazia, duplicidade, preservação da reserva e rollback após gravar parte do lote. Check, consistência das migrations e diff foram verificados. A migration foi aplicada ao SQLite local após backup.
+
+Na interface, o lote sintético `RF05-DEV-LOTE-01` a `03` foi criado separadamente: as unidades `01` e `02` foram devolvidas em uma única confirmação e a `03` permaneceu em uso. Os 39 equipamentos anteriores preservaram o estado. O contador, a seleção de todos, a rejeição de seleção vazia e o resumo de confirmação foram verificados no navegador. A validação de concorrência em PostgreSQL e do ambiente publicado continua pendente. Naquele refinamento, essas alterações ainda estavam sem commit para revisão.
+
+### Consolidação local da devolução — 03/10/2026
+
+A revisão para consolidação conferiu a devolução individual, integral e parcial, os grupos por reserva ou UUID, as pendências antigas por destinatário, a autorização no servidor, a preservação da retirada e da reserva e a gravação atômica com auditoria. As migrations `0003` (unicidade e origem obrigatória da devolução) e `0004` (identificador opcional dos novos lotes) estão aplicadas no SQLite local e integram esta entrega. Nenhum problema funcional que exigisse mudança de código foi identificado nesta revisão.
+
+A suíte completa foi **reexecutada nesta consolidação**, isolada do banco publicado:
+
+```powershell
+$env:DATABASE_URL=''
+$env:DJANGO_DEBUG='True'
+.venv/Scripts/python.exe manage.py test --verbosity 1
+```
+
+Resultado: **258 testes em 64,297 segundos; 255 aprovados e 3 ignorados**. Os cenários ignorados são a retirada simultânea, a devolução simultânea da mesma unidade e a devolução de seleções sobrepostas de um lote; exigem suporte a `select_for_update`, ausente no SQLite. O resultado não comprova concorrência em PostgreSQL.
+
+`manage.py check` não identificou problemas (um aviso `axes.W006` intencionalmente silenciado); `makemigrations --check --dry-run` não detectou mudanças; `showmigrations movimentacoes` confirmou `0003` e `0004` aplicadas; `git diff --check` passou. Esta é uma consolidação em commit local na branch `feat/retirada-sem-reserva`, sem publicação ou integração à `main`. Revisão cruzada, concorrência em PostgreSQL e validação publicada permanecem pendentes, assim como retirada vinculada à reserva, histórico completo e RN-14. RF-05 e RF-06 não estão totalmente concluídos.
+
 ## Regressão do inventário
 
 Para confirmar que a autorização não quebrou os comportamentos anteriores do inventário, foi executada separadamente a suíte histórica do módulo:
