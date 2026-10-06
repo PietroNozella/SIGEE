@@ -5,4 +5,6 @@ __pycache__/
 *.py[cod]
 *.sqlite3
 staticfiles/
+output/playwright/
+.playwright-cli/
 

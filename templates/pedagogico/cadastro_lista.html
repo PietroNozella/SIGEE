@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content">
+    <header class="page-header">
+        <div><h1>{{ titulo }}</h1><p>Consulte e mantenha os cadastros compartilhados. Inativar preserva os dados.</p></div>
+        {% if pode_criar %}<a class="btn btn-primary-sigee" href="{{ url_novo }}">Cadastrar {{ singular }}</a>{% endif %}
+    </header>
+    <section class="inventory-card" aria-labelledby="cadastros-heading">
+        <h2 id="cadastros-heading" class="visually-hidden">Lista de {{ titulo|lower }}</h2>
+        <form class="reservation-filter-toolbar" method="get" role="search">
+            <div class="reservation-filter-field"><label for="busca">Nome</label><input class="form-control" type="search" id="busca" name="busca" value="{{ busca }}"></div>
+            <div class="reservation-filter-field"><label for="situacao">Situação</label>
+                <select class="form-select" id="situacao" name="situacao">
+                    <option value=""{% if not situacao %} selected{% endif %}>Todas</option>
+                    <option value="ativos"{% if situacao == 'ativos' %} selected{% endif %}>Ativos</option>
+                    <option value="inativos"{% if situacao == 'inativos' %} selected{% endif %}>Inativos</option>
+                </select>
+            </div>
+            <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Filtrar</button><a class="btn btn-secondary-sigee" href="{{ url_lista }}">Limpar</a></div>
+        </form>
+        {% if pagina.object_list %}
+        <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Cadastros; use rolagem horizontal em telas pequenas">
+            <table class="table inventory-table mb-0">
+                <caption class="visually-hidden">{{ titulo }} com nome, situação e ações disponíveis</caption>
+                <thead><tr><th scope="col">Nome</th><th scope="col">Situação</th><th scope="col">Ações</th></tr></thead>
+                <tbody>{% for registro in pagina %}<tr>
+                    <td><strong>{{ registro.nome }}</strong>{% if cadastro == 'atividades' and registro.descricao %}<details><summary>Descrição</summary><p>{{ registro.descricao }}</p></details>{% endif %}</td>
+                    <td>{% if registro.ativo %}Ativo{% else %}Inativo{% endif %}</td>
+                    <td>{% if pode_alterar %}<div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-secondary-sigee" href="{% url rota_editar registro.pk %}" aria-label="Editar {{ registro.nome }}">Editar</a>
+                        <form method="post" action="{% if registro.ativo %}{% url rota_inativar registro.pk %}{% else %}{% url rota_reativar registro.pk %}{% endif %}">
+                            {% csrf_token %}<button class="btn btn-secondary-sigee" type="submit" aria-label="{% if registro.ativo %}Inativar{% else %}Reativar{% endif %} {{ registro.nome }}">{% if registro.ativo %}Inativar{% else %}Reativar{% endif %}</button>
+                        </form>
+                    </div>{% else %}<span>Somente consulta</span>{% endif %}</td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        <footer class="inventory-pagination">
+            <p>Mostrando {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }} cadastros</p>
+            {% if pagina.paginator.num_pages > 1 %}<nav aria-label="Paginação dos cadastros"><ul class="pagination mb-0">
+                {% if pagina.has_previous %}<li class="page-item"><a class="page-link" href="?{{ parametros_paginacao }}&amp;pagina={{ pagina.previous_page_number }}">Anterior</a></li>{% endif %}
+                <li class="page-item active"><span class="page-link" aria-current="page">{{ pagina.number }} de {{ pagina.paginator.num_pages }}</span></li>
+                {% if pagina.has_next %}<li class="page-item"><a class="page-link" href="?{{ parametros_paginacao }}&amp;pagina={{ pagina.next_page_number }}">Próxima</a></li>{% endif %}
+            </ul></nav>{% endif %}
+        </footer>
+        {% else %}<div class="inventory-empty"><h2>Nenhum cadastro encontrado</h2><p>Cadastre um novo registro ou revise os filtros informados.</p></div>{% endif %}
+    </section>
+</div>
+{% endblock %}

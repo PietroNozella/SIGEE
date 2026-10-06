@@ -93,18 +93,21 @@
                 <img src="{% static 'inventario/icons/pedagogical.svg' %}" alt="" aria-hidden="true">
                 Uso pedagógico
             </span>
-            <span class="side-nav-item is-disabled" aria-disabled="true">
-                <img src="{% static 'inventario/icons/classes.svg' %}" alt="" aria-hidden="true">
-                Turmas
-            </span>
-            <span class="side-nav-item is-disabled" aria-disabled="true">
-                <img src="{% static 'inventario/icons/subjects.svg' %}" alt="" aria-hidden="true">
-                Disciplinas
-            </span>
-            <span class="side-nav-item is-disabled" aria-disabled="true">
-                <img src="{% static 'inventario/icons/activities.svg' %}" alt="" aria-hidden="true">
-                Atividades
-            </span>
+            {% if pode_consultar_turmas %}
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'turmas' %} is-active{% endif %}" href="{% url 'pedagogico:turmas_lista' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'turmas' %} aria-current="page"{% endif %}>
+                <img src="{% static 'inventario/icons/classes.svg' %}" alt="" aria-hidden="true">Turmas
+            </a>
+            {% endif %}
+            {% if pode_consultar_disciplinas %}
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'disciplinas' %} is-active{% endif %}" href="{% url 'pedagogico:disciplinas_lista' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'disciplinas' %} aria-current="page"{% endif %}>
+                <img src="{% static 'inventario/icons/subjects.svg' %}" alt="" aria-hidden="true">Disciplinas
+            </a>
+            {% endif %}
+            {% if pode_consultar_atividades %}
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'atividades' %} is-active{% endif %}" href="{% url 'pedagogico:atividades_lista' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'atividades' %} aria-current="page"{% endif %}>
+                <img src="{% static 'inventario/icons/activities.svg' %}" alt="" aria-hidden="true">Atividades
+            </a>
+            {% endif %}
 
             <span class="sidebar-section-title">Administração</span>
             {% if pode_cadastrar_usuario %}

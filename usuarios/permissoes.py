@@ -29,6 +29,15 @@ PERMISSOES_POR_GRUPO = {
         PERMISSAO_CADASTRAR_USUARIO,
         PERMISSAO_CONSULTAR_AUDITORIA,
         "movimentacoes.view_movimentacao",
+        "pedagogico.view_turma",
+        "pedagogico.add_turma",
+        "pedagogico.change_turma",
+        "pedagogico.view_disciplina",
+        "pedagogico.add_disciplina",
+        "pedagogico.change_disciplina",
+        "pedagogico.view_atividadepedagogica",
+        "pedagogico.add_atividadepedagogica",
+        "pedagogico.change_atividadepedagogica",
     ),
     GRUPO_OPERADOR: (
         "inventario.view_equipamento",
@@ -97,6 +106,14 @@ def usuarios_funcionais_ativos():
 def pode_cadastrar_usuario(user):
     return e_administrador_funcional(user) and user.has_perm(
         PERMISSAO_CADASTRAR_USUARIO
+    )
+
+
+def pode_gerenciar_cadastro_pedagogico(user, modelo, acao="view"):
+    return (
+        user.is_active
+        and e_administrador_funcional(user)
+        and user.has_perm(f"pedagogico.{acao}_{modelo}")
     )
 
 
