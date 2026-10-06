@@ -26,6 +26,11 @@
                     <td>{{ registro.destinatario.get_full_name|default:registro.destinatario.username }}<span class="table-metadata">{{ registro.destinatario.username }}</span></td>
                     <td>{% if registro.reserva_id %}<a href="?reserva={{ registro.reserva_id }}">Reserva #{{ registro.reserva_id }}</a>{% else %}<span class="table-metadata">Sem reserva</span>{% endif %}
                         {% if registro.retirada_origem_id %}<span class="table-metadata"><a href="?retirada={{ registro.retirada_origem_id }}#mov-{{ registro.retirada_origem_id }}">Retirada #{{ registro.retirada_origem_id }}</a></span>{% else %}{% for devolucao in registro.devolucoes.all %}<span class="table-metadata"><a href="?retirada={{ registro.pk }}#mov-{{ devolucao.pk }}">Devolução #{{ devolucao.pk }}</a></span>{% endfor %}{% endif %}
+                        {% if registro.retirada_origem_id %}
+                            {% include "pedagogico/_contexto_historico.html" with contexto=registro.retirada_origem.utilizacao_pedagogica %}
+                        {% else %}
+                            {% include "pedagogico/_contexto_historico.html" with contexto=registro.utilizacao_pedagogica %}
+                        {% endif %}
                     </td>
                 </tr>{% endfor %}</tbody>
             </table>

@@ -114,6 +114,11 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao=""):
 def consultar_historico(filtros):
     movimentacoes = Movimentacao.objects.select_related(
         "equipamento__tipo", "operador", "destinatario", "retirada_origem",
+        "utilizacao_pedagogica__turma", "utilizacao_pedagogica__disciplina",
+        "utilizacao_pedagogica__atividade",
+        "retirada_origem__utilizacao_pedagogica__turma",
+        "retirada_origem__utilizacao_pedagogica__disciplina",
+        "retirada_origem__utilizacao_pedagogica__atividade",
     ).prefetch_related("devolucoes").order_by("-data_hora", "-pk")
     if filtros.get("busca"):
         busca = filtros["busca"]

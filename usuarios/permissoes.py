@@ -49,6 +49,9 @@ PERMISSOES_POR_GRUPO = {
         PERMISSAO_CRIAR_RESERVA,
         PERMISSAO_CONSULTAR_RESERVA,
         PERMISSAO_ALTERAR_RESERVA,
+        "pedagogico.view_utilizacaopedagogica",
+        "pedagogico.add_utilizacaopedagogica",
+        "pedagogico.change_utilizacaopedagogica",
     ),
 }
 
@@ -120,4 +123,11 @@ def pode_gerenciar_cadastro_pedagogico(user, modelo, acao="view"):
 def pode_consultar_auditoria(user):
     return e_administrador_funcional(user) and user.has_perm(
         PERMISSAO_CONSULTAR_AUDITORIA
+    )
+
+
+def pode_gerenciar_utilizacao_pedagogica(user, acao="view"):
+    return (
+        user.is_active and e_professor_funcional(user)
+        and user.has_perm(f"pedagogico.{acao}_utilizacaopedagogica")
     )

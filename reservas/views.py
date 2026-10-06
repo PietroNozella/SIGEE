@@ -4,13 +4,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Case, DateTimeField, Value, When
+from django.db.models import Case, DateTimeField, Exists, OuterRef, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from inventario.models import Local, TipoEquipamento
+from movimentacoes.models import Movimentacao
 from usuarios.permissoes import e_professor_funcional
 
 from .brasilapi import consultar_feriados_no_periodo
@@ -54,11 +55,15 @@ def reserva_lista(request):
 
     expirar_reservas_vencidas()
     agora = timezone.now()
+    retiradas = Movimentacao.objects.filter(reserva_id=OuterRef("pk"), tipo=Movimentacao.Tipo.RETIRADA)
     reservas = (
         Reserva.objects.filter(professor=request.user)
         .select_related("tipo_equipamento", "tipo_equipamento__categoria", "local")
         .prefetch_related("itens__equipamento", "itens__equipamento__local")
         .annotate(
+            tem_retirada=Exists(retiradas),
+            tem_pendentes=Exists(retiradas.filter(devolucoes__isnull=True)),
+            tem_contexto=Exists(retiradas.filter(utilizacao_pedagogica__isnull=False)),
             grupo_temporal=Case(
                 When(inicio__gte=agora, then=Value(0)),
                 default=Value(1),
