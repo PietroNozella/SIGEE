@@ -20,6 +20,7 @@ A auditoria cobre atualmente:
 - criação, cancelamento e expiração automática de reservas próprias pelo Professor;
 - retirada com ou sem reserva por Operador;
 - devolução básica vinculada à retirada por Operador;
+- criação, edição, inativação e reativação dos cadastros compartilhados de Turma, Disciplina e Atividade Pedagógica;
 - exportação de dados de uma conta para atendimento ao titular;
 - anonimização de conta;
 - limpeza confirmada de auditorias, aceites e sessões expiradas.
@@ -62,6 +63,9 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `RESERVA_EXPIRADA` | O sistema expira uma reserva ativa sem retirada após 30 minutos do início. | Sucesso |
 | `RETIRADA_REGISTRADA` | O Operador registra uma retirada com ou sem reserva ou o formulário é rejeitado. | Sucesso ou falha |
 | `DEVOLUCAO_REGISTRADA` | O Operador registra uma devolução vinculada à retirada ou a tentativa é rejeitada. | Sucesso ou falha |
+| `CADASTRO_PEDAGOGICO_CRIADO` | Criação de Turma, Disciplina ou Atividade Pedagógica aceita ou rejeitada. | Sucesso ou falha |
+| `CADASTRO_PEDAGOGICO_EDITADO` | Edição do cadastro compartilhado aceita ou rejeitada. | Sucesso ou falha |
+| `CADASTRO_PEDAGOGICO_SITUACAO_ALTERADA` | Inativação ou reativação altera o estado, ou falha na persistência. | Sucesso ou falha |
 | `DADOS_TITULAR_EXPORTADOS` | Um conjunto de dados é preparado para atendimento ao titular. | Sucesso |
 | `USUARIO_ANONIMIZADO` | Uma conta comum é desativada e tem identificadores diretos substituídos. | Sucesso |
 | `DADOS_EXPIRADOS_REMOVIDOS` | Uma limpeza confirmada remove registros segundo datas de corte explícitas. | Sucesso |
@@ -71,6 +75,8 @@ Uma tentativa de login inválida é registrada sem vincular o nome de usuário i
 Na retirada e na devolução, o evento de sucesso referencia a nova movimentação e é salvo na mesma transação que ela e a atualização do equipamento. Uma falha nessa gravação desfaz as três alterações. Tentativas inválidas geram separadamente um evento de falha sem copiar destinatário ou observação; acessos negados seguem o middleware existente. Na devolução rejeitada pela view, o evento de falha referencia a retirada consultada.
 
 Na retirada com reserva, cada unidade gera seu evento de sucesso. Uma tentativa rejeitada pela view referencia a reserva. Se o prazo já venceu, a expiração legítima e sua auditoria são preservadas, sem retirar equipamentos. A consulta do histórico não gera um novo evento específico de auditoria.
+
+Nos cadastros pedagógicos, auditoria de sucesso e alteração usam a mesma transação. Rejeições de criação não referenciam um identificador inexistente; edição e mudança de situação rejeitadas referenciam o cadastro. Nomes e descrições não são copiados. Repetir uma inativação ou reativação que já corresponde ao estado atual não gera outro evento de mudança. Cenários de validação e rollback estão em `pedagogico/tests.py`, com resultados nas [evidências da entrega](cadastros-pedagogicos.md).
 
 ## Controle de acesso e consulta
 
@@ -126,6 +132,7 @@ $env:DATABASE_URL=''
 | Acessos negados devem ser auditados | `auditoria/middleware.py` |
 | Operações atuais do inventário devem ser auditadas | `inventario/views.py` |
 | Cadastro controlado de contas deve ser auditado | `usuarios/views.py` e `auditoria/tests.py` |
+| Cadastros pedagógicos com resultado, responsável e referência à entidade | `pedagogico/views.py` e `pedagogico/tests.py` |
 | Operações de privacidade devem ser auditadas | `usuarios/management/commands/` e `usuarios/test_privacidade.py` |
 | Consulta restrita ao Administrador | `auditoria/views.py`, `usuarios/permissoes.py` e `templates/base.html` |
 | Consulta somente leitura | `auditoria/admin.py` e `templates/auditoria/registro_lista.html` |

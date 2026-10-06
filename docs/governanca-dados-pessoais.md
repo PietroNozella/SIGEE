@@ -24,7 +24,7 @@ As hipóteses legais e os prazos marcados como **proposta para validação** nã
 | Movimentação | Operador, destinatário, equipamento, tipo, data, hora, retirada de origem e observação | fluxo futuro de retirada/devolução | preservar rastreabilidade física | Operador e Administrador conforme matriz planejada | PostgreSQL/Supabase | execução da atividade e legítimo interesse em rastreabilidade | proposta pendente de validação |
 | Auditoria | conta, ação, resultado, data, hora, entidade e identificador | eventos automáticos | segurança, responsabilização e investigação | Administrador funcional e Superuser técnico | PostgreSQL/Supabase | legítimo interesse, exercício regular de direitos ou obrigação aplicável | proposta pendente de validação |
 | Aceite | conta, versões dos documentos e data/hora | confirmação do usuário | comprovar apresentação e aceite dos documentos | Superuser técnico em consulta somente leitura | PostgreSQL/Supabase | exercício regular de direitos | proposta pendente de validação |
-| Campos livres | descrições de equipamento, local e movimentação | entrada de usuário; em geral opcional | registrar contexto estritamente necessário | conforme a funcionalidade | PostgreSQL/Supabase | mesma hipótese da funcionalidade correspondente | mesma retenção do registro principal |
+| Campos livres | descrições de equipamento, local, movimentação e atividade pedagógica | entrada de usuário; em geral opcional | registrar contexto estritamente necessário | conforme a funcionalidade | PostgreSQL/Supabase | mesma hipótese da funcionalidade correspondente | mesma retenção do registro principal |
 | Metadados de infraestrutura | endereço IP, navegador e dados técnicos que o provedor possa registrar | requisição HTTP | entrega, segurança e diagnóstico da aplicação | fornecedor e equipe autorizada | Vercel | deve ser confirmada com o contrato do fornecedor | deve ser confirmada com o fornecedor |
 | Feriados | ano derivado da data da reserva e `User-Agent` técnico `SIGEE/1.0` | chamada do backend | informar feriados nacionais | BrasilAPI | BrasilAPI; nenhum identificador do Professor é enviado intencionalmente | não envolve dado pessoal enviado intencionalmente | não persistido pelo SIGEE |
 
@@ -55,6 +55,8 @@ Bootstrap e fontes são servidos como arquivos estáticos do próprio projeto. O
 ## Educação e crianças
 
 O contexto do produto é educacional, mas os titulares atuais são profissionais com perfis Administrador, Operador e Professor. O sistema não cadastra alunos, responsáveis, notas, frequência, necessidades especiais ou outros dados de crianças e adolescentes.
+
+Os cadastros pedagógicos implementados em 06/10/2026 armazenam nome de Turma, Disciplina e Atividade Pedagógica, descrição opcional da atividade, situação e data de criação. Não incluem identificadores de alunos nem vínculo ao Professor nesta entrega. O Administrador mantém os cadastros; a auditoria registra a conta responsável e o identificador da entidade, sem copiar nome ou descrição. Os campos livres devem conter somente o contexto necessário da atividade.
 
 Antes de ampliar o domínio pedagógico, a equipe deve repetir este inventário. Se a mudança introduzir dados de alunos, será necessária avaliação específica de melhor interesse, minimização, vínculo com responsáveis, permissões, transparência adequada à idade e retenção.
 

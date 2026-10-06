@@ -46,6 +46,8 @@ No domínio de reservas, `Categoria` classifica os equipamentos, `TipoEquipament
 
 As validações de domínio devem permanecer no servidor para que as regras sejam aplicadas mesmo quando uma requisição não se originar da navegação comum da interface.
 
+O app `pedagogico` implementa Turma, Disciplina e Atividade Pedagógica como cadastros compartilhados independentes. Usa models, ModelForms, views por função e templates reutilizados entre os três cadastros, com autorização e auditoria existentes. Não introduz dependências nem associações às utilizações nesta etapa. O modelo e as evidências estão em [Cadastros pedagógicos](cadastros-pedagogicos.md).
+
 ## Camada de persistência
 
 O Django ORM faz a comunicação entre os modelos da aplicação e o banco de dados. O ambiente publicado utilizará PostgreSQL hospedado no Supabase; o Supabase será usado como infraestrutura do banco, sem substituir a autenticação e a autorização do Django.
@@ -89,6 +91,8 @@ O fluxo principal pode ser representado por **Usuário → Navegador → Django 
 ## Desenvolvimento, testes e implantação
 
 O código é versionado com Git e armazenado no GitHub. As alterações são integradas por Pull Requests e verificadas com o framework de testes do Django. O fluxo previsto é **Git → GitHub → Pull Request → Testes → Implantação**.
+
+Para a entrega dos cadastros pedagógicos de 09/10, a dupla aprovou trabalhar diretamente na `main`, sem nova branch ou PR. A revisão do Diego será feita pelos commits e evidências; esse retorno permanece pendente.
 
 A implantação da aplicação na Vercel permanece condicionada à validação da compatibilidade com Django, conexão segura com o PostgreSQL e execução das migrations. O ambiente publicado deverá se comunicar com o PostgreSQL do Supabase por uma conexão protegida por TLS.
 

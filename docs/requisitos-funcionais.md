@@ -18,7 +18,11 @@ Este documento registra o baseline aprovado de requisitos funcionais do SIGEE. A
 
 ## Estado de RF-05 e RF-06
 
-A retirada com ou sem reserva, a devolução básica total ou parcial e a consulta do histórico estão implementadas localmente na branch `feat/retirada-sem-reserva`. A retirada com reserva entrega integralmente as unidades alocadas ao Professor proprietário, a partir do início e antes dos 30 minutos de tolerância, com gravação e auditoria atômicas. Permanecem pendentes a devolução com problema (RN-14), a concorrência em PostgreSQL e a validação publicada; esta entrega não declara RF-05/RF-06 totalmente concluídos.
+A retirada com ou sem reserva, a devolução básica total ou parcial e a consulta do histórico foram integradas à `main` pelo PR #19, no commit `4071580`. A retirada com reserva entrega integralmente as unidades alocadas ao Professor proprietário, a partir do início e antes dos 30 minutos de tolerância, com gravação e auditoria atômicas. Permanecem pendentes a devolução com problema (RN-14), a concorrência em PostgreSQL e a validação publicada; esta entrega não declara RF-05/RF-06 totalmente concluídos.
+
+## Base cadastral para RF-10 e estado do RF-11
+
+Em 06/10/2026 foram implementados os cadastros compartilhados de Turma, Disciplina e Atividade Pedagógica, geridos pelo Administrador com validações, permissões, auditoria e inativação/reativação. Os modelos seguem o DER atual e ainda não se vinculam às utilizações, reservas, movimentações ou Professores. As [evidências da entrega de 09/10](cadastros-pedagogicos.md) registram os cenários executados e as limitações. A associação pelo Professor prevista no RF-10 e os indicadores do RF-11 continuam pendentes; os requisitos não estão concluídos.
 
 ## Estado do RF-09
 

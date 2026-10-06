@@ -55,7 +55,7 @@ O SIGEE não possui cadastro público. As contas são criadas por usuários auto
 
 | Perfil | Acesso disponível atualmente |
 |---|---|
-| **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, consulta o resumo, a auditoria e o histórico de movimentações. |
+| **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, mantém turmas, disciplinas e atividades pedagógicas, consulta o resumo, a auditoria e o histórico de movimentações. |
 | **Operador** | Consulta equipamentos e reservas, registra retirada em lote com ou sem reserva, confirma devolução integral ou parcial e consulta o histórico de movimentações. |
 | **Professor** | Consulta os equipamentos e a disponibilidade, cria reservas próprias em lote e cancela as próprias reservas. |
 
@@ -151,6 +151,7 @@ python manage.py test
 - [x] retirada integral das unidades alocadas à reserva, do início até antes dos 30 minutos de tolerância;
 - [x] devolução básica em lote ou parcial por qualquer Operador autorizado, com seleção dos patrimônios, vínculo individual à retirada, auditoria e proteção contra duplicidade;
 - [x] histórico de retiradas e devoluções para Administrador e Operador, com filtros, paginação e vínculos de origem;
+- [x] criação, consulta, edição, inativação e reativação de turmas, disciplinas e atividades pedagógicas pelo Administrador, com permissões e auditoria;
 - [x] consulta informativa de feriados nacionais pela BrasilAPI.
 - [x] transparência de privacidade, inventário de dados e aceite versionado;
 - [x] comandos assistidos para exportação, anonimização e descarte controlado.
@@ -169,6 +170,7 @@ python manage.py test
 
 - [Arquitetura do sistema](docs/arquitetura-do-sistema.md)
 - [Matriz de acesso](docs/matriz-de-acesso.md)
+- [Cadastros pedagógicos e evidências da entrega](docs/cadastros-pedagogicos.md)
 - [Autenticação e autorização](docs/autenticacao.md)
 - [Auditoria de acessos e ações](docs/auditoria.md)
 - [Segurança](docs/evidencias-seguranca.md)
