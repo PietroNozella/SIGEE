@@ -153,7 +153,7 @@ Qualquer Operador autorizado consegue registrar pela interface a devolução cor
 
 ### Fluxo alternativo com necessidade de manutenção
 
-**Implementado localmente em `feat/manutencao`:** o Operador indica o problema por patrimônio recebido e o sistema abre a manutenção na mesma transação da devolução. Unidades normais e unidades não recebidas preservam os respectivos fluxos. Veja [modelo, autorização e evidências](manutencoes.md). Painel e indicadores pedagógicos permanecem pendentes.
+**Implementado localmente em `feat/manutencao`:** o Operador indica o problema por patrimônio recebido e o sistema abre a manutenção na mesma transação da devolução. Unidades normais e unidades não recebidas preservam os respectivos fluxos. Painel e indicadores pedagógicos permanecem pendentes.
 
 1. Durante a devolução, o Operador informa que o equipamento apresenta um problema.
 2. O sistema exige a descrição do problema.
@@ -172,7 +172,7 @@ A sidebar do Operador contém Equipamentos, Reservas, Em uso e Histórico. Em Re
 
 ## Manutenção
 
-O ciclo descrito abaixo está implementado localmente no app `manutencoes`, com abertura manual ou automática, início, encerramento, histórico e auditoria. A implementação não foi publicada nem validada em PostgreSQL; consulte [Manutenção e devolução com problema](manutencoes.md).
+O ciclo descrito abaixo está implementado localmente no app `manutencoes`, com abertura manual ou automática, início, encerramento, histórico e auditoria. A implementação não foi publicada nem validada em PostgreSQL.
 
 ### Rastreabilidade
 

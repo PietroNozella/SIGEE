@@ -58,12 +58,6 @@ O módulo contém **19 testes**, com cenários aplicados aos três cadastros. A 
 
 A conferência pelo navegador usou banco temporário separado e conta sintética. Foram observados criação dos três cadastros, edição/inativação/reativação de Turma, rejeição de duplicidade com espaços e campo preservado, expansão da descrição e menu móvel. A criação de Turma foi concluída por teclado com Tab e Enter. O erro recebeu foco no resumo. Em 390 × 844, formulário e listagem apresentaram largura de página de 390 pixels; a tabela tem rolagem horizontal própria para acessar todas as colunas. A apresentação desktop foi conferida em 1440 × 900.
 
-![Listagem desktop](evidencias/pedagogico-desktop.png)
-
-![Erro de duplicidade no celular](evidencias/pedagogico-mobile-erro.png)
-
-![Listagem no celular](evidencias/pedagogico-mobile-lista.png)
-
 ## Banco e revisão
 
 Antes de `pedagogico.0001_initial`, foi feito backup SQLite com verificação de integridade em `.tmp/backups/db-before-pedagogico-20261006-133844.sqlite3`. A migration e `configurar_perfis` foram aplicados ao SQLite local. Backup, bancos temporários, sessões de navegador e DOCX não versionado não integram os commits.

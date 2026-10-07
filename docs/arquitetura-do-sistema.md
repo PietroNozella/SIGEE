@@ -48,7 +48,7 @@ As validações de domínio devem permanecer no servidor para que as regras seja
 
 O app `pedagogico` implementa Turma, Disciplina e Atividade Pedagógica como cadastros compartilhados independentes. Usa models, ModelForms, views por função e templates reutilizados entre os três cadastros, com autorização e auditoria existentes. Não introduz dependências nem associações às utilizações nesta etapa. O modelo e as evidências estão em [Cadastros pedagógicos](cadastros-pedagogicos.md).
 
-O app `manutencoes` implementa localmente RF-07 e RN-14 no mesmo monólito, sem novas dependências. A intervenção tem estados próprios, responsáveis e datas, equipamento protegido e devolução de origem opcional. Serviços transacionais mantêm a situação do equipamento coerente com a intervenção e integram a abertura automática à devolução. Consulte [Manutenção e devolução com problema](manutencoes.md) para contratos, restrições e limites da validação.
+O app `manutencoes` implementa localmente RF-07 e RN-14 no mesmo monólito, sem novas dependências. A intervenção tem estados próprios, responsáveis e datas, equipamento protegido e devolução de origem opcional. Serviços transacionais mantêm a situação do equipamento coerente com a intervenção e integram a abertura automática à devolução. A validação de concorrência em PostgreSQL permanece pendente.
 
 ## Camada de persistência
 

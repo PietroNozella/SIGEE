@@ -143,7 +143,7 @@ python manage.py test
 
 ## Funcionalidades disponíveis nesta entrega
 
-O ciclo de manutenção e a devolução com problema estão implementados localmente em `feat/manutencao`, ainda sem envio ao GitHub ou aplicação ao ambiente publicado. Consulte [as evidências e os limites](docs/manutencoes.md).
+O ciclo de manutenção e a devolução com problema estão implementados localmente em `feat/manutencao`, ainda sem envio ao GitHub ou aplicação ao ambiente publicado. A revisão cruzada e a validação de concorrência em PostgreSQL permanecem pendentes.
 
 - [x] cadastro, importação, consulta, edição e inativação de equipamentos;
 - [x] reservas próprias por Professor, com quantidade e controle de disponibilidade;
@@ -173,7 +173,6 @@ O ciclo de manutenção e a devolução com problema estão implementados localm
 
 - [Arquitetura do sistema](docs/arquitetura-do-sistema.md)
 - [Matriz de acesso](docs/matriz-de-acesso.md)
-- [Manutenção e devolução com problema](docs/manutencoes.md)
 - [Cadastros pedagógicos e evidências da entrega](docs/cadastros-pedagogicos.md)
 - [Autenticação e autorização](docs/autenticacao.md)
 - [Auditoria de acessos e ações](docs/auditoria.md)
