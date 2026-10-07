@@ -55,8 +55,8 @@ O SIGEE não possui cadastro público. As contas são criadas por usuários auto
 
 | Perfil | Acesso disponível atualmente |
 |---|---|
-| **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, mantém turmas, disciplinas e atividades pedagógicas, consulta o resumo, a auditoria e o histórico de movimentações. |
-| **Operador** | Consulta equipamentos e reservas, registra retirada em lote com ou sem reserva, confirma devolução integral ou parcial e consulta o histórico de movimentações. |
+| **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, mantém turmas, disciplinas e atividades pedagógicas, acompanha manutenções, consulta o resumo, a auditoria e o histórico de movimentações. |
+| **Operador** | Consulta equipamentos e reservas, registra retirada em lote com ou sem reserva, confirma devolução integral ou parcial, encaminha unidades com problema para manutenção e consulta o histórico de movimentações. |
 | **Professor** | Consulta os equipamentos e a disponibilidade, cria reservas próprias em lote e cancela as próprias reservas. |
 
 Consulte os detalhes de autorização na [matriz de acesso](docs/matriz-de-acesso.md).
@@ -131,7 +131,7 @@ Execute `configurar_perfis` depois das migrations. O comando é idempotente e ma
 
 ## Testes
 
-A suíte automatizada cobre autenticação, bloqueio de tentativas, autorização, inventário, importação CSV, usuários, documentos legais, auditoria, reservas, disponibilidade, conflitos, cancelamento, direitos dos titulares e contingência da BrasilAPI.
+A suíte automatizada cobre autenticação, bloqueio de tentativas, autorização, inventário, importação CSV, usuários, documentos legais, auditoria, reservas, disponibilidade, conflitos, cancelamento, manutenção, devolução com problema, direitos dos titulares e contingência da BrasilAPI.
 
 Para validar o projeto com SQLite:
 
@@ -143,6 +143,8 @@ python manage.py test
 
 ## Funcionalidades disponíveis nesta entrega
 
+O ciclo de manutenção e a devolução com problema estão implementados localmente em `feat/manutencao`, ainda sem envio ao GitHub ou aplicação ao ambiente publicado. Consulte [as evidências e os limites](docs/manutencoes.md).
+
 - [x] cadastro, importação, consulta, edição e inativação de equipamentos;
 - [x] reservas próprias por Professor, com quantidade e controle de disponibilidade;
 - [x] prevenção de conflitos e bloqueio de períodos inválidos;
@@ -151,6 +153,8 @@ python manage.py test
 - [x] retirada integral das unidades alocadas à reserva, do início até antes dos 30 minutos de tolerância;
 - [x] devolução básica em lote ou parcial por qualquer Operador autorizado, com seleção dos patrimônios, vínculo individual à retirada, auditoria e proteção contra duplicidade;
 - [x] histórico de retiradas e devoluções para Administrador e Operador, com filtros, paginação e vínculos de origem;
+- [x] devolução com problema por patrimônio, com abertura automática de manutenção e gravação atômica do lote;
+- [x] abertura manual, acompanhamento e conclusão de manutenção pelo Administrador, com resultado reparado ou sem reparo, indisponibilidade, auditoria e histórico;
 - [x] criação, consulta, edição, inativação e reativação de turmas, disciplinas e atividades pedagógicas pelo Administrador, com permissões e auditoria;
 - [x] consulta informativa de feriados nacionais pela BrasilAPI.
 - [x] transparência de privacidade, inventário de dados e aceite versionado;
@@ -158,9 +162,8 @@ python manage.py test
 
 ## Roadmap
 
-- [ ] devolução com problema e encaminhamento para manutenção (RN-14);
 - [ ] validação de concorrência em PostgreSQL e do ambiente publicado;
-- [ ] registro e acompanhamento de manutenções;
+- [ ] revisão cruzada e integração da entrega local de manutenção;
 - [ ] vinculação da utilização ao contexto pedagógico;
 - [ ] indicadores de utilização pedagógica.
 
@@ -170,6 +173,7 @@ python manage.py test
 
 - [Arquitetura do sistema](docs/arquitetura-do-sistema.md)
 - [Matriz de acesso](docs/matriz-de-acesso.md)
+- [Manutenção e devolução com problema](docs/manutencoes.md)
 - [Cadastros pedagógicos e evidências da entrega](docs/cadastros-pedagogicos.md)
 - [Autenticação e autorização](docs/autenticacao.md)
 - [Auditoria de acessos e ações](docs/auditoria.md)

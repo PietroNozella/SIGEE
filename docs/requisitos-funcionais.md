@@ -18,7 +18,7 @@ Este documento registra o baseline aprovado de requisitos funcionais do SIGEE. A
 
 ## Estado de RF-05 e RF-06
 
-A retirada com ou sem reserva, a devolução básica total ou parcial e a consulta do histórico foram integradas à `main` pelo PR #19, no commit `4071580`. A retirada com reserva entrega integralmente as unidades alocadas ao Professor proprietário, a partir do início e antes dos 30 minutos de tolerância, com gravação e auditoria atômicas. Permanecem pendentes a devolução com problema (RN-14), a concorrência em PostgreSQL e a validação publicada; esta entrega não declara RF-05/RF-06 totalmente concluídos.
+A retirada com ou sem reserva, a devolução básica total ou parcial e a consulta do histórico foram integradas à `main` pelo PR #19, no commit `4071580`. A retirada com reserva entrega integralmente as unidades alocadas ao Professor proprietário, a partir do início e antes dos 30 minutos de tolerância, com gravação e auditoria atômicas. A devolução com problema (RN-14) e o ciclo de manutenção (RF-07) foram implementados localmente em `feat/manutencao`, com [evidências próprias](manutencoes.md). Concorrência em PostgreSQL, integração desta branch, revisão cruzada e validação publicada continuam pendentes; a implementação local não declara os cards formalmente concluídos.
 
 ## Base cadastral para RF-10 e estado do RF-11
 

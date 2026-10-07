@@ -1,6 +1,6 @@
 # Matriz de acesso
 
-Esta matriz registra as decisões aprovadas para atender ao `RF-01`. Estão implementadas as permissões do inventário, cadastro de usuários, auditoria, reservas próprias, retirada com ou sem reserva, devolução básica, histórico de movimentações e cadastros de Turma, Disciplina e Atividade Pedagógica. Manutenção, painel dedicado, associação das utilizações e indicadores pedagógicos permanecem planejados.
+Esta matriz registra as decisões aprovadas para atender ao `RF-01`. Estão implementadas as permissões do inventário, cadastro de usuários, auditoria, reservas próprias, retirada com ou sem reserva, devolução, histórico de movimentações e cadastros de Turma, Disciplina e Atividade Pedagógica. O ciclo de manutenção e a devolução com problema estão implementados localmente em `feat/manutencao`. Painel dedicado, associação das utilizações e indicadores pedagógicos permanecem planejados.
 
 ## Princípios
 
@@ -51,8 +51,8 @@ O comando `python manage.py configurar_perfis`, executado depois de `migrate`, a
 
 | Grupo | Permissões atuais |
 |---|---|
-| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auditoria.view_registroauditoria`, `movimentacoes.view_movimentacao`; no app `pedagogico`: `view_turma`, `add_turma`, `change_turma`, `view_disciplina`, `add_disciplina`, `change_disciplina`, `view_atividadepedagogica`, `add_atividadepedagogica`, `change_atividadepedagogica` |
-| Operador | `view_equipamento`, `movimentacoes.add_movimentacao` (retirada com ou sem reserva e devolução básica), `movimentacoes.view_movimentacao` |
+| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auditoria.view_registroauditoria`, `movimentacoes.view_movimentacao`; no app `pedagogico`: `view_turma`, `add_turma`, `change_turma`, `view_disciplina`, `add_disciplina`, `change_disciplina`, `view_atividadepedagogica`, `add_atividadepedagogica`, `change_atividadepedagogica`; no app `manutencoes`: `view_manutencao`, `add_manutencao`, `change_manutencao` |
+| Operador | `view_equipamento`, `movimentacoes.add_movimentacao` (retirada com ou sem reserva e devolução com ou sem encaminhamento para manutenção), `movimentacoes.view_movimentacao` |
 | Professor | `view_equipamento`, `add_reserva`, `view_reserva`, `change_reserva` |
 
 As permissões das funcionalidades futuras serão acrescentadas somente quando suas respectivas rotas forem implementadas.
@@ -61,4 +61,6 @@ As rotas sob `/pedagogico/turmas/`, `/pedagogico/disciplinas/` e `/pedagogico/at
 
 As rotas `/movimentacoes/retirada/`, `/movimentacoes/retirada/reservas/`, `/movimentacoes/retirada/reservas/<reserva_id>/`, `/movimentacoes/devolucao/` e `/movimentacoes/devolucao/<retirada_id>/` exigem conta ativa, sem privilégios de Superuser, pertencente exclusivamente ao grupo Operador e com `movimentacoes.add_movimentacao`. A verificação ocorre nas views e nos serviços de gravação, inclusive em acesso direto à URL. Qualquer Operador autorizado pode devolver uma unidade, mesmo quando outro Operador registrou a retirada.
 
-A rota `/movimentacoes/historico/` exige conta ativa, sem Superuser, pertencente exclusivamente ao grupo Administrador ou Operador e com `movimentacoes.view_movimentacao`. O histórico permite somente consulta. O encaminhamento para manutenção permanece pendente.
+A rota `/movimentacoes/historico/` exige conta ativa, sem Superuser, pertencente exclusivamente ao grupo Administrador ou Operador e com `movimentacoes.view_movimentacao`. O histórico permite somente consulta e inclui a referência às manutenções originadas nas devoluções.
+
+No app `manutencoes`, o comando `configurar_perfis` acrescenta ao Administrador as permissões `view_manutencao`, `add_manutencao` e `change_manutencao`. Não atribui `delete_manutencao` a nenhum perfil. As rotas de consulta, abertura, início e conclusão exigem o Administrador funcional exclusivo, ativo, sem Superuser, com a permissão da respectiva ação. O Operador pode originar uma manutenção exclusivamente durante a devolução autorizada. Veja [as rotas e evidências](manutencoes.md).
