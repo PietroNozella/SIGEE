@@ -83,10 +83,12 @@
                 Movimentações
             </span>
             {% endif %}
-            <span class="side-nav-item is-disabled" aria-disabled="true">
+            {% if pode_consultar_manutencoes %}
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'manutencoes' %} is-active{% endif %}" href="{% url 'manutencoes:manutencao_lista' %}"{% if request.resolver_match.namespace == 'manutencoes' %} aria-current="page"{% endif %}>
                 <img src="{% static 'inventario/icons/maintenance.svg' %}" alt="" aria-hidden="true">
                 Manutenções
-            </span>
+            </a>
+            {% endif %}
 
             <span class="sidebar-section-title">Gestão educacional</span>
             <span class="side-nav-item is-disabled" aria-disabled="true">

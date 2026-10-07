@@ -44,7 +44,8 @@
         const list = dialog.querySelector('[data-return-confirm-list]');
         list.replaceChildren(...received.map(unit => {
             const item = document.createElement('li');
-            item.textContent = unit.dataset.patrimonio;
+            const problem = form.querySelector(`[name="problema_${unit.value}"]`);
+            item.textContent = unit.dataset.patrimonio + (problem?.checked ? ' · Encaminhado para manutenção' : '');
             return item;
         }));
         confirm.disabled = false;

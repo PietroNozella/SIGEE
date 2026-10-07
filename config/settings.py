@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'inventario',
     'legal',
     'movimentacoes',
+    'manutencoes',
     'pedagogico',
     'reservas',
     'usuarios',

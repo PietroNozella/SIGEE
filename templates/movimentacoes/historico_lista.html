@@ -26,6 +26,7 @@
                     <td>{{ registro.destinatario.get_full_name|default:registro.destinatario.username }}<span class="table-metadata">{{ registro.destinatario.username }}</span></td>
                     <td>{% if registro.reserva_id %}<a href="?reserva={{ registro.reserva_id }}">Reserva #{{ registro.reserva_id }}</a>{% else %}<span class="table-metadata">Sem reserva</span>{% endif %}
                         {% if registro.retirada_origem_id %}<span class="table-metadata"><a href="?retirada={{ registro.retirada_origem_id }}#mov-{{ registro.retirada_origem_id }}">Retirada #{{ registro.retirada_origem_id }}</a></span>{% else %}{% for devolucao in registro.devolucoes.all %}<span class="table-metadata"><a href="?retirada={{ registro.pk }}#mov-{{ devolucao.pk }}">Devolução #{{ devolucao.pk }}</a></span>{% endfor %}{% endif %}
+                        {% if registro.manutencao %}<span class="table-metadata">{% if pode_consultar_manutencoes %}<a href="{% url 'manutencoes:manutencao_detalhe' registro.manutencao.pk %}">Manutenção #{{ registro.manutencao.pk }}</a>{% else %}Manutenção #{{ registro.manutencao.pk }}{% endif %} · {{ registro.manutencao.get_estado_display }}</span>{% endif %}
                     </td>
                 </tr>{% endfor %}</tbody>
             </table>

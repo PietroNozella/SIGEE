@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Manutenção #{{ manutencao.pk }} | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'manutencoes:manutencao_lista' %}">Manutenções</a><span aria-hidden="true">/</span><span aria-current="page">Manutenção #{{ manutencao.pk }}</span></nav>
+    <header class="page-header"><div><h1>Manutenção #{{ manutencao.pk }}</h1><p>{{ manutencao.equipamento.numero_patrimonio }} · {{ manutencao.equipamento.tipo.nome }} · {{ manutencao.get_estado_display }}</p></div></header>
+    <section class="form-card" aria-labelledby="maintenance-detail-heading">
+        <div class="form-card-header"><h2 id="maintenance-detail-heading">Histórico da intervenção</h2><p>Origem, responsáveis e datas preservados para consulta.</p></div>
+        <dl class="equipment-form-grid">
+            <div class="form-field"><dt>Equipamento</dt><dd>{{ manutencao.equipamento.numero_patrimonio }} · {{ manutencao.equipamento.tipo.nome }}<br>{{ manutencao.equipamento.local.nome }}<br>{{ manutencao.equipamento.get_situacao_display }}{% if not manutencao.equipamento.ativo %} · Inativo{% endif %}</dd></div>
+            <div class="form-field"><dt>Origem</dt><dd>{% if manutencao.devolucao_origem_id %}<a href="{% url 'movimentacoes:historico_lista' %}?retirada={{ manutencao.devolucao_origem.retirada_origem_id }}#mov-{{ manutencao.devolucao_origem_id }}">Devolução #{{ manutencao.devolucao_origem_id }}</a>{% else %}Abertura manual{% endif %}</dd></div>
+            <div class="form-field form-field-full"><dt>Problema informado</dt><dd>{{ manutencao.descricao_problema|linebreaksbr }}</dd></div>
+            <div class="form-field"><dt>Abertura · Pendente</dt><dd>{{ manutencao.data_abertura|date:"d/m/Y H:i:s" }}<br>{{ manutencao.aberto_por.get_full_name|default:manutencao.aberto_por.username }}</dd></div>
+            {% if manutencao.data_inicio %}<div class="form-field"><dt>Início · Em andamento</dt><dd>{{ manutencao.data_inicio|date:"d/m/Y H:i:s" }}<br>{{ manutencao.iniciado_por.get_full_name|default:manutencao.iniciado_por.username }}</dd></div>{% endif %}
+            {% if manutencao.data_conclusao %}<div class="form-field"><dt>Encerramento · Concluída</dt><dd>{{ manutencao.data_conclusao|date:"d/m/Y H:i:s" }}<br>{{ manutencao.concluido_por.get_full_name|default:manutencao.concluido_por.username }}</dd></div><div class="form-field"><dt>Resultado</dt><dd>{{ manutencao.get_resultado_display }}</dd></div><div class="form-field form-field-full"><dt>Solução ou conclusão da análise</dt><dd>{{ manutencao.descricao_solucao|linebreaksbr }}</dd></div>{% endif %}
+        </dl>
+        <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'manutencoes:manutencao_lista' %}">Voltar à lista</a>
+            {% if pode_alterar_manutencao %}{% if manutencao.estado == 'PENDENTE' %}<form method="post" action="{% url 'manutencoes:manutencao_iniciar' manutencao.pk %}">{% csrf_token %}<button class="btn btn-primary-sigee" type="submit">Iniciar manutenção</button></form>{% elif manutencao.estado == 'EM_ANDAMENTO' %}<a class="btn btn-primary-sigee" href="{% url 'manutencoes:manutencao_concluir' manutencao.pk %}">Concluir manutenção</a>{% endif %}{% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

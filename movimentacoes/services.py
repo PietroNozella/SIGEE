@@ -11,6 +11,7 @@ from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from inventario.models import Equipamento
+from manutencoes.services import _abrir_manutencao_bloqueada
 from reservas.models import Reserva
 from reservas.services import _expirar_reserva_bloqueada
 from usuarios.permissoes import pode_registrar_devolucao, pode_registrar_retirada, usuarios_funcionais_ativos
@@ -113,7 +114,7 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao=""):
 
 def consultar_historico(filtros):
     movimentacoes = Movimentacao.objects.select_related(
-        "equipamento__tipo", "operador", "destinatario", "retirada_origem",
+        "equipamento__tipo", "operador", "destinatario", "retirada_origem", "manutencao",
     ).prefetch_related("devolucoes").order_by("-data_hora", "-pk")
     if filtros.get("busca"):
         busca = filtros["busca"]
@@ -276,7 +277,7 @@ def grupos_devolucao(busca=""):
     ).filter(pendentes__gt=0).order_by("inicio", "retirada_id")
 
 
-def registrar_devolucoes(*, operador, retirada_id, retiradas_ids, observacao=""):
+def registrar_devolucoes(*, operador, retirada_id, retiradas_ids, observacao="", problemas=None):
     if not operador.is_authenticated:
         raise PermissionDenied
     operador_atual = get_user_model().objects.filter(pk=operador.pk).first()
@@ -286,6 +287,11 @@ def registrar_devolucoes(*, operador, retirada_id, retiradas_ids, observacao="")
     ids = list(retiradas_ids)
     if not ids or len(ids) != len(set(ids)):
         raise ValidationError("Selecione pelo menos uma unidade, sem repetir patrimônios.")
+    problemas = {} if problemas is None else problemas
+    if not set(problemas).issubset(ids):
+        raise ValidationError("Informe problemas somente para os patrimônios recebidos.")
+    if any(not descricao.strip() for descricao in problemas.values()):
+        raise ValidationError("Descreva o problema de cada patrimônio encaminhado para manutenção.")
     with transaction.atomic():
         # Ordem estável também quando dois lotes selecionam subconjuntos diferentes.
         # Sem joins anuláveis no SELECT FOR UPDATE do PostgreSQL.
@@ -320,7 +326,12 @@ def registrar_devolucoes(*, operador, retirada_id, retiradas_ids, observacao="")
             devolucao.full_clean()
             devolucao.save()
             # RN-05/RN-06/RN-10: devolver não libera manutenção nem reativa um item.
-            if equipamento.ativo and equipamento.situacao != Equipamento.Situacao.MANUTENCAO:
+            if origem.pk in problemas:
+                _abrir_manutencao_bloqueada(
+                    equipamento=equipamento, usuario=operador_atual,
+                    descricao_problema=problemas[origem.pk], devolucao=devolucao,
+                )
+            elif equipamento.ativo and equipamento.situacao != Equipamento.Situacao.MANUTENCAO:
                 equipamento.situacao = Equipamento.Situacao.DISPONIVEL
                 equipamento.save(update_fields=("situacao", "data_atualizacao"))
             registrar_evento(
@@ -332,8 +343,9 @@ def registrar_devolucoes(*, operador, retirada_id, retiradas_ids, observacao="")
     return devolucoes
 
 
-def registrar_devolucao(*, operador, retirada_id, observacao=""):
+def registrar_devolucao(*, operador, retirada_id, observacao="", descricao_problema=None):
     return registrar_devolucoes(
         operador=operador, retirada_id=retirada_id,
         retiradas_ids=[retirada_id], observacao=observacao,
+        problemas=None if descricao_problema is None else {retirada_id: descricao_problema},
     )[0]

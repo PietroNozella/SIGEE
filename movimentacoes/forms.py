@@ -32,6 +32,39 @@ class DevolucaoForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields["retiradas"].queryset = retiradas
         self.initial.setdefault("retiradas", list(retiradas.values_list("pk", flat=True)))
+        for retirada in retiradas:
+            self.fields[f"problema_{retirada.pk}"] = forms.BooleanField(
+                label=f"Problema no patrimônio {retirada.equipamento.numero_patrimonio}", required=False,
+                widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            )
+            self.fields[f"descricao_problema_{retirada.pk}"] = forms.CharField(
+                label=f"Descrição do problema — {retirada.equipamento.numero_patrimonio}", required=False,
+                widget=forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            )
+        if self.is_bound:
+            for nome in self.errors:
+                if nome in self.fields:
+                    self.fields[nome].widget.attrs.update({
+                        "aria-invalid": "true", "aria-describedby": f"id_{nome}_error",
+                    })
+
+    def clean(self):
+        dados = super().clean()
+        recebidas = {item.pk for item in dados.get("retiradas", [])}
+        problemas = {}
+        for retirada in self.fields["retiradas"].queryset:
+            marcado = dados.get(f"problema_{retirada.pk}")
+            descricao = dados.get(f"descricao_problema_{retirada.pk}", "")
+            if (marcado or descricao) and retirada.pk not in recebidas:
+                self.add_error(f"problema_{retirada.pk}", "Registre problemas somente em patrimônios recebidos.")
+            elif marcado and not descricao:
+                self.add_error(f"descricao_problema_{retirada.pk}", "Descreva o problema deste patrimônio.")
+            elif descricao and not marcado:
+                self.add_error(f"problema_{retirada.pk}", "Marque o encaminhamento para manutenção ou remova a descrição.")
+            elif marcado:
+                problemas[retirada.pk] = descricao
+        dados["problemas"] = problemas
+        return dados
 
     def clean_retiradas(self):
         valores = self.fields["retiradas"].widget.value_from_datadict(self.data, self.files, "retiradas")
