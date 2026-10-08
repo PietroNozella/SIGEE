@@ -59,6 +59,7 @@ urlpatterns = [
     path('equipamentos/', include('inventario.urls')),
     path('reservas/', include('reservas.urls')),
     path('movimentacoes/', include('movimentacoes.urls')),
+    path('manutencoes/', include('manutencoes.urls')),
     path('pedagogico/', include('pedagogico.urls')),
     path('usuarios/', include('usuarios.urls')),
 ]

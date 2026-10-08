@@ -14,7 +14,7 @@
     <section class="form-card" aria-labelledby="return-heading">
         <div class="form-card-header">
             <h2 id="return-heading">{% if retirada.reserva_id %}Reserva #{{ retirada.reserva_id }}{% elif retirada.lote_retirada %}Retirada #{{ referencia_id }}{% else %}Pendências anteriores do destinatário{% endif %}</h2>
-            <p>Devolução sem necessidade de manutenção. O responsável pelo recebimento e a data e hora são registrados automaticamente.</p>
+            <p>Confira o recebimento e informe problemas por patrimônio. O responsável e a data e hora são registrados automaticamente.</p>
         </div>
         {% if form.errors %}
         <div class="validation-summary" role="alert" tabindex="-1" data-focus-on-load>
@@ -54,6 +54,20 @@
                     </table>
                 </div>
             </fieldset>
+            <section aria-labelledby="return-problems-heading">
+                <h2 id="return-problems-heading">Condição dos equipamentos</h2>
+                <p class="form-help">Se uma unidade recebida apresenta defeito, marque o encaminhamento e descreva o problema. Ela ficará indisponível até o Administrador concluir a manutenção.</p>
+                {% for unidade in unidades %}{% if not unidade.devolvida %}
+                <details class="form-field"{% if unidade.campo_problema.value or unidade.campo_problema.errors or unidade.campo_descricao_problema.errors or unidade.campo_descricao_problema.value %} open{% endif %}>
+                    <summary>Informar problema · {{ unidade.equipamento.numero_patrimonio }}</summary>
+                    <div class="form-check mt-3">{{ unidade.campo_problema }}<label class="form-check-label" for="{{ unidade.campo_problema.id_for_label }}">Encaminhar {{ unidade.equipamento.numero_patrimonio }} para manutenção</label></div>
+                    {% if unidade.campo_problema.errors %}<div class="field-error" id="{{ unidade.campo_problema.id_for_label }}_error">{{ unidade.campo_problema.errors }}</div>{% endif %}
+                    <label class="form-label mt-3" for="{{ unidade.campo_descricao_problema.id_for_label }}">{{ unidade.campo_descricao_problema.label }}</label>
+                    {{ unidade.campo_descricao_problema }}
+                    {% if unidade.campo_descricao_problema.errors %}<div class="field-error" id="{{ unidade.campo_descricao_problema.id_for_label }}_error">{{ unidade.campo_descricao_problema.errors }}</div>{% endif %}
+                </details>
+                {% endif %}{% endfor %}
+            </section>
             <div class="form-field">
                 <label class="form-label" for="{{ form.observacao.id_for_label }}">{{ form.observacao.label }} <span class="optional-label">(opcional)</span></label>
                 {{ form.observacao }}

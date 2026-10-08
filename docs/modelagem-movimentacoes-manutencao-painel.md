@@ -153,7 +153,7 @@ Qualquer Operador autorizado consegue registrar pela interface a devolução cor
 
 ### Fluxo alternativo com necessidade de manutenção
 
-**Pendente neste incremento:** o encaminhamento automático previsto na RN-14 ainda não foi implementado. O formulário atual atende somente à devolução básica, sem abertura de manutenção. Painel e indicadores pedagógicos também permanecem pendentes.
+**Implementado localmente em `feat/manutencao`:** o Operador indica o problema por patrimônio recebido e o sistema abre a manutenção na mesma transação da devolução. Unidades normais e unidades não recebidas preservam os respectivos fluxos. Painel e indicadores pedagógicos permanecem pendentes.
 
 1. Durante a devolução, o Operador informa que o equipamento apresenta um problema.
 2. O sistema exige a descrição do problema.
@@ -171,6 +171,8 @@ O histórico está implementado em `/movimentacoes/historico/` para Administrado
 A sidebar do Operador contém Equipamentos, Reservas, Em uso e Histórico. Em Reservas, Registrar retirada abre a entrega sem reserva. Em uso apresenta lotes pendentes e permite conferir a devolução total ou parcial; não substitui o histórico. Após confirmar uma retirada, o sistema abre Em uso.
 
 ## Manutenção
+
+O ciclo descrito abaixo está implementado localmente no app `manutencoes`, com abertura manual ou automática, início, encerramento, histórico e auditoria. A implementação não foi publicada nem validada em PostgreSQL.
 
 ### Rastreabilidade
 

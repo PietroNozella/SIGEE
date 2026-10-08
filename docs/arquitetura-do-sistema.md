@@ -48,6 +48,8 @@ As validações de domínio devem permanecer no servidor para que as regras seja
 
 O app `pedagogico` implementa Turma, Disciplina e Atividade Pedagógica como cadastros compartilhados independentes. Usa models, ModelForms, views por função e templates reutilizados entre os três cadastros, com autorização e auditoria existentes. Não introduz dependências nem associações às utilizações nesta etapa. O modelo e as evidências estão em [Cadastros pedagógicos](cadastros-pedagogicos.md).
 
+O app `manutencoes` implementa localmente RF-07 e RN-14 no mesmo monólito, sem novas dependências. A intervenção tem estados próprios, responsáveis e datas, equipamento protegido e devolução de origem opcional. Serviços transacionais mantêm a situação do equipamento coerente com a intervenção e integram a abertura automática à devolução. A validação de concorrência em PostgreSQL permanece pendente.
+
 ## Camada de persistência
 
 O Django ORM faz a comunicação entre os modelos da aplicação e o banco de dados. O ambiente publicado utilizará PostgreSQL hospedado no Supabase; o Supabase será usado como infraestrutura do banco, sem substituir a autenticação e a autorização do Django.

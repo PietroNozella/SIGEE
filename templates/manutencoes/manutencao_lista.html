@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Manutenções | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content">
+    <header class="page-header"><div><h1>Manutenções</h1><p>Acompanhe as intervenções e consulte o histórico dos equipamentos.</p></div>
+        {% if pode_abrir_manutencao %}<a class="btn btn-primary-sigee" href="{% url 'manutencoes:manutencao_abrir' %}">Abrir manutenção</a>{% endif %}
+    </header>
+    <section class="inventory-card" aria-labelledby="maintenance-heading">
+        <h2 id="maintenance-heading" class="visually-hidden">Intervenções registradas</h2>
+        <form class="reservation-filter-toolbar" method="get" role="search">
+            <div class="reservation-filter-field"><label for="busca">Patrimônio ou tipo/modelo</label><input class="form-control" id="busca" name="busca" type="search" value="{{ busca }}"></div>
+            <div class="reservation-filter-field"><label for="estado">Estado da manutenção</label><select class="form-select" id="estado" name="estado"><option value="">Todos</option>{% for valor, rotulo in estados %}<option value="{{ valor }}"{% if estado == valor %} selected{% endif %}>{{ rotulo }}</option>{% endfor %}</select></div>
+            <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Filtrar</button><a class="btn btn-secondary-sigee" href="{% url 'manutencoes:manutencao_lista' %}">Limpar</a></div>
+        </form>
+        {% if pagina.object_list %}
+        <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Manutenções; use rolagem horizontal em telas pequenas">
+            <table class="table inventory-table mb-0"><caption class="visually-hidden">Manutenções com equipamento, estado, origem, abertura e acesso ao histórico</caption>
+                <thead><tr><th scope="col">Equipamento</th><th scope="col">Estado</th><th scope="col">Origem</th><th scope="col">Abertura</th><th scope="col">Ações</th></tr></thead>
+                <tbody>{% for manutencao in pagina %}<tr>
+                    <td><strong>{{ manutencao.equipamento.numero_patrimonio }}</strong><span class="table-metadata">{{ manutencao.equipamento.tipo.nome }}</span>{% if not manutencao.equipamento.ativo %}<span class="table-metadata">Equipamento inativo</span>{% endif %}</td>
+                    <td>{{ manutencao.get_estado_display }}{% if manutencao.resultado %}<span class="table-metadata">{{ manutencao.get_resultado_display }}</span>{% endif %}</td>
+                    <td>{% if manutencao.devolucao_origem_id %}Devolução #{{ manutencao.devolucao_origem_id }}{% else %}Abertura manual{% endif %}</td>
+                    <td>{{ manutencao.data_abertura|date:"d/m/Y H:i" }}<span class="table-metadata">{{ manutencao.aberto_por.get_full_name|default:manutencao.aberto_por.username }}</span></td>
+                    <td><a class="btn btn-secondary-sigee" href="{% url 'manutencoes:manutencao_detalhe' manutencao.pk %}" aria-label="Acompanhar manutenção {{ manutencao.pk }} do patrimônio {{ manutencao.equipamento.numero_patrimonio }}">Acompanhar</a></td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        <footer class="inventory-pagination"><p>Mostrando {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }} manutenções</p>
+            {% if pagina.paginator.num_pages > 1 %}<nav aria-label="Paginação das manutenções"><ul class="pagination mb-0">
+                {% if pagina.has_previous %}<li class="page-item"><a class="page-link" href="?{{ parametros_paginacao }}&amp;pagina={{ pagina.previous_page_number }}">Anterior</a></li>{% endif %}
+                <li class="page-item active"><span class="page-link" aria-current="page">{{ pagina.number }} de {{ pagina.paginator.num_pages }}</span></li>
+                {% if pagina.has_next %}<li class="page-item"><a class="page-link" href="?{{ parametros_paginacao }}&amp;pagina={{ pagina.next_page_number }}">Próxima</a></li>{% endif %}
+            </ul></nav>{% endif %}
+        </footer>
+        {% else %}<div class="inventory-empty"><h2>Nenhuma manutenção encontrada</h2><p>Revise os filtros ou abra uma manutenção para um equipamento disponível.</p></div>{% endif %}
+    </section>
+</div>
+{% endblock %}

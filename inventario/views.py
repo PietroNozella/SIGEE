@@ -12,6 +12,7 @@ from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from movimentacoes.models import Movimentacao
+from manutencoes.models import Manutencao
 from reservas.models import ReservaEquipamento
 from usuarios.permissoes import e_operador_funcional, e_professor_funcional
 
@@ -32,6 +33,7 @@ def equipamento_lista(request):
             | Exists(
                 ReservaEquipamento.objects.filter(equipamento_id=OuterRef("pk"))
             )
+            | Exists(Manutencao.objects.filter(equipamento_id=OuterRef("pk")))
         )
     )
 
@@ -189,8 +191,10 @@ def equipamento_novo(request):
 
 @login_required
 @permission_required("inventario.change_equipamento", raise_exception=True)
+@transaction.atomic
 def equipamento_editar(request, equipamento_id):
-    equipamento = get_object_or_404(Equipamento, pk=equipamento_id)
+    equipamentos = Equipamento.objects.select_for_update() if request.method == "POST" else Equipamento.objects.all()
+    equipamento = get_object_or_404(equipamentos, pk=equipamento_id)
     form = EquipamentoForm(request.POST or None, instance=equipamento)
 
     if request.method == "POST" and form.is_valid():
@@ -306,8 +310,9 @@ def equipamento_modelo_csv(request):
 @login_required
 @permission_required("inventario.delete_equipamento", raise_exception=True)
 @require_POST
+@transaction.atomic
 def equipamento_excluir(request, equipamento_id):
-    equipamento = get_object_or_404(Equipamento, pk=equipamento_id)
+    equipamento = get_object_or_404(Equipamento.objects.select_for_update(), pk=equipamento_id)
     possui_historico = equipamento.possui_registros_relacionados()
 
     acao = (
@@ -329,7 +334,7 @@ def equipamento_excluir(request, equipamento_id):
     if possui_historico:
         messages.success(
             request,
-            "Equipamento inativado e histórico de movimentações preservado.",
+            "Equipamento inativado e histórico de movimentações preservado, incluindo as manutenções.",
         )
     else:
         messages.success(request, "Equipamento excluído com sucesso.")

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{% if manutencao %}Concluir{% else %}Abrir{% endif %} manutenção | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'manutencoes:manutencao_lista' %}">Manutenções</a><span aria-hidden="true">/</span><span aria-current="page">{% if manutencao %}Concluir{% else %}Abrir{% endif %} manutenção</span></nav>
+    <header class="page-header form-page-header"><div><h1>{% if manutencao %}Concluir manutenção #{{ manutencao.pk }}{% else %}Abrir manutenção{% endif %}</h1>
+        <p>{% if manutencao %}{{ manutencao.equipamento.numero_patrimonio }} · {{ manutencao.equipamento.tipo.nome }}{% else %}Registre um defeito identificado fora da devolução.{% endif %}</p></div></header>
+    <section class="form-card" aria-labelledby="maintenance-form-heading">
+        <div class="form-card-header"><h2 id="maintenance-form-heading">{% if manutencao %}Resultado da intervenção{% else %}Equipamento e problema{% endif %}</h2><p>Os campos com asterisco são obrigatórios.</p></div>
+        {% if manutencao %}<p class="form-help">Reparado: o equipamento volta a ficar disponível, preservando uma eventual inativação anterior. Sem possibilidade de reparo: o equipamento é inativado e o histórico permanece.</p>{% else %}<p class="form-help">A abertura deixa o equipamento indisponível para reserva e retirada até a conclusão da manutenção.</p>{% endif %}
+        {% if form.errors %}<div class="validation-summary" role="alert" tabindex="-1" data-focus-on-load><h3>Revise os campos indicados</h3><ul>{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}{% for field in form %}{% for error in field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}</ul></div>{% endif %}
+        {% if not manutencao or manutencao.estado == 'EM_ANDAMENTO' %}
+        <form method="post" novalidate>{% csrf_token %}
+            <div class="equipment-form-grid">{% for field in form %}<div class="form-field form-field-full"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }} <span class="required-mark" aria-hidden="true">*</span><span class="visually-hidden">(obrigatório)</span></label>{{ field }}{% if field.errors %}<div class="field-error" id="id_{{ field.name }}_error">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}</div>{% endfor %}</div>
+            <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% if manutencao %}{% url 'manutencoes:manutencao_detalhe' manutencao.pk %}{% else %}{% url 'manutencoes:manutencao_lista' %}{% endif %}">Cancelar</a><button class="btn btn-primary-sigee" type="submit">{% if manutencao %}Confirmar conclusão{% else %}Abrir manutenção{% endif %}</button></div>
+        </form>
+        {% else %}<p role="status">Somente uma manutenção em andamento pode ser concluída.</p><a class="btn btn-secondary-sigee" href="{% url 'manutencoes:manutencao_detalhe' manutencao.pk %}">Voltar à manutenção</a>{% endif %}
+    </section>
+</div>
+{% endblock %}

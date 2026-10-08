@@ -3,11 +3,13 @@ import json
 from axes.models import AccessAttempt, AccessLog
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
+from django.db.models import Q
 from django.utils import timezone
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
+from manutencoes.models import Manutencao
 
 
 def _data_hora(valor):
@@ -82,6 +84,27 @@ class Command(BaseCommand):
                 for item in usuario.movimentacoes_recebidas.select_related(
                     "equipamento"
                 )
+            ],
+            "manutencoes": [
+                {
+                    "id": item.pk,
+                    "equipamento": item.equipamento.numero_patrimonio,
+                    "devolucao_origem_id": item.devolucao_origem_id,
+                    "estado": item.estado,
+                    "resultado": item.resultado,
+                    "data_abertura": _data_hora(item.data_abertura),
+                    "data_inicio": _data_hora(item.data_inicio),
+                    "data_conclusao": _data_hora(item.data_conclusao),
+                    "responsabilidades": [
+                        papel for papel, responsavel_id in (
+                            ("abertura", item.aberto_por_id), ("inicio", item.iniciado_por_id),
+                            ("conclusao", item.concluido_por_id),
+                        ) if responsavel_id == usuario.pk
+                    ],
+                }
+                for item in Manutencao.objects.filter(
+                    Q(aberto_por=usuario) | Q(iniciado_por=usuario) | Q(concluido_por=usuario)
+                ).select_related("equipamento")
             ],
             "aceites": [
                 {

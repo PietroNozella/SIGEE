@@ -30,6 +30,8 @@ As hipóteses legais e os prazos marcados como **proposta para validação** nã
 
 ## Fluxo dos dados
 
+A implementação local de manutenção em `feat/manutencao` acrescenta vínculos aos usuários responsáveis pela abertura, pelo início e pelo encerramento, datas, equipamento, devolução de origem opcional e descrições do problema e da solução. O Administrador consulta e acompanha as intervenções; o Operador registra o problema durante a devolução e consulta a referência no histórico. A auditoria não copia os textos livres. A exportação assistida da conta inclui os vínculos e as responsabilidades estruturadas, sem identificar os outros responsáveis. Os campos livres devem conter somente informações do equipamento e da intervenção; sua revisão continua assistida, como os demais campos livres do sistema. Retenção e hipótese legal permanecem propostas a validar para o tratamento institucional, sem prazo novo definido nesta entrega.
+
 ```text
 Usuário
   -> navegador (cookies técnicos e formulários)

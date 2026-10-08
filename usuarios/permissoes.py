@@ -29,6 +29,9 @@ PERMISSOES_POR_GRUPO = {
         PERMISSAO_CADASTRAR_USUARIO,
         PERMISSAO_CONSULTAR_AUDITORIA,
         "movimentacoes.view_movimentacao",
+        "manutencoes.view_manutencao",
+        "manutencoes.add_manutencao",
+        "manutencoes.change_manutencao",
         "pedagogico.view_turma",
         "pedagogico.add_turma",
         "pedagogico.change_turma",
@@ -117,6 +120,13 @@ def pode_gerenciar_cadastro_pedagogico(user, modelo, acao="view"):
         user.is_active
         and e_administrador_funcional(user)
         and user.has_perm(f"pedagogico.{acao}_{modelo}")
+    )
+
+
+def pode_gerenciar_manutencao(user, acao="view"):
+    return (
+        user.is_active and e_administrador_funcional(user)
+        and user.has_perm(f"manutencoes.{acao}_manutencao")
     )
 
 

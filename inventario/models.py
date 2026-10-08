@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -115,7 +116,15 @@ class Equipamento(models.Model):
         ]
 
     def possui_registros_relacionados(self):
-        return self.movimentacoes.exists() or self.itens_reserva.exists()
+        return self.movimentacoes.exists() or self.itens_reserva.exists() or self.manutencoes.exists()
+
+    def clean(self):
+        super().clean()
+        if (
+            self.pk and self.situacao != self.Situacao.MANUTENCAO
+            and self.manutencoes.exclude(estado="CONCLUIDA").exists()
+        ):
+            raise ValidationError({"situacao": "Conclua a manutenção antes de alterar a situação do equipamento."})
 
     # RN-06: equipamentos com movimentações são inativados para preservar
     # o histórico; somente itens sem registros relacionados são excluídos.

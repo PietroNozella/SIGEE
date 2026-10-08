@@ -251,9 +251,10 @@ def devolucao_registrar(request, retirada_id):
                     operador=request.user, retirada_id=retirada.pk,
                     retiradas_ids=[item.pk for item in form.cleaned_data["retiradas"]],
                     observacao=form.cleaned_data["observacao"],
+                    problemas=form.cleaned_data["problemas"],
                 )
             except ValidationError as erro:
-                form.add_error(None, erro)
+                form.add_error(None, erro.messages)
             except IntegrityError:
                 form.add_error(
                     None, "Não foi possível registrar a devolução. Nenhuma alteração foi salva. "
@@ -271,6 +272,8 @@ def devolucao_registrar(request, retirada_id):
                 messages.success(
                     request, f"Devolução de {len(devolucoes)} equipamento(s) registrada com sucesso. {complemento}",
                 )
+                if form.cleaned_data["problemas"]:
+                    messages.info(request, f"{len(form.cleaned_data['problemas'])} manutenção(ões) aberta(s), aguardando acompanhamento do Administrador.")
                 return redirect("movimentacoes:devolucao_lista")
         registrar_evento(
             usuario=request.user, acao=AcaoAuditoria.DEVOLUCAO_REGISTRADA,
@@ -279,6 +282,9 @@ def devolucao_registrar(request, retirada_id):
         )
     unidades = list(grupo.order_by("equipamento__numero_patrimonio", "pk"))
     abertas = [item for item in unidades if not item.devolvida]
+    for item in abertas:
+        item.campo_problema = form[f"problema_{item.pk}"]
+        item.campo_descricao_problema = form[f"descricao_problema_{item.pk}"]
     selecionados = (
         request.POST.getlist("retiradas") if request.method == "POST"
         else [str(item.pk) for item in abertas]
