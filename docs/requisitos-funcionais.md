@@ -22,7 +22,9 @@ A retirada com ou sem reserva, a devolução básica total ou parcial e a consul
 
 ## Base cadastral para RF-10 e estado do RF-11
 
-Em 06/10/2026 foram implementados os cadastros compartilhados de Turma, Disciplina e Atividade Pedagógica, geridos pelo Administrador com validações, permissões, auditoria e inativação/reativação. Os modelos seguem o DER atual e ainda não se vinculam às utilizações, reservas, movimentações ou Professores. As [evidências da entrega de 09/10](cadastros-pedagogicos.md) registram os cenários executados e as limitações. A associação pelo Professor prevista no RF-10 e os indicadores do RF-11 continuam pendentes; os requisitos não estão concluídos.
+Em 06/10/2026 foram implementados os cadastros compartilhados de Turma, Disciplina e Atividade Pedagógica, geridos pelo Administrador com validações, permissões, auditoria e inativação/reativação. Os modelos seguem o DER atual. A entrega cadastral não incluiu a associação às utilizações nem os indicadores. As [evidências da entrega de 09/10](cadastros-pedagogicos.md) registram os cenários executados e as limitações.
+
+Na branch `utilizacao-equipamentos`, o [incremento com reserva do RF-10](utilizacao-pedagogica-reserva.md) permite ao Professor registrar turma, disciplina e atividade após a retirada de reserva própria, uma vez para todo o lote. Os três campos são obrigatórios ao salvar; o vínculo continua opcional. Criação e edição são permitidas até a devolução integral. O contexto permanece consultável e associado às movimentações após devolução ou inativação. O fluxo sem reserva e os indicadores permanecem pendentes; RF-10 e RF-11 não são declarados concluídos. Este incremento ainda aguarda revisão do Diego e integração à `main`.
 
 ## Estado do RF-09
 

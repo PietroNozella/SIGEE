@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404, redirect, render
@@ -10,10 +10,12 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
-from usuarios.permissoes import pode_gerenciar_cadastro_pedagogico
+from usuarios.permissoes import pode_gerenciar_cadastro_pedagogico, pode_gerenciar_utilizacao_pedagogica
+from reservas.models import Reserva
 
-from .forms import AtividadePedagogicaForm, DisciplinaForm, TurmaForm
+from .forms import AtividadePedagogicaForm, DisciplinaForm, TurmaForm, UtilizacaoPedagogicaForm
 from .models import AtividadePedagogica, Disciplina, Turma
+from .services import retiradas_com_contexto, salvar_contexto_reserva
 
 
 CADASTROS = {
@@ -132,3 +134,53 @@ def cadastro_situacao(request, cadastro, registro_id, ativo):
     else:
         messages.success(request, "Cadastro ativo." if ativo else "Cadastro inativo. Os dados foram preservados.")
     return redirect(f"pedagogico:{cadastro}_lista")
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def utilizacao_reserva(request, reserva_id):
+    if not pode_gerenciar_utilizacao_pedagogica(request.user):
+        raise PermissionDenied
+    reserva = get_object_or_404(
+        Reserva.objects.select_related("tipo_equipamento", "local"),
+        pk=reserva_id, professor=request.user,
+    )
+    retiradas = list(retiradas_com_contexto(reserva))
+    utilizacao = getattr(retiradas[0], "utilizacao_pedagogica", None) if retiradas else None
+    pendentes = sum(not retirada.devolucoes.all() for retirada in retiradas)
+    acao_permissao = "change" if utilizacao else "add"
+    pode_gravar = pode_gerenciar_utilizacao_pedagogica(request.user, acao_permissao)
+    form = UtilizacaoPedagogicaForm(
+        request.POST if request.method == "POST" else None, utilizacao=utilizacao,
+    )
+    if request.method == "POST":
+        if not pode_gravar:
+            raise PermissionDenied
+        if form.is_valid():
+            try:
+                salvar_contexto_reserva(
+                    professor=request.user, reserva_id=reserva.pk, **form.cleaned_data,
+                )
+            except ValidationError as erro:
+                if hasattr(erro, "message_dict"):
+                    for campo, mensagens in erro.message_dict.items():
+                        form.add_error(campo if campo in form.fields else None, mensagens)
+                else:
+                    form.add_error(None, erro)
+            except IntegrityError:
+                form.add_error(None, "Não foi possível salvar. Nenhuma alteração foi gravada. Tente novamente.")
+            else:
+                messages.success(request, "Contexto pedagógico salvo para todo o lote.")
+                return redirect("pedagogico:utilizacao_reserva", reserva_id=reserva.pk)
+        else:
+            registrar_evento(
+                usuario=request.user,
+                acao=AcaoAuditoria.UTILIZACAO_PEDAGOGICA_EDITADA if utilizacao else AcaoAuditoria.UTILIZACAO_PEDAGOGICA_CRIADA,
+                resultado=RegistroAuditoria.Resultado.FALHA,
+                entidade=Reserva._meta.label, entidade_id=reserva.pk,
+            )
+    return render(request, "pedagogico/utilizacao_reserva.html", {
+        "reserva": reserva, "retiradas": retiradas, "utilizacao": utilizacao,
+        "pendentes": pendentes, "form": form,
+        "pode_editar": bool(pendentes and pode_gravar),
+    })

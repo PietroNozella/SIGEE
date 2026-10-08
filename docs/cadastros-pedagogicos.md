@@ -6,7 +6,7 @@ Entrega desenvolvida diretamente na `main`, a partir de `4071580`, sem nova bran
 
 ## Modelo e escopo
 
-O app `pedagogico` mantém três cadastros compartilhados independentes, conforme as entidades do DER atual. Esta é a base cadastral para o RF-10; associação às utilizações e indicadores do RF-11 continuam pendentes. Nenhum desses requisitos é declarado concluído nesta entrega.
+O app `pedagogico` mantém três cadastros compartilhados independentes, conforme as entidades do DER atual. Esta entrega é a base cadastral para o RF-10 e não incluiu associação às utilizações nem indicadores do RF-11. O incremento posterior com reserva está descrito ao final; nenhum desses requisitos é declarado integralmente concluído.
 
 | Entidade | Campos persistidos |
 |---|---|
@@ -74,6 +74,6 @@ Após autorização explícita, em 06/10/2026 foram aplicadas ao PostgreSQL publ
 
 `configurar_perfis` foi executado no PostgreSQL; a conferência final encontrou zero migrations pendentes e nove permissões pedagógicas no Administrador. Isso comprova a preparação do banco e dos perfis; os fluxos do site publicado e os testes de concorrência ainda precisam de validação própria.
 
-Pendências: retorno do Diego; seis cenários existentes de concorrência em PostgreSQL (retiradas, devoluções e interações com reservas); validação no ambiente publicado. Os testes simulados de conflito deste módulo não comprovam concorrência real no PostgreSQL.
+Na validação cadastral ficaram pendentes o retorno do Diego, os seis cenários existentes de concorrência em PostgreSQL e a validação no ambiente publicado. Os cenários de concorrência passaram posteriormente no PostgreSQL isolado do incremento com reserva, conforme as evidências abaixo; revisão e validação publicada continuam pendentes. Os testes simulados de conflito deste módulo, isoladamente, não comprovam concorrência real.
 
-A próxima etapa funcional é associar a utilização a esses cadastros no RF-10. Os indicadores do RF-11 permanecem para a etapa seguinte.
+A associação de utilizações com reserva foi implementada e validada na branch `utilizacao-equipamentos`, conforme as [evidências do incremento de 13/10](utilizacao-pedagogica-reserva.md), ainda aguardando revisão e merge. A próxima etapa funcional é a associação sem reserva; os indicadores do RF-11 continuam pendentes.

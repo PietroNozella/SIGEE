@@ -57,7 +57,7 @@ O SIGEE não possui cadastro público. As contas são criadas por usuários auto
 |---|---|
 | **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, mantém turmas, disciplinas e atividades pedagógicas, consulta o resumo, a auditoria e o histórico de movimentações. |
 | **Operador** | Consulta equipamentos e reservas, registra retirada em lote com ou sem reserva, confirma devolução integral ou parcial e consulta o histórico de movimentações. |
-| **Professor** | Consulta os equipamentos e a disponibilidade, cria reservas próprias em lote e cancela as próprias reservas. |
+| **Professor** | Consulta os equipamentos e a disponibilidade, cria e cancela reservas próprias em lote e associa contexto pedagógico às utilizações com reserva após a retirada, até a devolução integral. |
 
 Consulte os detalhes de autorização na [matriz de acesso](docs/matriz-de-acesso.md).
 
@@ -152,6 +152,7 @@ python manage.py test
 - [x] devolução básica em lote ou parcial por qualquer Operador autorizado, com seleção dos patrimônios, vínculo individual à retirada, auditoria e proteção contra duplicidade;
 - [x] histórico de retiradas e devoluções para Administrador e Operador, com filtros, paginação e vínculos de origem;
 - [x] criação, consulta, edição, inativação e reativação de turmas, disciplinas e atividades pedagógicas pelo Administrador, com permissões e auditoria;
+- [x] associação pedagógica das utilizações com reserva pelo Professor, aplicada ao lote após a retirada, com edição até a devolução integral e preservação no histórico (incremento na branch `utilizacao-equipamentos`, aguardando revisão e merge);
 - [x] consulta informativa de feriados nacionais pela BrasilAPI.
 - [x] transparência de privacidade, inventário de dados e aceite versionado;
 - [x] comandos assistidos para exportação, anonimização e descarte controlado.
@@ -159,9 +160,9 @@ python manage.py test
 ## Roadmap
 
 - [ ] devolução com problema e encaminhamento para manutenção (RN-14);
-- [ ] validação de concorrência em PostgreSQL e do ambiente publicado;
+- [ ] validação dos fluxos no ambiente publicado com PostgreSQL (os cenários automatizados de concorrência passaram no PostgreSQL isolado do incremento RF-10);
 - [ ] registro e acompanhamento de manutenções;
-- [ ] vinculação da utilização ao contexto pedagógico;
+- [ ] vinculação pedagógica da utilização originada de retirada sem reserva;
 - [ ] indicadores de utilização pedagógica.
 
 ![BrasilAPI](https://img.shields.io/badge/integração%20ativa-BrasilAPI-009C3B?style=for-the-badge)
@@ -171,6 +172,7 @@ python manage.py test
 - [Arquitetura do sistema](docs/arquitetura-do-sistema.md)
 - [Matriz de acesso](docs/matriz-de-acesso.md)
 - [Cadastros pedagógicos e evidências da entrega](docs/cadastros-pedagogicos.md)
+- [Utilização pedagógica com reserva e evidências](docs/utilizacao-pedagogica-reserva.md)
 - [Autenticação e autorização](docs/autenticacao.md)
 - [Auditoria de acessos e ações](docs/auditoria.md)
 - [Segurança](docs/evidencias-seguranca.md)

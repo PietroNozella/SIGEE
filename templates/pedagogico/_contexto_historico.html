@@ -1,0 +1,6 @@
+{% if contexto %}
+<details><summary>Contexto pedagógico</summary>
+    <p>Turma: {{ contexto.turma.nome }}<br>Disciplina: {{ contexto.disciplina.nome }}<br>Atividade: {{ contexto.atividade.nome }}</p>
+    {% if contexto.observacao %}<p>{{ contexto.observacao }}</p>{% endif %}
+</details>
+{% endif %}
