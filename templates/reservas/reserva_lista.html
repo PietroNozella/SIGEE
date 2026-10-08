@@ -70,7 +70,17 @@
                                     </span>
                                 </td>
                                 <td>
-                                    {% if reserva.status == status_reserva.ATIVA %}
+                                    {% if reserva.tem_retirada %}
+                                        {% if perms.pedagogico.view_utilizacaopedagogica %}
+                                        <a class="btn btn-secondary-sigee" href="{% url 'pedagogico:utilizacao_reserva' reserva.pk %}">
+                                            {% if reserva.tem_pendentes %}
+                                                {% if reserva.tem_contexto and perms.pedagogico.change_utilizacaopedagogica %}Editar contexto pedagógico
+                                                {% elif not reserva.tem_contexto and perms.pedagogico.add_utilizacaopedagogica %}Vincular contexto pedagógico
+                                                {% else %}Consultar contexto pedagógico{% endif %}
+                                            {% else %}Consultar contexto pedagógico{% endif %}
+                                        </a>
+                                        {% endif %}
+                                    {% elif reserva.status == status_reserva.ATIVA %}
                                         <button
                                             class="btn btn-secondary-sigee"
                                             type="button"

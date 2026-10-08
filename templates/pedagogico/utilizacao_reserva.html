@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Contexto pedagógico | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">
+        <a href="{% url 'reservas:reserva_lista' %}">Minhas Reservas</a><span aria-hidden="true">/</span>
+        <span aria-current="page">Contexto pedagógico</span>
+    </nav>
+    <header class="page-header form-page-header"><div>
+        <h1>Contexto pedagógico</h1>
+        <p>Reserva #{{ reserva.pk }} · {{ reserva.tipo_equipamento.nome }} · {{ reserva.local.nome }}</p>
+    </div></header>
+    <section class="form-card" aria-labelledby="utilizacao-heading">
+        <div class="form-card-header"><h2 id="utilizacao-heading">Utilização dos equipamentos</h2>
+            <p>{{ retiradas|length }} unidade(s) retirada(s) · {{ pendentes }} pendente(s) de devolução.</p>
+        </div>
+        <ul>{% for retirada in retiradas %}<li>{{ retirada.equipamento.numero_patrimonio }} — {% if retirada.devolucoes.all %}Devolvido{% else %}Pendente de devolução{% endif %}</li>{% empty %}<li>A retirada desta reserva ainda não foi registrada.</li>{% endfor %}</ul>
+        {% if form.errors %}
+        <div class="validation-summary" id="form-errors" role="alert" tabindex="-1" data-focus-on-load>
+            <h3>Revise os campos indicados</h3>
+            <ul>{% for field in form %}{% for error in field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}
+            {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+        {% if pode_editar %}
+        <p class="form-help">O contexto será aplicado a todo o lote, incluindo unidades já devolvidas parcialmente. Você pode corrigir os dados até a devolução integral. O vínculo é opcional; ao registrá-lo, preencha os três campos obrigatórios.</p>
+        {% if form.cadastros_faltantes %}<p role="status">Não há opções para: {{ form.cadastros_faltantes|join:", " }}. Solicite ao Administrador o cadastro ou a reativação antes de salvar.</p>{% endif %}
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="equipment-form-grid">
+            {% for field in form %}
+                <div class="form-field{% if field.name == 'observacao' %} form-field-full{% endif %}">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}
+                        {% if field.field.required %}<span class="required-mark" aria-hidden="true">*</span><span class="visually-hidden">(obrigatório)</span>{% else %}<span class="optional-label">(opcional)</span>{% endif %}
+                    </label>
+                    {{ field }}
+                    {% if field.errors %}<div class="field-error" id="id_{{ field.name }}_error">{% for error in field.errors %}<span>{{ error }}</span>{% endfor %}</div>{% endif %}
+                </div>
+            {% endfor %}
+            </div>
+            <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_lista' %}">Voltar</a>
+                <button class="btn btn-primary-sigee" type="submit"{% if form.cadastros_faltantes %} disabled{% endif %}>Salvar contexto pedagógico</button>
+            </div>
+        </form>
+        {% else %}
+            {% if retiradas and not pendentes %}<p>A devolução integral encerrou o registro e a edição do contexto pedagógico.</p>{% endif %}
+            {% if utilizacao %}
+                <dl><dt>Turma</dt><dd>{{ utilizacao.turma.nome }}</dd><dt>Disciplina</dt><dd>{{ utilizacao.disciplina.nome }}</dd><dt>Atividade pedagógica</dt><dd>{{ utilizacao.atividade.nome }}</dd>{% if utilizacao.observacao %}<dt>Observação</dt><dd>{{ utilizacao.observacao|linebreaksbr }}</dd>{% endif %}</dl>
+            {% else %}<p>Nenhum contexto pedagógico foi registrado.</p>{% endif %}
+            <a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_lista' %}">Voltar para Minhas Reservas</a>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

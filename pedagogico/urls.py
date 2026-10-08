@@ -4,7 +4,9 @@ from . import views
 
 
 app_name = "pedagogico"
-urlpatterns = []
+urlpatterns = [
+    path("reservas/<int:reserva_id>/utilizacao/", views.utilizacao_reserva, name="utilizacao_reserva"),
+]
 for cadastro in views.CADASTROS:
     urlpatterns.extend([
         path(f"{cadastro}/", views.cadastro_lista, {"cadastro": cadastro}, name=f"{cadastro}_lista"),

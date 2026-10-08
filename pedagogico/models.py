@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -46,3 +47,38 @@ class AtividadePedagogica(CadastroPedagogico):
         abstract = False
         verbose_name = "atividade pedagógica"
         verbose_name_plural = "atividades pedagógicas"
+
+
+class UtilizacaoPedagogica(models.Model):
+    movimentacao = models.OneToOneField(
+        "movimentacoes.Movimentacao", on_delete=models.PROTECT,
+        related_name="utilizacao_pedagogica",
+    )
+    professor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name="utilizacoes_pedagogicas",
+    )
+    turma = models.ForeignKey(Turma, on_delete=models.PROTECT)
+    disciplina = models.ForeignKey(Disciplina, on_delete=models.PROTECT)
+    atividade = models.ForeignKey(AtividadePedagogica, on_delete=models.PROTECT)
+    observacao = models.TextField("observação", blank=True)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-data_criacao", "-pk"]
+        verbose_name = "utilização pedagógica"
+        verbose_name_plural = "utilizações pedagógicas"
+        default_permissions = ("view", "add", "change")
+
+    def clean(self):
+        super().clean()
+        if not self.movimentacao_id:
+            return
+        retirada = self.movimentacao
+        if retirada.tipo != "RETIRADA" or not retirada.reserva_id:
+            raise ValidationError({"movimentacao": "Selecione uma retirada originada de reserva."})
+        if self.professor_id != retirada.destinatario_id or self.professor_id != retirada.reserva.professor_id:
+            raise ValidationError({"professor": "O Professor precisa ser o proprietário da reserva e destinatário da retirada."})
+
+    def __str__(self):
+        return f"Utilização da retirada #{self.movimentacao_id}"

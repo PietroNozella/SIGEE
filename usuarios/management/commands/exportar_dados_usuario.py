@@ -114,6 +114,19 @@ class Command(BaseCommand):
                 }
                 for aceite in usuario.aceites_documentos_legais.all()
             ],
+            "utilizacoes_pedagogicas": [
+                {
+                    "id": item.pk, "movimentacao_id": item.movimentacao_id,
+                    "reserva_id": item.movimentacao.reserva_id,
+                    "turma": {"id": item.turma_id, "nome": item.turma.nome},
+                    "disciplina": {"id": item.disciplina_id, "nome": item.disciplina.nome},
+                    "atividade": {"id": item.atividade_id, "nome": item.atividade.nome},
+                    "observacao": item.observacao, "data_criacao": _data_hora(item.data_criacao),
+                }
+                for item in usuario.utilizacoes_pedagogicas.select_related(
+                    "movimentacao", "turma", "disciplina", "atividade",
+                )
+            ],
             "auditoria": [
                 {
                     "acao": registro.acao,
