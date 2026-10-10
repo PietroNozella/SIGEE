@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Visão geral | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'inventario/css/painel.css' %}?v=20261010.1">{% endblock %}
+{% block content %}
+<div class="page-content dashboard-page">
+    <header class="page-header">
+        <div><h1>Visão geral</h1><p>Acompanhe a situação atual do inventário e as últimas retiradas e devoluções.</p></div>
+        {% if perms.inventario.view_equipamento %}<a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_lista' %}">Consultar equipamentos</a>{% endif %}
+    </header>
+
+    <section class="kpi-grid dashboard-kpis" aria-label="Resumo do inventário">
+        <article class="kpi-card">
+            <div class="dashboard-kpi-heading"><span class="kpi-label">Equipamentos ativos</span><img src="{% static 'inventario/icons/painel/equipamentos.svg' %}" alt="" aria-hidden="true" width="20" height="16"></div>
+            <strong class="kpi-value">{{ indicadores.ativos }}</strong><span class="dashboard-kpi-note">Inventário ativo</span>
+        </article>
+        <article class="kpi-card">
+            <div class="dashboard-kpi-heading"><span class="kpi-label">Disponíveis</span><img src="{% static 'inventario/icons/painel/disponiveis.svg' %}" alt="" aria-hidden="true" width="20" height="20"></div>
+            <strong class="kpi-value">{{ indicadores.disponiveis }}</strong><span class="dashboard-kpi-note">Prontos para retirada</span>
+        </article>
+        <article class="kpi-card">
+            <div class="dashboard-kpi-heading"><span class="kpi-label">Em uso</span><img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true" width="20" height="20"></div>
+            <strong class="kpi-value">{{ indicadores.em_uso }}</strong><span class="dashboard-kpi-note">Aguardando devolução</span>
+        </article>
+        <article class="kpi-card">
+            <div class="dashboard-kpi-heading"><span class="kpi-label">Em manutenção</span><img src="{% static 'inventario/icons/painel/manutencao.svg' %}" alt="" aria-hidden="true" width="18" height="18"></div>
+            <strong class="kpi-value">{{ indicadores.manutencao }}</strong><span class="dashboard-kpi-note">Temporariamente indisponíveis</span>
+        </article>
+        <article class="kpi-card">
+            <div class="dashboard-kpi-heading"><span class="kpi-label">Inativos</span><img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true" width="20" height="20"></div>
+            <strong class="kpi-value">{{ indicadores.inativos }}</strong><span class="dashboard-kpi-note">Fora do inventário ativo</span>
+        </article>
+    </section>
+
+    <div class="dashboard-panels">
+    <section class="inventory-card dashboard-chart" aria-labelledby="distribution-heading">
+        <header class="dashboard-section-header"><div><h2 id="distribution-heading">Situação dos equipamentos</h2><p>Distribuição dos {{ indicadores.ativos }} equipamentos ativos.</p></div></header>
+        {% if indicadores.ativos %}
+        <figure class="dashboard-distribution">
+            <figcaption class="visually-hidden">Quantidade e proporção dos {{ indicadores.ativos }} equipamentos ativos por situação.</figcaption>
+            <div class="distribution-track" aria-hidden="true">
+                {% for item in distribuicao %}<span class="distribution-fill distribution-{{ item.chave }}" style="width: {{ item.percentual|floatformat:'2u' }}%"></span>{% endfor %}
+            </div>
+            <dl class="distribution-legend">
+                {% for item in distribuicao %}
+                <div class="distribution-row">
+                    <dt><span class="distribution-dot distribution-{{ item.chave }}" aria-hidden="true"></span>{{ item.nome }}</dt>
+                    <dd><strong>{{ item.total }}</strong><span class="distribution-percent">{{ item.percentual|floatformat:1 }}%</span></dd>
+                </div>
+                {% endfor %}
+            </dl>
+        </figure>
+        {% else %}<div class="empty-state" role="status"><h3>Nenhum equipamento ativo</h3><p>A distribuição aparecerá quando houver equipamentos ativos no inventário.</p></div>{% endif %}
+        <p class="dashboard-chart-note">Os {{ indicadores.inativos }} equipamentos inativos são contabilizados separadamente e não participam do gráfico.</p>
+    </section>
+
+    <section class="inventory-card dashboard-recent" aria-labelledby="recent-heading">
+        <header class="dashboard-section-header"><div><h2 id="recent-heading">Movimentações recentes</h2><p>As dez últimas retiradas e devoluções, incluindo equipamentos inativos.</p></div>{% if pode_consultar_historico %}<a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:historico_lista' %}">Ver histórico</a>{% endif %}</header>
+        {% if movimentacoes_recentes %}
+        <div class="dashboard-activity-scroll" tabindex="0" role="region" aria-label="Movimentações recentes; use rolagem para consultar os dez registros">
+        <ol class="dashboard-activity" aria-label="Movimentações mais recentes primeiro">
+            {% for registro in movimentacoes_recentes %}
+            <li class="activity-item">
+                <span class="activity-icon {% if registro.tipo == 'RETIRADA' %}activity-withdrawal{% else %}activity-return{% endif %}" aria-hidden="true">
+                    {% if registro.tipo == 'RETIRADA' %}<img src="{% static 'inventario/icons/painel/retirada.svg' %}" alt="">{% else %}<img src="{% static 'inventario/icons/painel/devolucao.svg' %}" alt="">{% endif %}
+                </span>
+                <div class="activity-content">
+                    <div class="activity-heading"><strong>{{ registro.get_tipo_display }} registrada</strong><time datetime="{{ registro.data_hora|date:'c' }}">{{ registro.data_hora|date:"d/m/Y H:i:s" }}</time></div>
+                    <p class="activity-equipment">{{ registro.equipamento.tipo.nome }}<span class="activity-patrimony">Patrimônio {{ registro.equipamento.numero_patrimonio }}</span></p>
+                    <dl class="activity-people">
+                        <div><dt>Operador</dt><dd>{{ registro.operador.get_full_name|default:registro.operador.username }}</dd></div>
+                        <div><dt>Destinatário</dt><dd>{{ registro.destinatario.get_full_name|default:registro.destinatario.username }}</dd></div>
+                    </dl>
+                </div>
+            </li>
+            {% endfor %}
+        </ol>
+        </div>
+        {% else %}<div class="empty-state" role="status"><h3>Nenhuma movimentação registrada</h3><p>As retiradas e devoluções aparecerão aqui após serem registradas.</p></div>{% endif %}
+    </section>
+    </div>
+</div>
+{% endblock %}

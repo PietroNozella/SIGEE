@@ -94,7 +94,7 @@ O fluxo principal pode ser representado por **Usuário → Navegador → Django 
 
 O código é versionado com Git e armazenado no GitHub. As alterações são integradas por Pull Requests e verificadas com o framework de testes do Django. O fluxo previsto é **Git → GitHub → Pull Request → Testes → Implantação**.
 
-Para a entrega dos cadastros pedagógicos de 09/10, a dupla aprovou trabalhar diretamente na `main`, sem nova branch ou PR. A revisão do Diego será feita pelos commits e evidências; esse retorno permanece pendente.
+Os cadastros pedagógicos foram implementados diretamente na `main`, sem nova branch ou PR. A revisão técnica pelos commits e pelas evidências permanece pendente.
 
 A implantação da aplicação na Vercel permanece condicionada à validação da compatibilidade com Django, conexão segura com o PostgreSQL e execução das migrations. O ambiente publicado deverá se comunicar com o PostgreSQL do Supabase por uma conexão protegida por TLS.
 

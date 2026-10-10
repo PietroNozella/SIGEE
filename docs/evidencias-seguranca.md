@@ -4,7 +4,7 @@ Este documento reúne evidências reproduzíveis dos incrementos de segurança e
 
 ## Validação integrada em 06/10/2026
 
-Após a integração do PR #19 e a implementação dos cadastros pedagógicos na `main`, a suíte completa executou **310 testes: 304 aprovados e seis ignorados no SQLite**, dependentes de concorrência em PostgreSQL. `check`, verificação de migrations e revisão de whitespace passaram. Os 19 testes pedagógicos incluem perfis incompatíveis, Superuser técnico, inatividade, permissões por ação, CSRF, ausência de gravação por GET, rollback e minimização da auditoria. Os comandos, fluxos observados no navegador e capturas estão nas [evidências da entrega](cadastros-pedagogicos.md). A revisão do Diego e a validação publicada continuam pendentes; os resultados anteriores abaixo são registros históricos.
+Após a integração do PR #19 e a implementação dos cadastros pedagógicos na `main`, a suíte completa executou **310 testes: 304 aprovados e seis ignorados no SQLite**, dependentes de concorrência em PostgreSQL. `check`, verificação de migrations e revisão de whitespace passaram. Os 19 testes pedagógicos incluem perfis incompatíveis, Superuser técnico, inatividade, permissões por ação, CSRF, ausência de gravação por GET, rollback e minimização da auditoria. Os comandos e fluxos observados no navegador estão nas [evidências da entrega](cadastros-pedagogicos.md). A revisão técnica e a validação publicada continuam pendentes; os resultados anteriores abaixo são registros históricos.
 
 ## Resultado dos cenários de segurança
 

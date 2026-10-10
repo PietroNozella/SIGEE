@@ -1,8 +1,8 @@
 # Cadastros pedagógicos — entrega de 09/10
 
-**Estado em 06/10/2026: implementado e validado localmente; aguardando revisão do Diego.**
+**Estado em 06/10/2026: implementado e validado localmente; revisão técnica pendente.**
 
-Entrega desenvolvida diretamente na `main`, a partir de `4071580`, sem nova branch ou PR, conforme decisão da dupla. Implementação: [commit 9480ecb](https://github.com/PietroNozella/SIGEE/commit/9480ecb92e455425ac144e90ad968f08f00af35f).
+Entrega desenvolvida diretamente na `main`, a partir de `4071580`, sem nova branch ou PR. Implementação: [commit 9480ecb](https://github.com/PietroNozella/SIGEE/commit/9480ecb92e455425ac144e90ad968f08f00af35f).
 
 ## Modelo e escopo
 
@@ -68,6 +68,6 @@ Após autorização explícita, em 06/10/2026 foram aplicadas ao PostgreSQL publ
 
 `configurar_perfis` foi executado no PostgreSQL; a conferência final encontrou zero migrations pendentes e nove permissões pedagógicas no Administrador. Isso comprova a preparação do banco e dos perfis; os fluxos do site publicado e os testes de concorrência ainda precisam de validação própria.
 
-Na validação cadastral ficaram pendentes o retorno do Diego, os seis cenários existentes de concorrência em PostgreSQL e a validação no ambiente publicado. Os cenários de concorrência passaram posteriormente no PostgreSQL isolado do incremento com reserva, conforme as evidências abaixo; revisão e validação publicada continuam pendentes. Os testes simulados de conflito deste módulo, isoladamente, não comprovam concorrência real.
+Na validação cadastral ficaram pendentes a revisão técnica, os seis cenários existentes de concorrência em PostgreSQL e a validação no ambiente publicado. Os cenários de concorrência passaram posteriormente no PostgreSQL isolado do incremento com reserva, conforme as evidências abaixo; revisão e validação publicada continuam pendentes. Os testes simulados de conflito deste módulo, isoladamente, não comprovam concorrência real.
 
 A associação de utilizações com reserva foi implementada e validada na branch `utilizacao-equipamentos`, conforme as [evidências do incremento de 13/10](utilizacao-pedagogica-reserva.md), ainda aguardando revisão e merge. A próxima etapa funcional é a associação sem reserva; os indicadores do RF-11 continuam pendentes.

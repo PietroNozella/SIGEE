@@ -6,6 +6,7 @@ from .permissoes import (
     pode_registrar_retirada,
     pode_registrar_devolucao,
     pode_consultar_historico,
+    pode_consultar_painel,
     pode_gerenciar_cadastro_pedagogico,
     pode_gerenciar_manutencao,
 )
@@ -20,6 +21,7 @@ def permissoes_funcionais(request):
         "pode_registrar_retirada": pode_registrar_retirada(request.user),
         "pode_registrar_devolucao": pode_registrar_devolucao(request.user),
         "pode_consultar_historico": pode_consultar_historico(request.user),
+        "pode_consultar_painel": pode_consultar_painel(request.user),
         "pode_consultar_manutencoes": pode_gerenciar_manutencao(request.user),
         "pode_abrir_manutencao": pode_gerenciar_manutencao(request.user, "add"),
         "pode_alterar_manutencao": pode_gerenciar_manutencao(request.user, "change"),

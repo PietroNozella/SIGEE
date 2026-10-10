@@ -1,12 +1,13 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
@@ -14,11 +15,43 @@ from auditoria.services import registrar_evento
 from movimentacoes.models import Movimentacao
 from manutencoes.models import Manutencao
 from reservas.models import ReservaEquipamento
-from usuarios.permissoes import e_operador_funcional, e_professor_funcional
+from usuarios.permissoes import e_operador_funcional, e_professor_funcional, pode_consultar_painel
 
 from .forms import EquipamentoForm, ImportacaoEquipamentosCSVForm
 from .importacao_csv import CABECALHOS_CSV, validar_equipamentos_csv
 from .models import Categoria, Equipamento, Local
+
+
+@login_required
+@require_GET
+def painel(request):
+    if not pode_consultar_painel(request.user):
+        raise PermissionDenied
+
+    indicadores = Equipamento.objects.aggregate(
+        ativos=Count("pk", filter=Q(ativo=True)),
+        disponiveis=Count("pk", filter=Q(ativo=True, situacao=Equipamento.Situacao.DISPONIVEL)),
+        em_uso=Count("pk", filter=Q(ativo=True, situacao=Equipamento.Situacao.EM_USO)),
+        manutencao=Count("pk", filter=Q(ativo=True, situacao=Equipamento.Situacao.MANUTENCAO)),
+        inativos=Count("pk", filter=Q(ativo=False)),
+    )
+    distribuicao = [
+        {"nome": "Disponíveis", "chave": "disponiveis"},
+        {"nome": "Em uso", "chave": "em_uso"},
+        {"nome": "Em manutenção", "chave": "manutencao"},
+    ]
+    for item in distribuicao:
+        item["total"] = indicadores[item["chave"]]
+        item["percentual"] = (
+            item["total"] * 100 / indicadores["ativos"] if indicadores["ativos"] else 0
+        )
+    recentes = Movimentacao.objects.select_related(
+        "equipamento__tipo", "operador", "destinatario",
+    ).order_by("-data_hora", "-pk")[:10]
+    return render(request, "inventario/painel.html", {
+        "indicadores": indicadores, "distribuicao": distribuicao,
+        "movimentacoes_recentes": recentes,
+    })
 
 
 @login_required
