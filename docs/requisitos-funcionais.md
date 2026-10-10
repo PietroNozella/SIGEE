@@ -18,13 +18,13 @@ Este documento registra o baseline aprovado de requisitos funcionais do SIGEE. A
 
 ## Estado de RF-05 e RF-06
 
-A retirada com ou sem reserva, a devolução básica total ou parcial e a consulta do histórico foram integradas à `main` pelo PR #19, no commit `4071580`. A retirada com reserva entrega integralmente as unidades alocadas ao Professor proprietário, a partir do início e antes dos 30 minutos de tolerância, com gravação e auditoria atômicas. A devolução com problema (RN-14) e o ciclo de manutenção (RF-07) foram implementados localmente em `feat/manutencao`, com testes automatizados em `manutencoes/tests.py`. Concorrência em PostgreSQL, integração desta branch, revisão cruzada e validação publicada continuam pendentes; a implementação local não declara os cards formalmente concluídos.
+A retirada com ou sem reserva, a devolução básica total ou parcial e a consulta do histórico foram integradas à `main` pelo PR #19, no commit `4071580`. A retirada com reserva entrega integralmente as unidades alocadas ao Professor proprietário, a partir do início e antes dos 30 minutos de tolerância, com gravação e auditoria atômicas. A devolução com problema (RN-14) e o ciclo de manutenção (RF-07) foram integrados pelo PR #21 (`2ed8ca4`). Os testes estão em `manutencoes/tests.py`. Concorrência em PostgreSQL e validação dos fluxos publicados não foram comprovadas nesta etapa.
 
 ## Base cadastral para RF-10 e estado do RF-11
 
 Em 06/10/2026 foram implementados os cadastros compartilhados de Turma, Disciplina e Atividade Pedagógica, geridos pelo Administrador com validações, permissões, auditoria e inativação/reativação. Os modelos seguem o DER atual. A entrega cadastral não incluiu a associação às utilizações nem os indicadores. As [evidências da entrega de 09/10](cadastros-pedagogicos.md) registram os cenários executados e as limitações.
 
-Na branch `utilizacao-equipamentos`, o [incremento com reserva do RF-10](utilizacao-pedagogica-reserva.md) permite ao Professor registrar turma, disciplina e atividade após a retirada de reserva própria, uma vez para todo o lote. Os três campos são obrigatórios ao salvar; o vínculo continua opcional. Criação e edição são permitidas até a devolução integral. O contexto permanece consultável e associado às movimentações após devolução ou inativação. O fluxo sem reserva e os indicadores permanecem pendentes; RF-10 e RF-11 não são declarados concluídos. Este incremento ainda aguarda revisão do Diego e integração à `main`.
+O [incremento com reserva do RF-10](utilizacao-pedagogica-reserva.md), integrado à `main` pelo PR #20 (`0ffa8de`), permite ao Professor registrar turma, disciplina e atividade após a retirada de reserva própria, uma vez para todo o lote. Os três campos são obrigatórios ao salvar; o vínculo continua opcional. Criação e edição são permitidas até a devolução integral. O contexto permanece consultável e associado às movimentações após devolução ou inativação. O fluxo sem reserva e os indicadores permanecem pendentes; RF-10 e RF-11 não são declarados concluídos.
 
 ## Estado do RF-09
 

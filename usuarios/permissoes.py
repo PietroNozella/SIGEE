@@ -99,6 +99,13 @@ def pode_consultar_historico(user):
     )
 
 
+def pode_consultar_painel(user):
+    return (
+        user.is_active and e_administrador_funcional(user)
+        and user.has_perm("inventario.view_resumo_inventario")
+    )
+
+
 def usuarios_funcionais_ativos():
     # Conta com grupos adicionais também viola a atribuição exclusiva da RN-18.
     return (

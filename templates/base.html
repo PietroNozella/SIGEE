@@ -53,12 +53,14 @@
                 </a>
                 {% endif %}
             {% else %}
-            <span class="side-nav-item is-disabled" aria-disabled="true">
+            {% if pode_consultar_painel %}
+            <a class="side-nav-item{% if request.resolver_match.url_name == 'painel' %} is-active{% endif %}" href="{% url 'inventario:painel' %}"{% if request.resolver_match.url_name == 'painel' %} aria-current="page"{% endif %}>
                 <img src="{% static 'inventario/icons/overview.svg' %}" alt="" aria-hidden="true">
                 Visão geral
-            </span>
+            </a>
+            {% endif %}
             {% if perms.inventario.view_equipamento %}
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' and request.resolver_match.url_name != 'painel' %} is-active{% endif %}" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' and request.resolver_match.url_name != 'painel' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
                     Equipamentos
                 </a>

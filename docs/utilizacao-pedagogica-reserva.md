@@ -1,6 +1,6 @@
 # Utilização pedagógica com reserva — incremento de 13/10
 
-**Estado em 06/10/2026:** implementado e validado na branch `utilizacao-equipamentos`; aguardando revisão do Diego e integração à `main`. Aplicação ainda não publicada; migration e permissões já aplicadas ao PostgreSQL publicado, após autorização.
+**Estado em 06/10/2026:** implementado e validado na branch `utilizacao-equipamentos`; revisão técnica e integração à `main` pendentes. Aplicação ainda não publicada; migration e permissões já aplicadas ao PostgreSQL publicado, após autorização.
 
 ## Recorte e decisões aprovadas
 
@@ -60,15 +60,10 @@ Foram observados o acesso por Minhas Reservas, criação dos três vínculos com
 
 Desktop: 1440 × 900. Celular: 390 × 844, com rolagem vertical e sem estouro horizontal; a largura da página foi 390 pixels no formulário válido e 375 no erro com barra de rolagem. O console apresentou a falta preexistente de `/favicon.ico`; não houve erro JavaScript do novo fluxo.
 
-![Formulário no desktop](evidencias/utilizacao-reserva-desktop.png)
-![Formulário no celular](evidencias/utilizacao-reserva-mobile.png)
-![Erro com campos preservados](evidencias/utilizacao-reserva-mobile-erro.png)
-![Consulta após devolução integral](evidencias/utilizacao-reserva-encerrada.png)
-
 ## Banco local e revisão
 
 Antes de aplicar `pedagogico.0002_utilizacaopedagogica`, foi feito backup SQLite por API de backup, com `PRAGMA integrity_check` aprovado, em `.tmp/backups/db-before-utilizacao-20261006-145644.sqlite3`. Migration e `configurar_perfis` foram aplicados somente ao SQLite local; foram conferidas zero migrations pendentes e três permissões de utilização pedagógica no Professor. Backup, banco sintético e scripts temporários não integram a entrega versionada.
 
 Após autorização explícita em 06/10/2026, a mesma migration foi aplicada ao PostgreSQL publicado. A pré-verificação encontrou somente `pedagogico.0002_utilizacaopedagogica` pendente. Antes da alteração, foi salva e conferida uma cópia lógica dos dados de 26 tabelas Django, com definições de colunas e constraints, em `.tmp/backups/postgres-before-utilizacao-20261006-150727.json.gz`. Essa cópia não é um `pg_dump` e sua restauração não foi ensaiada. A migration e `configurar_perfis` concluíram com sucesso; foram conferidos zero migrations pendentes, a existência da nova tabela, três permissões de utilização pedagógica no Professor, nenhuma permissão de exclusão desse modelo no grupo e nove permissões cadastrais pedagógicas no Administrador. A preparação do banco não publica o código da branch nem comprova os fluxos no site.
 
-Para a revisão do Diego: conferir o fluxo completo, a restrição a reservas próprias, a correção de todas as unidades após devolução parcial e o bloqueio após devolução integral, usando os cenários acima. Permanecem pendentes o retorno dele, merge, publicação e validação do site publicado. A execução local em PostgreSQL não comprova o ambiente publicado. O próximo incremento funcional é a utilização pedagógica sem reserva.
+A revisão técnica deve conferir o fluxo completo, a restrição a reservas próprias, a correção de todas as unidades após devolução parcial e o bloqueio após devolução integral, usando os cenários acima. Revisão, integração, publicação e validação do site publicado permanecem pendentes. A execução local em PostgreSQL não comprova o ambiente publicado. O próximo incremento funcional é a utilização pedagógica sem reserva.
