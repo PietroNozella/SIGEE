@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Uso pedagógico | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'pedagogico/css/indicadores.css' %}">{% endblock %}
+{% block content %}
+<div class="page-content pedagogical-indicators">
+    <header class="page-header">
+        <div><h1>Uso pedagógico</h1><p>Consulte a utilização dos equipamentos por turma, disciplina e atividade pedagógica.</p></div>
+        {% if pode_consultar_painel %}<a class="btn btn-secondary-sigee" href="{% url 'inventario:painel' %}">Ver inventário</a>{% endif %}
+    </header>
+
+    <section class="kpi-grid pedagogical-kpis" aria-label="Resumo da utilização pedagógica">
+        <article class="kpi-card"><span class="kpi-label">Utilizações pedagógicas</span><strong class="kpi-value">{{ totais.utilizacoes }}</strong><span class="pedagogical-note">Uma utilização por reserva retirada com contexto</span></article>
+        <article class="kpi-card"><span class="kpi-label">Retiradas de equipamentos</span><strong class="kpi-value">{{ totais.retiradas }}</strong><span class="pedagogical-note">Unidades retiradas com contexto pedagógico</span></article>
+        <article class="kpi-card"><span class="kpi-label">Equipamentos distintos</span><strong class="kpi-value">{{ totais.equipamentos }}</strong><span class="pedagogical-note">Cada patrimônio contado uma vez no total</span></article>
+    </section>
+
+    <section class="inventory-card pedagogical-explanation" aria-labelledby="counting-heading">
+        <h2 id="counting-heading">Como os números são calculados</h2>
+        <p>Os indicadores incluem todo o histórico de retiradas com turma, disciplina e atividade registradas. Uma reserva de 30 equipamentos retirados com contexto conta como uma utilização pedagógica e 30 retiradas de equipamentos.</p>
+        <p>Se os mesmos 30 equipamentos forem retirados em outra reserva com contexto, serão duas utilizações, 60 retiradas e 30 equipamentos distintos. Uma utilização representa uma reserva com retirada e contexto, sem indicar a quantidade de aulas realizadas.</p>
+        <p>Devoluções e retiradas sem contexto pedagógico não são contadas. Registros encerrados e vínculos com cadastros ou equipamentos inativos permanecem no histórico.</p>
+        <p class="pedagogical-note">Um equipamento pode aparecer em mais de uma turma, disciplina ou atividade. Por isso, a soma dos equipamentos distintos das linhas pode superar o total geral.</p>
+    </section>
+
+    {% if totais.retiradas %}
+    <div class="pedagogical-groups">
+        {% for grupo in grupos %}
+        <section class="inventory-card" aria-labelledby="heading-{{ grupo.campo }}">
+            <header class="pedagogical-section-header"><h2 id="heading-{{ grupo.campo }}">{{ grupo.titulo }}</h2><p>Ordenadas pela quantidade de utilizações pedagógicas.</p></header>
+            <div class="table-responsive inventory-table-wrapper" tabindex="0" role="region" aria-label="Indicadores por {{ grupo.titulo|lower }}; use rolagem horizontal em telas pequenas">
+                <table class="table inventory-table mb-0">
+                    <caption class="visually-hidden">{{ grupo.titulo }} com utilizações pedagógicas, retiradas de equipamentos e equipamentos distintos no histórico completo</caption>
+                    <thead><tr><th scope="col">Nome</th><th scope="col" class="pedagogical-number">Utilizações pedagógicas</th><th scope="col" class="pedagogical-number">Retiradas de equipamentos</th><th scope="col" class="pedagogical-number">Equipamentos distintos</th></tr></thead>
+                    <tbody>{% for registro in grupo.pagina %}<tr>
+                        <th scope="row" class="pedagogical-name">{{ registro.nome }}{% if not registro.ativo %}<span class="pedagogical-note d-block">Cadastro inativo</span>{% endif %}</th>
+                        <td class="pedagogical-number">{{ registro.utilizacoes }}</td><td class="pedagogical-number">{{ registro.retiradas }}</td><td class="pedagogical-number">{{ registro.equipamentos }}</td>
+                    </tr>{% endfor %}</tbody>
+                </table>
+            </div>
+            <footer class="inventory-pagination">
+                <p>{{ grupo.pagina.start_index }}–{{ grupo.pagina.end_index }} de {{ grupo.pagina.paginator.count }}</p>
+                {% if grupo.pagina.paginator.num_pages > 1 %}<nav aria-label="Paginação de {{ grupo.titulo|lower }}"><ul class="pagination mb-0">
+                    {% if grupo.pagina.has_previous %}<li class="page-item"><a class="page-link" href="?{{ grupo.parametros }}&amp;{{ grupo.parametro }}={{ grupo.pagina.previous_page_number }}#heading-{{ grupo.campo }}">Anterior</a></li>{% endif %}
+                    <li class="page-item active"><span class="page-link" aria-current="page">{{ grupo.pagina.number }} de {{ grupo.pagina.paginator.num_pages }}</span></li>
+                    {% if grupo.pagina.has_next %}<li class="page-item"><a class="page-link" href="?{{ grupo.parametros }}&amp;{{ grupo.parametro }}={{ grupo.pagina.next_page_number }}#heading-{{ grupo.campo }}">Próxima</a></li>{% endif %}
+                </ul></nav>{% endif %}
+            </footer>
+        </section>
+        {% endfor %}
+    </div>
+    {% else %}
+    <section class="inventory-card inventory-empty" role="status"><h2>Nenhuma utilização pedagógica registrada</h2><p>Os indicadores aparecerão quando o Professor vincular turma, disciplina e atividade às unidades retiradas.</p></section>
+    {% endif %}
+</div>
+{% endblock %}

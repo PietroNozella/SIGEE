@@ -5,6 +5,7 @@ from . import views
 
 app_name = "pedagogico"
 urlpatterns = [
+    path("indicadores/", views.indicadores, name="indicadores"),
     path("reservas/<int:reserva_id>/utilizacao/", views.utilizacao_reserva, name="utilizacao_reserva"),
 ]
 for cadastro in views.CADASTROS:
