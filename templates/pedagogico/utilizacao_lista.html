@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Minhas Utilizações | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content">
+    <header class="page-header"><div>
+        <h1>Minhas Utilizações</h1>
+        <p>Consulte os equipamentos recebidos com ou sem reserva e registre seu contexto pedagógico.</p>
+    </div></header>
+    <section class="inventory-card" aria-labelledby="utilizacoes-heading">
+        <h2 id="utilizacoes-heading" class="visually-hidden">Utilizações registradas</h2>
+        {% if pagina.object_list %}
+        <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Utilizações; use rolagem horizontal em telas pequenas">
+            <table class="table inventory-table mb-0">
+                <caption class="visually-hidden">Retiradas do Professor, da mais recente à mais antiga</caption>
+                <thead><tr><th scope="col">Origem</th><th scope="col">Equipamento e local</th><th scope="col">Data e hora</th><th scope="col">Unidades</th><th scope="col">Contexto pedagógico</th></tr></thead>
+                <tbody>{% for grupo in pagina %}<tr>
+                    <td>{% if grupo.reserva_id %}Reserva #{{ grupo.reserva_id }}{% else %}Sem reserva<span class="table-metadata">Retirada #{{ grupo.retirada_id }}</span>{% endif %}</td>
+                    <td><strong>{{ grupo.retirada.equipamento.tipo.nome }}</strong><span class="table-metadata">{{ grupo.retirada.equipamento.local.nome }}</span></td>
+                    <td>{{ grupo.data_hora|date:"d/m/Y H:i" }}</td>
+                    <td>{{ grupo.total }} retirada(s)<span class="table-metadata">{{ grupo.pendentes }} pendente(s)</span></td>
+                    <td>
+                        <span class="table-metadata">{% if not grupo.pendentes %}Devolução integral{% elif grupo.com_contexto %}Contexto registrado{% else %}Sem contexto{% endif %}</span>
+                        <a class="btn btn-secondary-sigee" href="{% if grupo.reserva_id %}{% url 'pedagogico:utilizacao_reserva' grupo.reserva_id %}{% else %}{% url 'pedagogico:utilizacao_retirada' grupo.retirada_id %}{% endif %}">{% if grupo.pendentes and grupo.com_contexto and pode_editar_utilizacao %}Editar contexto pedagógico{% elif grupo.pendentes and not grupo.com_contexto and pode_criar_utilizacao %}Vincular contexto pedagógico{% else %}Consultar contexto pedagógico{% endif %}</a>
+                    </td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        {% include "movimentacoes/_paginacao.html" %}
+        {% else %}
+        <div class="empty-state" role="status"><h2>Nenhuma utilização registrada</h2><p>Suas utilizações aparecerão aqui depois que o Operador registrar a retirada dos equipamentos.</p></div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

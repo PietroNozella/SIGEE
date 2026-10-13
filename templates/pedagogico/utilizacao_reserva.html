@@ -3,12 +3,12 @@
 {% block content %}
 <div class="page-content form-page">
     <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">
-        <a href="{% url 'reservas:reserva_lista' %}">Minhas Reservas</a><span aria-hidden="true">/</span>
+        <a href="{{ url_voltar }}">{{ rotulo_voltar }}</a><span aria-hidden="true">/</span>
         <span aria-current="page">Contexto pedagógico</span>
     </nav>
     <header class="page-header form-page-header"><div>
         <h1>Contexto pedagógico</h1>
-        <p>Reserva #{{ reserva.pk }} · {{ reserva.tipo_equipamento.nome }} · {{ reserva.local.nome }}</p>
+        <p>{{ descricao_origem }}</p>
     </div></header>
     <section class="form-card" aria-labelledby="utilizacao-heading">
         <div class="form-card-header"><h2 id="utilizacao-heading">Utilização dos equipamentos</h2>
@@ -38,7 +38,7 @@
                 </div>
             {% endfor %}
             </div>
-            <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_lista' %}">Voltar</a>
+            <div class="form-actions"><a class="btn btn-secondary-sigee" href="{{ url_voltar }}">Voltar</a>
                 <button class="btn btn-primary-sigee" type="submit"{% if form.cadastros_faltantes %} disabled{% endif %}>Salvar contexto pedagógico</button>
             </div>
         </form>
@@ -47,7 +47,7 @@
             {% if utilizacao %}
                 <dl><dt>Turma</dt><dd>{{ utilizacao.turma.nome }}</dd><dt>Disciplina</dt><dd>{{ utilizacao.disciplina.nome }}</dd><dt>Atividade pedagógica</dt><dd>{{ utilizacao.atividade.nome }}</dd>{% if utilizacao.observacao %}<dt>Observação</dt><dd>{{ utilizacao.observacao|linebreaksbr }}</dd>{% endif %}</dl>
             {% else %}<p>Nenhum contexto pedagógico foi registrado.</p>{% endif %}
-            <a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_lista' %}">Voltar para Minhas Reservas</a>
+            <a class="btn btn-secondary-sigee" href="{{ url_voltar }}">Voltar para {{ rotulo_voltar }}</a>
         {% endif %}
     </section>
 </div>

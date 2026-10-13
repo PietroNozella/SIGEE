@@ -224,7 +224,8 @@ class CadastroFluxoTests(TestCase):
             registro.refresh_from_db()
             self.assertTrue(registro.ativo)
         navegacao = self.client.get(reverse("inventario:equipamento_lista")).content.decode()
-        self.assertNotIn('href="/pedagogico/', navegacao)
+        for cadastro, _, _ in CADASTROS:
+            self.assertNotIn(f'href="{self.url(cadastro, "lista")}"', navegacao)
 
     def test_anonimo_e_conta_inativa_nao_acessam(self):
         self.client.logout()
