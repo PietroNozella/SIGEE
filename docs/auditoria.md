@@ -25,7 +25,7 @@ A auditoria cobre atualmente:
 - anonimização de conta;
 - limpeza confirmada de auditorias, aceites e sessões expiradas.
 
-As funcionalidades futuras devem registrar seus próprios eventos quando forem implementadas. A auditoria de manutenção e utilização pedagógica continua pendente enquanto esses fluxos não existirem no código.
+As funcionalidades futuras devem registrar seus próprios eventos quando forem implementadas. Manutenção e utilização pedagógica já registram eventos nos respectivos serviços transacionais.
 
 ## Registro persistente
 
@@ -66,6 +66,8 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `CADASTRO_PEDAGOGICO_CRIADO` | Criação de Turma, Disciplina ou Atividade Pedagógica aceita ou rejeitada. | Sucesso ou falha |
 | `CADASTRO_PEDAGOGICO_EDITADO` | Edição do cadastro compartilhado aceita ou rejeitada. | Sucesso ou falha |
 | `CADASTRO_PEDAGOGICO_SITUACAO_ALTERADA` | Inativação ou reativação altera o estado, ou falha na persistência. | Sucesso ou falha |
+| `UTILIZACAO_PEDAGOGICA_CRIADA` | Contexto pedagógico de retirada com ou sem reserva criado ou rejeitado. | Sucesso ou falha |
+| `UTILIZACAO_PEDAGOGICA_EDITADA` | Contexto pedagógico do lote corrigido ou rejeitado. | Sucesso ou falha |
 | `DADOS_TITULAR_EXPORTADOS` | Um conjunto de dados é preparado para atendimento ao titular. | Sucesso |
 | `USUARIO_ANONIMIZADO` | Uma conta comum é desativada e tem identificadores diretos substituídos. | Sucesso |
 | `DADOS_EXPIRADOS_REMOVIDOS` | Uma limpeza confirmada remove registros segundo datas de corte explícitas. | Sucesso |
@@ -75,6 +77,8 @@ Uma tentativa de login inválida é registrada sem vincular o nome de usuário i
 Na retirada e na devolução, o evento de sucesso referencia a nova movimentação e é salvo na mesma transação que ela e a atualização do equipamento. Uma falha nessa gravação desfaz as três alterações. Tentativas inválidas geram separadamente um evento de falha sem copiar destinatário ou observação; acessos negados seguem o middleware existente. Na devolução rejeitada pela view, o evento de falha referencia a retirada consultada.
 
 Na retirada com reserva, cada unidade gera seu evento de sucesso. Uma tentativa rejeitada pela view referencia a reserva. Se o prazo já venceu, a expiração legítima e sua auditoria são preservadas, sem retirar equipamentos. A consulta do histórico não gera um novo evento específico de auditoria.
+
+No contexto pedagógico, cada associação alterada gera sucesso na mesma transação do lote. Reenvio sem mudança não gera novo evento. Uma falha de validação ou integridade desfaz a gravação e referencia a Reserva no fluxo com reserva ou a Movimentação de retirada no fluxo sem reserva, sem copiar observações ou nomes dos cadastros.
 
 Nos cadastros pedagógicos, auditoria de sucesso e alteração usam a mesma transação. Rejeições de criação não referenciam um identificador inexistente; edição e mudança de situação rejeitadas referenciam o cadastro. Nomes e descrições não são copiados. Repetir uma inativação ou reativação que já corresponde ao estado atual não gera outro evento de mudança. Cenários de validação e rollback estão em `pedagogico/tests.py`, com resultados nas [evidências da entrega](cadastros-pedagogicos.md).
 

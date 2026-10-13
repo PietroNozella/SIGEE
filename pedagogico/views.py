@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -12,10 +13,14 @@ from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from usuarios.permissoes import pode_gerenciar_cadastro_pedagogico, pode_gerenciar_utilizacao_pedagogica
 from reservas.models import Reserva
+from movimentacoes.models import Movimentacao
 
 from .forms import AtividadePedagogicaForm, DisciplinaForm, TurmaForm, UtilizacaoPedagogicaForm
 from .models import AtividadePedagogica, Disciplina, Turma
-from .services import retiradas_com_contexto, salvar_contexto_reserva
+from .services import (
+    grupos_utilizacao, retiradas_com_contexto, retiradas_sem_reserva_com_contexto,
+    salvar_contexto_reserva, salvar_contexto_retirada,
+)
 
 
 CADASTROS = {
@@ -146,6 +151,61 @@ def utilizacao_reserva(request, reserva_id):
         pk=reserva_id, professor=request.user,
     )
     retiradas = list(retiradas_com_contexto(reserva))
+    return _utilizacao_form(
+        request, origem=reserva, retiradas=retiradas,
+        salvar=lambda dados: salvar_contexto_reserva(professor=request.user, reserva_id=reserva.pk, **dados),
+        contexto={
+            "reserva": reserva,
+            "descricao_origem": f"Reserva #{reserva.pk} · {reserva.tipo_equipamento.nome} · {reserva.local.nome}",
+            "url_voltar": reverse("reservas:reserva_lista"), "rotulo_voltar": "Minhas Reservas",
+        },
+    )
+
+
+@login_required
+@require_GET
+def utilizacao_lista(request):
+    if not pode_gerenciar_utilizacao_pedagogica(request.user):
+        raise PermissionDenied
+    pagina = Paginator(grupos_utilizacao(request.user), 10).get_page(request.GET.get("pagina"))
+    grupos = list(pagina.object_list)
+    representantes = Movimentacao.objects.filter(
+        pk__in=[grupo["retirada_id"] for grupo in grupos],
+    ).select_related("equipamento__tipo", "equipamento__local").in_bulk()
+    for grupo in grupos:
+        grupo["retirada"] = representantes[grupo["retirada_id"]]
+    pagina.object_list = grupos
+    return render(request, "pedagogico/utilizacao_lista.html", {
+        "pagina": pagina,
+        "pode_criar_utilizacao": pode_gerenciar_utilizacao_pedagogica(request.user, "add"),
+        "pode_editar_utilizacao": pode_gerenciar_utilizacao_pedagogica(request.user, "change"),
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def utilizacao_retirada(request, retirada_id):
+    if not pode_gerenciar_utilizacao_pedagogica(request.user):
+        raise PermissionDenied
+    retirada = get_object_or_404(
+        Movimentacao.objects.select_related("equipamento__tipo", "equipamento__local"),
+        pk=retirada_id, tipo=Movimentacao.Tipo.RETIRADA,
+        reserva__isnull=True, destinatario=request.user,
+    )
+    retiradas = list(retiradas_sem_reserva_com_contexto(retirada))
+    if any(item.destinatario_id != request.user.pk for item in retiradas):
+        raise Http404
+    return _utilizacao_form(
+        request, origem=retirada, retiradas=retiradas,
+        salvar=lambda dados: salvar_contexto_retirada(professor=request.user, retirada_id=retirada.pk, **dados),
+        contexto={
+            "descricao_origem": f"Retirada sem reserva · {retirada.equipamento.tipo.nome} · {retirada.equipamento.local.nome}",
+            "url_voltar": reverse("pedagogico:utilizacao_lista"), "rotulo_voltar": "Minhas Utilizações",
+        },
+    )
+
+
+def _utilizacao_form(request, *, origem, retiradas, salvar, contexto):
     utilizacao = getattr(retiradas[0], "utilizacao_pedagogica", None) if retiradas else None
     pendentes = sum(not retirada.devolucoes.all() for retirada in retiradas)
     acao_permissao = "change" if utilizacao else "add"
@@ -158,9 +218,7 @@ def utilizacao_reserva(request, reserva_id):
             raise PermissionDenied
         if form.is_valid():
             try:
-                salvar_contexto_reserva(
-                    professor=request.user, reserva_id=reserva.pk, **form.cleaned_data,
-                )
+                salvar(form.cleaned_data)
             except ValidationError as erro:
                 if hasattr(erro, "message_dict"):
                     for campo, mensagens in erro.message_dict.items():
@@ -171,16 +229,16 @@ def utilizacao_reserva(request, reserva_id):
                 form.add_error(None, "Não foi possível salvar. Nenhuma alteração foi gravada. Tente novamente.")
             else:
                 messages.success(request, "Contexto pedagógico salvo para todo o lote.")
-                return redirect("pedagogico:utilizacao_reserva", reserva_id=reserva.pk)
+                return redirect(request.path)
         else:
             registrar_evento(
                 usuario=request.user,
                 acao=AcaoAuditoria.UTILIZACAO_PEDAGOGICA_EDITADA if utilizacao else AcaoAuditoria.UTILIZACAO_PEDAGOGICA_CRIADA,
                 resultado=RegistroAuditoria.Resultado.FALHA,
-                entidade=Reserva._meta.label, entidade_id=reserva.pk,
+                entidade=origem._meta.label, entidade_id=origem.pk,
             )
     return render(request, "pedagogico/utilizacao_reserva.html", {
-        "reserva": reserva, "retiradas": retiradas, "utilizacao": utilizacao,
+        **contexto, "retiradas": retiradas, "utilizacao": utilizacao,
         "pendentes": pendentes, "form": form,
         "pode_editar": bool(pendentes and pode_gravar),
     })
