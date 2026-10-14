@@ -21,9 +21,9 @@ from usuarios.permissoes import (
 )
 
 from .forms import AtividadePedagogicaForm, DisciplinaForm, TurmaForm, UtilizacaoPedagogicaForm
-from .models import AtividadePedagogica, Disciplina, Turma, UtilizacaoPedagogica
+from .models import AtividadePedagogica, Disciplina, Turma
 from .services import (
-    grupos_utilizacao, retiradas_com_contexto, retiradas_sem_reserva_com_contexto,
+    chave_grupo_utilizacao, grupos_utilizacao, retiradas_com_contexto, retiradas_sem_reserva_com_contexto,
     salvar_contexto_reserva, salvar_contexto_retirada,
 )
 
@@ -41,13 +41,13 @@ def indicadores(request):
     if not pode_consultar_indicadores_pedagogicos(request.user):
         raise PermissionDenied
 
-    utilizacoes = UtilizacaoPedagogica.objects.filter(
-        movimentacao__tipo=Movimentacao.Tipo.RETIRADA,
-    )
+    utilizacoes = Movimentacao.objects.filter(
+        tipo=Movimentacao.Tipo.RETIRADA, utilizacao_pedagogica__isnull=False,
+    ).annotate(chave_grupo=chave_grupo_utilizacao())
     totais = utilizacoes.aggregate(
-        utilizacoes=Count("movimentacao__reserva_id", distinct=True),
+        utilizacoes=Count("chave_grupo", distinct=True),
         retiradas=Count("pk"),
-        equipamentos=Count("movimentacao__equipamento_id", distinct=True),
+        equipamentos=Count("equipamento_id", distinct=True),
     )
     grupos = []
     for campo, titulo in (
@@ -55,11 +55,13 @@ def indicadores(request):
         ("atividade", "Atividades pedagógicas"),
     ):
         registros = utilizacoes.values(
-            cadastro_id=F(f"{campo}_id"), nome=F(f"{campo}__nome"), ativo=F(f"{campo}__ativo"),
+            cadastro_id=F(f"utilizacao_pedagogica__{campo}_id"),
+            nome=F(f"utilizacao_pedagogica__{campo}__nome"),
+            ativo=F(f"utilizacao_pedagogica__{campo}__ativo"),
         ).annotate(
-            utilizacoes=Count("movimentacao__reserva_id", distinct=True),
+            utilizacoes=Count("chave_grupo", distinct=True),
             retiradas=Count("pk"),
-            equipamentos=Count("movimentacao__equipamento_id", distinct=True),
+            equipamentos=Count("equipamento_id", distinct=True),
         ).order_by("-utilizacoes", "nome", "cadastro_id")
         parametro = f"pagina_{campo}"
         pagina = Paginator(registros, 10).get_page(request.GET.get(parametro))

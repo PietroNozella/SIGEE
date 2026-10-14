@@ -40,6 +40,15 @@ def retiradas_sem_reserva_com_contexto(retirada):
     return _com_contexto(_retiradas_sem_reserva(retirada))
 
 
+def chave_grupo_utilizacao():
+    return Case(
+        When(reserva__isnull=False, then=Concat(Value("reserva:"), Cast("reserva_id", CharField()))),
+        When(lote_retirada__isnull=False, then=Concat(Value("lote:"), Cast("lote_retirada", CharField()))),
+        default=Concat(Value("retirada:"), Cast("pk", CharField())),
+        output_field=CharField(),
+    )
+
+
 def grupos_utilizacao(professor):
     devolucoes = Movimentacao.objects.filter(
         tipo=Movimentacao.Tipo.DEVOLUCAO, retirada_origem_id=OuterRef("pk"),
@@ -48,12 +57,7 @@ def grupos_utilizacao(professor):
         tipo=Movimentacao.Tipo.RETIRADA, destinatario=professor,
     ).filter(Q(reserva__isnull=True) | Q(reserva__professor=professor)).annotate(
         devolvida=Exists(devolucoes),
-        chave_grupo=Case(
-            When(reserva__isnull=False, then=Concat(Value("reserva:"), Cast("reserva_id", CharField()))),
-            When(lote_retirada__isnull=False, then=Concat(Value("lote:"), Cast("lote_retirada", CharField()))),
-            default=Concat(Value("retirada:"), Cast("pk", CharField())),
-            output_field=CharField(),
-        ),
+        chave_grupo=chave_grupo_utilizacao(),
     )
     return retiradas.order_by().values("chave_grupo", "reserva_id").annotate(
         retirada_id=Min("pk"), data_hora=Max("data_hora"), total=Count("pk"),
