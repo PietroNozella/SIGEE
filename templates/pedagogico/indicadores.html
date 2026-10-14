@@ -15,15 +15,6 @@
         <article class="kpi-card"><span class="kpi-label">Equipamentos distintos</span><strong class="kpi-value">{{ totais.equipamentos }}</strong><span class="pedagogical-note">Cada patrimônio contado uma vez no total</span></article>
     </section>
 
-    <section class="inventory-card pedagogical-explanation" aria-labelledby="counting-heading">
-        <h2 id="counting-heading">Como os números são calculados</h2>
-        <p>Os indicadores incluem todo o histórico de retiradas com turma, disciplina e atividade registradas. Uma reserva ou um lote sem reserva de 30 equipamentos retirados com contexto conta como uma utilização pedagógica e 30 retiradas de equipamentos.</p>
-        <p>Se os mesmos 30 equipamentos forem retirados em outra reserva ou lote com contexto, serão duas utilizações, 60 retiradas e 30 equipamentos distintos. Uma utilização representa uma reserva ou lote com retirada e contexto, sem indicar a quantidade de aulas realizadas.</p>
-        <p>Retiradas antigas sem reserva e sem identificador de lote são contadas individualmente, sem presumir agrupamentos pelo Professor ou pela data.</p>
-        <p>Devoluções e retiradas sem contexto pedagógico não são contadas. Registros encerrados e vínculos com cadastros ou equipamentos inativos permanecem no histórico.</p>
-        <p class="pedagogical-note">Um equipamento pode aparecer em mais de uma turma, disciplina ou atividade. Por isso, a soma dos equipamentos distintos das linhas pode superar o total geral.</p>
-    </section>
-
     {% if totais.retiradas %}
     <div class="pedagogical-groups">
         {% for grupo in grupos %}
