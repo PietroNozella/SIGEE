@@ -39,11 +39,6 @@ Banco sintético separado em `.tmp/sem-reserva-ui.sqlite3`, com Professor e Oper
 
 Desktop: 1440 × 900. Celular: 390 × 844. Formulário e lista com largura de página de 390 pixels; tabela de 760 pixels com rolagem própria em contêiner de 356 pixels. As sessões registraram a ausência preexistente de `/favicon.ico`; uma navegação de teste para URL incorreta de devolução também retornou 404 e foi corrigida.
 
-- [Lista desktop](evidencias/utilizacao-sem-reserva-lista-desktop.png)
-- [Formulário no celular](evidencias/utilizacao-sem-reserva-form-mobile.png)
-- [Erro no celular](evidencias/utilizacao-sem-reserva-mobile-erro.png)
-- [Consulta após devolução integral](evidencias/utilizacao-sem-reserva-encerrada-mobile.png)
-
 ## Banco local e fechamento
 
 Foi conferido backup SQLite por API de backup e `PRAGMA integrity_check` em `.tmp/backups/db-before-sem-reserva-20261013-115613.sqlite3`. A migration preexistente `manutencoes.0001_initial` e `configurar_perfis` foram aplicados somente ao SQLite local; não restaram migrations pendentes. O incremento não altera o esquema. Bancos, sessões, scripts e backup temporários não integram a entrega versionada.

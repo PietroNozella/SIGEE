@@ -41,6 +41,7 @@ PERMISSOES_POR_GRUPO = {
         "pedagogico.view_atividadepedagogica",
         "pedagogico.add_atividadepedagogica",
         "pedagogico.change_atividadepedagogica",
+        "pedagogico.view_utilizacaopedagogica",
     ),
     GRUPO_OPERADOR: (
         "inventario.view_equipamento",
@@ -103,6 +104,13 @@ def pode_consultar_painel(user):
     return (
         user.is_active and e_administrador_funcional(user)
         and user.has_perm("inventario.view_resumo_inventario")
+    )
+
+
+def pode_consultar_indicadores_pedagogicos(user):
+    return (
+        user.is_active and e_administrador_funcional(user)
+        and user.has_perm("pedagogico.view_utilizacaopedagogica")
     )
 
 

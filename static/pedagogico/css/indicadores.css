@@ -1,0 +1,23 @@
+.pedagogical-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 24px; }
+.pedagogical-kpis .kpi-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pedagogical-kpis .kpi-value { color: var(--sigee-in-use); }
+.pedagogical-kpis .kpi-label { white-space: normal; }
+.pedagogical-note { color: var(--sigee-muted); font-size: 12px; line-height: 18px; }
+.pedagogical-section-header h2 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+.pedagogical-groups { display: grid; grid-template-columns: 1fr; gap: 24px; }
+.pedagogical-groups > section { min-width: 0; }
+.pedagogical-section-header { padding: 24px; }
+.pedagogical-section-header p { margin: 0; color: var(--sigee-muted); font-size: 13px; }
+.pedagogical-number { text-align: right; }
+.pedagogical-name { font-weight: 500; overflow-wrap: anywhere; }
+.pedagogical-indicators .inventory-table-wrapper { overflow-y: hidden; }
+.pedagogical-indicators .inventory-table { min-width: 560px; table-layout: fixed; }
+.pedagogical-indicators .inventory-table thead th { white-space: normal; }
+.pedagogical-indicators .inventory-table th:first-child { width: 40%; }
+.pedagogical-indicators .inventory-table th:nth-child(n+2) { width: 20%; }
+.pedagogical-indicators .inventory-table th, .pedagogical-indicators .inventory-table td { padding: 16px 12px; vertical-align: middle; }
+.pedagogical-indicators .inventory-pagination { gap: 12px; flex-wrap: wrap; }
+@media (max-width: 767.98px) {
+    .pedagogical-kpis { grid-template-columns: 1fr; }
+    .pedagogical-section-header { padding: 20px; }
+}

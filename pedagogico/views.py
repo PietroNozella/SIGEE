@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
+from django.db.models import Count, F
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -11,14 +12,18 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
-from usuarios.permissoes import pode_gerenciar_cadastro_pedagogico, pode_gerenciar_utilizacao_pedagogica
-from reservas.models import Reserva
 from movimentacoes.models import Movimentacao
+from reservas.models import Reserva
+from usuarios.permissoes import (
+    pode_consultar_indicadores_pedagogicos,
+    pode_gerenciar_cadastro_pedagogico,
+    pode_gerenciar_utilizacao_pedagogica,
+)
 
 from .forms import AtividadePedagogicaForm, DisciplinaForm, TurmaForm, UtilizacaoPedagogicaForm
 from .models import AtividadePedagogica, Disciplina, Turma
 from .services import (
-    grupos_utilizacao, retiradas_com_contexto, retiradas_sem_reserva_com_contexto,
+    chave_grupo_utilizacao, grupos_utilizacao, retiradas_com_contexto, retiradas_sem_reserva_com_contexto,
     salvar_contexto_reserva, salvar_contexto_retirada,
 )
 
@@ -28,6 +33,45 @@ CADASTROS = {
     "disciplinas": {"modelo": Disciplina, "formulario": DisciplinaForm, "titulo": "Disciplinas", "singular": "disciplina"},
     "atividades": {"modelo": AtividadePedagogica, "formulario": AtividadePedagogicaForm, "titulo": "Atividades pedagógicas", "singular": "atividade pedagógica"},
 }
+
+
+@login_required
+@require_GET
+def indicadores(request):
+    if not pode_consultar_indicadores_pedagogicos(request.user):
+        raise PermissionDenied
+
+    utilizacoes = Movimentacao.objects.filter(
+        tipo=Movimentacao.Tipo.RETIRADA, utilizacao_pedagogica__isnull=False,
+    ).annotate(chave_grupo=chave_grupo_utilizacao())
+    totais = utilizacoes.aggregate(
+        utilizacoes=Count("chave_grupo", distinct=True),
+        retiradas=Count("pk"),
+        equipamentos=Count("equipamento_id", distinct=True),
+    )
+    grupos = []
+    for campo, titulo in (
+        ("turma", "Turmas"), ("disciplina", "Disciplinas"),
+        ("atividade", "Atividades pedagógicas"),
+    ):
+        registros = utilizacoes.values(
+            cadastro_id=F(f"utilizacao_pedagogica__{campo}_id"),
+            nome=F(f"utilizacao_pedagogica__{campo}__nome"),
+            ativo=F(f"utilizacao_pedagogica__{campo}__ativo"),
+        ).annotate(
+            utilizacoes=Count("chave_grupo", distinct=True),
+            retiradas=Count("pk"),
+            equipamentos=Count("equipamento_id", distinct=True),
+        ).order_by("-utilizacoes", "nome", "cadastro_id")
+        parametro = f"pagina_{campo}"
+        pagina = Paginator(registros, 10).get_page(request.GET.get(parametro))
+        parametros = request.GET.copy()
+        parametros.pop(parametro, None)
+        grupos.append({
+            "campo": campo, "titulo": titulo, "pagina": pagina,
+            "parametro": parametro, "parametros": parametros.urlencode(),
+        })
+    return render(request, "pedagogico/indicadores.html", {"totais": totais, "grupos": grupos})
 
 
 def _exigir_permissao(usuario, modelo, acao):

@@ -99,10 +99,12 @@
             {% endif %}
 
             <span class="sidebar-section-title">Gestão educacional</span>
-            <span class="side-nav-item is-disabled" aria-disabled="true">
+            {% if pode_consultar_indicadores_pedagogicos %}
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.url_name == 'indicadores' %} is-active{% endif %}" href="{% url 'pedagogico:indicadores' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.url_name == 'indicadores' %} aria-current="page"{% endif %}>
                 <img src="{% static 'inventario/icons/pedagogical.svg' %}" alt="" aria-hidden="true">
                 Uso pedagógico
-            </span>
+            </a>
+            {% endif %}
             {% if pode_consultar_turmas %}
             <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'turmas' %} is-active{% endif %}" href="{% url 'pedagogico:turmas_lista' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'turmas' %} aria-current="page"{% endif %}>
                 <img src="{% static 'inventario/icons/classes.svg' %}" alt="" aria-hidden="true">Turmas
