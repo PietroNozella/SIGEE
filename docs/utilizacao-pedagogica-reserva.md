@@ -1,6 +1,6 @@
 # Utilização pedagógica com reserva — incremento de 13/10
 
-**Estado em 06/10/2026:** implementado e validado na branch `utilizacao-equipamentos`; revisão técnica e integração à `main` pendentes. Aplicação ainda não publicada; migration e permissões já aplicadas ao PostgreSQL publicado, após autorização.
+**Atualização em 13/10/2026:** incremento integrado à `main` em 08/10 pelo PR #20 (`0ffa8de`). Os registros abaixo descrevem a validação de 06/10. A validação do ambiente publicado continua pendente; o incremento sem reserva está registrado em [Utilização pedagógica sem reserva](utilizacao-pedagogica-sem-reserva.md).
 
 ## Recorte e decisões aprovadas
 
@@ -66,4 +66,4 @@ Antes de aplicar `pedagogico.0002_utilizacaopedagogica`, foi feito backup SQLite
 
 Após autorização explícita em 06/10/2026, a mesma migration foi aplicada ao PostgreSQL publicado. A pré-verificação encontrou somente `pedagogico.0002_utilizacaopedagogica` pendente. Antes da alteração, foi salva e conferida uma cópia lógica dos dados de 26 tabelas Django, com definições de colunas e constraints, em `.tmp/backups/postgres-before-utilizacao-20261006-150727.json.gz`. Essa cópia não é um `pg_dump` e sua restauração não foi ensaiada. A migration e `configurar_perfis` concluíram com sucesso; foram conferidos zero migrations pendentes, a existência da nova tabela, três permissões de utilização pedagógica no Professor, nenhuma permissão de exclusão desse modelo no grupo e nove permissões cadastrais pedagógicas no Administrador. A preparação do banco não publica o código da branch nem comprova os fluxos no site.
 
-A revisão técnica deve conferir o fluxo completo, a restrição a reservas próprias, a correção de todas as unidades após devolução parcial e o bloqueio após devolução integral, usando os cenários acima. Revisão, integração, publicação e validação do site publicado permanecem pendentes. A execução local em PostgreSQL não comprova o ambiente publicado. O próximo incremento funcional é a utilização pedagógica sem reserva.
+A revisão técnica deve conferir o fluxo completo, a restrição a reservas próprias, a correção de todas as unidades após devolução parcial e o bloqueio após devolução integral, usando os cenários acima. A integração já ocorreu pelo PR #20; publicação, validação publicada e comprovação da revisão cruzada devem ser acompanhadas separadamente. A execução local em PostgreSQL não comprova o ambiente publicado.

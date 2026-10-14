@@ -33,6 +33,12 @@
                     <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
                     Minhas Reservas
                 </a>
+                {% if pode_consultar_utilizacoes %}
+                <a class="side-nav-item{% if request.resolver_match.url_name == 'utilizacao_lista' or request.resolver_match.url_name == 'utilizacao_retirada' %} is-active{% endif %}" href="{% url 'pedagogico:utilizacao_lista' %}"{% if request.resolver_match.url_name == 'utilizacao_lista' or request.resolver_match.url_name == 'utilizacao_retirada' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">
+                    Minhas Utilizações
+                </a>
+                {% endif %}
             {% elif e_operador %}
                 {% if perms.inventario.view_equipamento %}
                 <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>

@@ -57,7 +57,7 @@ O SIGEE não possui cadastro público. As contas são criadas por usuários auto
 |---|---|
 | **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, mantém turmas, disciplinas e atividades pedagógicas, acompanha manutenções, consulta o resumo, a auditoria e o histórico de movimentações. |
 | **Operador** | Consulta equipamentos e reservas, registra retirada em lote com ou sem reserva, confirma devolução integral ou parcial, encaminha unidades com problema para manutenção e consulta o histórico de movimentações. |
-| **Professor** | Consulta os equipamentos e a disponibilidade, cria e cancela reservas próprias em lote e associa contexto pedagógico às utilizações com reserva após a retirada, até a devolução integral. |
+| **Professor** | Consulta equipamentos e disponibilidade, cria e cancela reservas próprias em lote e consulta Minhas Utilizações para associar contexto pedagógico às retiradas com ou sem reserva, até a devolução integral. |
 
 Consulte os detalhes de autorização na [matriz de acesso](docs/matriz-de-acesso.md).
 
@@ -143,7 +143,7 @@ python manage.py test
 
 ## Funcionalidades disponíveis nesta entrega
 
-O ciclo de manutenção e a devolução com problema estão implementados localmente em `feat/manutencao`, ainda sem envio ao GitHub ou aplicação ao ambiente publicado. A revisão cruzada e a validação de concorrência em PostgreSQL permanecem pendentes.
+Manutenção, utilização pedagógica com reserva e painel estão integrados à `main`. O incremento sem reserva está implementado em `feat/utilizacao-sem-reserva`, com revisão e integração pendentes. Os testes de concorrência passaram em PostgreSQL isolado; isso não comprova os fluxos no ambiente publicado.
 
 - [x] cadastro, importação, consulta, edição e inativação de equipamentos;
 - [x] reservas próprias por Professor, com quantidade e controle de disponibilidade;
@@ -156,16 +156,17 @@ O ciclo de manutenção e a devolução com problema estão implementados localm
 - [x] devolução com problema por patrimônio, com abertura automática de manutenção e gravação atômica do lote;
 - [x] abertura manual, acompanhamento e conclusão de manutenção pelo Administrador, com resultado reparado ou sem reparo, indisponibilidade, auditoria e histórico;
 - [x] criação, consulta, edição, inativação e reativação de turmas, disciplinas e atividades pedagógicas pelo Administrador, com permissões e auditoria;
-- [x] associação pedagógica das utilizações com reserva pelo Professor, aplicada ao lote após a retirada, com edição até a devolução integral e preservação no histórico (incremento na branch `utilizacao-equipamentos`, aguardando revisão e merge);
+- [x] associação pedagógica das utilizações com e sem reserva pelo Professor, aplicada ao lote após a retirada, com edição até a devolução integral e preservação no histórico;
+- [x] Minhas Utilizações reúne as retiradas próprias com e sem reserva, inclusive encerradas;
+- [x] painel do Administrador com totais, gráfico por situação e dez movimentações recentes;
 - [x] consulta informativa de feriados nacionais pela BrasilAPI.
 - [x] transparência de privacidade, inventário de dados e aceite versionado;
 - [x] comandos assistidos para exportação, anonimização e descarte controlado.
 
 ## Roadmap
 
-- [ ] validação de concorrência em PostgreSQL e do ambiente publicado;
-- [ ] revisão cruzada e integração da entrega local de manutenção;
-- [ ] vinculação pedagógica da utilização originada de retirada sem reserva;
+- [ ] validação dos fluxos no ambiente publicado;
+- [ ] revisão cruzada e integração do incremento pedagógico sem reserva;
 - [ ] indicadores de utilização pedagógica.
 
 ![BrasilAPI](https://img.shields.io/badge/integração%20ativa-BrasilAPI-009C3B?style=for-the-badge)
@@ -176,6 +177,7 @@ O ciclo de manutenção e a devolução com problema estão implementados localm
 - [Matriz de acesso](docs/matriz-de-acesso.md)
 - [Cadastros pedagógicos e evidências da entrega](docs/cadastros-pedagogicos.md)
 - [Utilização pedagógica com reserva e evidências](docs/utilizacao-pedagogica-reserva.md)
+- [Utilização pedagógica sem reserva e evidências](docs/utilizacao-pedagogica-sem-reserva.md)
 - [Autenticação e autorização](docs/autenticacao.md)
 - [Auditoria de acessos e ações](docs/auditoria.md)
 - [Segurança](docs/evidencias-seguranca.md)

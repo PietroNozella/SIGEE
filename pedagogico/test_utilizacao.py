@@ -291,13 +291,12 @@ class UtilizacaoReservaTests(TestCase):
         with self.assertRaises(IntegrityError), transaction.atomic():
             UtilizacaoPedagogica.objects.create(movimentacao=self.retiradas[0], professor=self.professor, **self.escolhas)
 
-    def test_retirada_sem_reserva_nao_pode_receber_contexto_neste_incremento(self):
+    def test_modelo_aceita_retirada_sem_reserva_do_professor_destinatario(self):
         retirada = Movimentacao.objects.create(
             equipamento=self.cenario["equipamento"], operador=self.cenario["operador"],
             destinatario=self.professor, tipo="RETIRADA",
         )
-        with self.assertRaises(ValidationError):
-            UtilizacaoPedagogica(movimentacao=retirada, professor=self.professor, **self.escolhas).full_clean()
+        UtilizacaoPedagogica(movimentacao=retirada, professor=self.professor, **self.escolhas).full_clean()
 
 
 class ConcorrenciaUtilizacaoTests(TransactionTestCase):

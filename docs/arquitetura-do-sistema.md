@@ -46,9 +46,9 @@ No domínio de reservas, `Categoria` classifica os equipamentos, `TipoEquipament
 
 As validações de domínio devem permanecer no servidor para que as regras sejam aplicadas mesmo quando uma requisição não se originar da navegação comum da interface.
 
-O app `pedagogico` implementa Turma, Disciplina e Atividade Pedagógica como cadastros compartilhados independentes. Usa models, ModelForms, views por função e templates reutilizados entre os três cadastros, com autorização e auditoria existentes. Não introduz dependências nem associações às utilizações nesta etapa. O modelo e as evidências estão em [Cadastros pedagógicos](cadastros-pedagogicos.md).
+O app `pedagogico` implementa Turma, Disciplina e Atividade Pedagógica como cadastros compartilhados independentes e `UtilizacaoPedagogica` como vínculo protegido à movimentação de retirada. Um registro representa uma unidade física; um formulário aplica o contexto ao lote inteiro. Os fluxos com e sem reserva compartilham validação, transação e auditoria. Minhas Utilizações oferece consulta própria ao Professor, sem acesso ao histórico geral. Não há dependências ou campos novos no incremento sem reserva. As evidências estão em [Cadastros pedagógicos](cadastros-pedagogicos.md) e [Utilização sem reserva](utilizacao-pedagogica-sem-reserva.md).
 
-O app `manutencoes` implementa localmente RF-07 e RN-14 no mesmo monólito, sem novas dependências. A intervenção tem estados próprios, responsáveis e datas, equipamento protegido e devolução de origem opcional. Serviços transacionais mantêm a situação do equipamento coerente com a intervenção e integram a abertura automática à devolução. A validação de concorrência em PostgreSQL permanece pendente.
+O app `manutencoes` implementa RF-07 e RN-14, integrado à `main` pelo PR #21, no mesmo monólito e sem novas dependências. A intervenção tem estados próprios, responsáveis e datas, equipamento protegido e devolução de origem opcional. Serviços transacionais mantêm a situação do equipamento coerente com a intervenção e integram a abertura automática à devolução. Seus testes de concorrência passaram em PostgreSQL isolado em 13/10/2026, conforme a validação do incremento pedagógico sem reserva; a validação publicada permanece pendente.
 
 ## Camada de persistência
 

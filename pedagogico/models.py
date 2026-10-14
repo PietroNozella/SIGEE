@@ -75,9 +75,11 @@ class UtilizacaoPedagogica(models.Model):
         if not self.movimentacao_id:
             return
         retirada = self.movimentacao
-        if retirada.tipo != "RETIRADA" or not retirada.reserva_id:
-            raise ValidationError({"movimentacao": "Selecione uma retirada originada de reserva."})
-        if self.professor_id != retirada.destinatario_id or self.professor_id != retirada.reserva.professor_id:
+        if retirada.tipo != "RETIRADA":
+            raise ValidationError({"movimentacao": "Selecione uma movimentação de retirada."})
+        if self.professor_id != retirada.destinatario_id:
+            raise ValidationError({"professor": "O Professor precisa ser o destinatário da retirada."})
+        if retirada.reserva_id and self.professor_id != retirada.reserva.professor_id:
             raise ValidationError({"professor": "O Professor precisa ser o proprietário da reserva e destinatário da retirada."})
 
     def __str__(self):
