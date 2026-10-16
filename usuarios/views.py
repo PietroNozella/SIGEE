@@ -2,13 +2,13 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import PasswordResetConfirmView, PasswordResetView
+from django.contrib.auth.views import LoginView, PasswordResetConfirmView, PasswordResetView
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_GET, require_POST
 
 from auditoria.eventos import AcaoAuditoria
@@ -16,8 +16,20 @@ from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 
 from .forms import CadastroUsuarioForm
-from .permissoes import pode_cadastrar_usuario, pode_gerenciar_usuarios, usuarios_funcionais
+from .permissoes import (
+    pode_cadastrar_usuario,
+    pode_consultar_painel,
+    pode_gerenciar_usuarios,
+    usuarios_funcionais,
+)
 from .services import alterar_situacao_usuario
+
+
+class EntrarView(LoginView):
+    def get_default_redirect_url(self):
+        if pode_consultar_painel(self.request.user):
+            return reverse("inventario:painel")
+        return super().get_default_redirect_url()
 
 
 class SolicitarRecuperacaoSenhaView(PasswordResetView):

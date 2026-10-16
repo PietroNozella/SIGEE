@@ -89,6 +89,24 @@ class DocumentosLegaisTests(TestCase):
             fetch_redirect_response=False,
         )
 
+    def test_login_admin_preserva_aceite_obrigatorio_antes_do_painel(self):
+        self.client.logout()
+        resposta = self.client.post(
+            reverse("login"),
+            {"username": self.usuario.username, "password": "senha-segura-123"},
+        )
+        self.assertRedirects(
+            resposta, reverse("inventario:painel"), fetch_redirect_response=False,
+        )
+        aceite = self.client.get(resposta.url, follow=True)
+        self.assertEqual(aceite.request["PATH_INFO"], reverse("legal:aceite_documentos"))
+        self.assertEqual(aceite.context["next"], reverse("inventario:painel"))
+        resposta = self.client.post(
+            reverse("legal:aceite_documentos"),
+            self.dados_aceite(next=reverse("inventario:painel")),
+        )
+        self.assertRedirects(resposta, reverse("inventario:painel"))
+
     def test_usuario_sem_aceite_pode_sair(self):
         resposta = self.client.post(reverse("logout"))
 

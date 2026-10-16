@@ -1,8 +1,11 @@
 from datetime import timedelta
+from importlib import import_module
 from unittest.mock import patch
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Group, Permission
+from django.db import connection
 from django.test import TestCase
 from django.urls import reverse
 
@@ -346,6 +349,31 @@ class IndicadoresPedagogicosTests(TestCase):
         grupo.permissions.remove(Permission.objects.get(content_type__app_label="pedagogico", codename="view_utilizacaopedagogica"))
         self.assertEqual(self.client.get(self.url).status_code, 403)
         self.assertNotContains(self.client.get(reverse("inventario:painel")), f'href="{self.url}"')
+
+    def test_migration_libera_indicadores_sem_alterar_demais_permissoes(self):
+        grupo = Group.objects.get(name="Administrador")
+        permissao = Permission.objects.get(
+            content_type__app_label="pedagogico", codename="view_utilizacaopedagogica",
+        )
+        grupo.permissions.remove(permissao)
+        anteriores = set(grupo.permissions.values_list("pk", flat=True))
+        outros_grupos = {
+            nome: set(Group.objects.get(name=nome).permissions.values_list("pk", flat=True))
+            for nome in ("Operador", "Professor")
+        }
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+
+        migration = import_module("usuarios.migrations.0002_permissao_indicadores_administrador")
+        for _ in range(2):
+            migration.vincular_permissao_indicadores(apps, connection.schema_editor())
+
+        self.assertSetEqual(set(grupo.permissions.values_list("pk", flat=True)), anteriores | {permissao.pk})
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+        self.assertContains(self.client.get(reverse("inventario:painel")), f'href="{self.url}"')
+        for nome, esperadas in outros_grupos.items():
+            self.assertSetEqual(
+                set(Group.objects.get(name=nome).permissions.values_list("pk", flat=True)), esperadas,
+            )
 
     def test_anonimo_e_conta_inativa_nao_acessam(self):
         self.assertFalse(pode_consultar_indicadores_pedagogicos(AnonymousUser()))

@@ -130,7 +130,7 @@
             {% elif pode_cadastrar_usuario %}
                 <a class="side-nav-item{% if request.resolver_match.namespace == 'usuarios' %} is-active{% endif %}" href="{% url 'usuarios:usuario_novo' %}"{% if request.resolver_match.namespace == 'usuarios' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/users.svg' %}" alt="" aria-hidden="true">
-                    Cadastrar usuário
+                    Usuários
                 </a>
             {% else %}
                 <span class="side-nav-item is-disabled" aria-disabled="true">
@@ -144,10 +144,6 @@
                     Auditoria
                 </a>
             {% endif %}
-            <span class="side-nav-item is-disabled" aria-disabled="true">
-                <img src="{% static 'inventario/icons/settings.svg' %}" alt="" aria-hidden="true">
-                Configurações
-            </span>
             {% endif %}
             {% if pode_consultar_historico %}
             <a class="side-nav-item{% if request.resolver_match.url_name == 'historico_lista' %} is-active{% endif %}" href="{% url 'movimentacoes:historico_lista' %}"{% if request.resolver_match.url_name == 'historico_lista' %} aria-current="page"{% endif %}>
