@@ -36,6 +36,31 @@ O formulário de cadastro estende `UserCreationForm`. Portanto, a senha inicial 
 
 O e-mail é obrigatório para as contas funcionais e deve ser único sem diferenciação entre letras maiúsculas e minúsculas. O formulário rejeita a duplicidade com uma mensagem clara, e um índice único no banco preserva a regra mesmo quando a gravação não passa pelo formulário do SIGEE. Contas técnicas sem e-mail continuam permitidas pelo `User` nativo do Django.
 
+## Desativação reversível de usuários
+
+A tela `/usuarios/` permite ao Administrador funcional consultar contas comuns,
+filtrar por nome, usuário, e-mail e situação, desativar e reativar. Consulta exige
+`auth.view_user`; alteração de situação exige `auth.change_user`. Execute
+`python manage.py configurar_perfis` para aplicar essas permissões a bancos existentes.
+
+A desativação usa `is_active=False`, encerra as sessões da conta e preserva senha,
+identificadores, grupos, permissões, aceites e referências históricas. Username e
+e-mail continuam reservados. A reativação exige novo login; sessões anteriores
+não são recuperadas. Não há exclusão definitiva na interface funcional.
+
+O servidor impede desativar a própria conta, o último Administrador ativo ou
+contas técnicas. Contas sem um único perfil funcional, incluindo as anonimizadas,
+não podem ser alteradas por esse fluxo. Reservas ativas sem retirada bloqueiam a
+desativação até serem canceladas pelo Professor ou expiradas pelo fluxo de reservas.
+Reservas com retirada e equipamentos em uso permanecem no histórico e podem ser
+devolvidos pelo Operador mesmo após a desativação do destinatário.
+
+Mudanças geram `USUARIO_DESATIVADO` ou `USUARIO_REATIVADO`, identificando o
+Administrador responsável e a conta afetada. Repetir a mesma situação não duplica
+eventos de sucesso. A anonimização continua sendo um procedimento separado.
+As regras ampliam o controle de contas da RN-18 e a autorização do RF-01;
+os cenários estão em `usuarios/test_soft_delete.py`.
+
 ## Bootstrap dos perfis
 
 Após aplicar as migrations, execute:

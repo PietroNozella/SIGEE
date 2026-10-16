@@ -70,6 +70,8 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `UTILIZACAO_PEDAGOGICA_EDITADA` | Contexto pedagógico do lote corrigido ou rejeitado. | Sucesso ou falha |
 | `DADOS_TITULAR_EXPORTADOS` | Um conjunto de dados é preparado para atendimento ao titular. | Sucesso |
 | `USUARIO_ANONIMIZADO` | Uma conta comum é desativada e tem identificadores diretos substituídos. | Sucesso |
+| `USUARIO_DESATIVADO` | Um Administrador desativa uma conta funcional preservando seus dados e histórico. | Sucesso ou falha |
+| `USUARIO_REATIVADO` | Um Administrador reativa uma conta funcional previamente desativada. | Sucesso ou falha |
 | `DADOS_EXPIRADOS_REMOVIDOS` | Uma limpeza confirmada remove registros segundo datas de corte explícitas. | Sucesso |
 
 Uma tentativa de login inválida é registrada sem vincular o nome de usuário informado a uma conta. Consultas registram que houve uso de filtros, mas não armazenam os termos pesquisados. A importação registra um evento para o lote e não copia o conteúdo do arquivo. No cadastro de contas, a auditoria identifica o Administrador responsável e, em caso de sucesso, o identificador da conta criada, sem copiar nome, e-mail, perfil ou senha.

@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Exists, OuterRef
@@ -160,6 +161,11 @@ def criar_reserva(
     reserva.full_clean()
 
     with transaction.atomic():
+        # A desativação bloqueia esta mesma conta antes de conferir suas reservas.
+        professor_atual = get_user_model().objects.select_for_update().get(pk=professor.pk)
+        if not e_professor_funcional(professor_atual):
+            raise ValidationError({"professor": "O Professor precisa estar ativo para criar uma reserva."})
+        reserva.professor = professor_atual
         try:
             tipo_bloqueado = TipoEquipamento.objects.select_for_update().get(
                 pk=tipo_equipamento.pk,
@@ -224,6 +230,7 @@ def criar_reserva(
 
 
 def cancelar_reserva(*, professor, reserva):
+    professor = get_user_model().objects.get(pk=professor.pk)
     if not e_professor_funcional(professor):
         raise ValidationError(
             "Somente um usuário com perfil Professor pode cancelar uma reserva."

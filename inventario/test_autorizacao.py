@@ -142,7 +142,7 @@ class AutorizacaoInventarioTests(TestCase):
             reverse("inventario:equipamento_editar", args=[equipamento.pk]),
         )
         self.assertContains(resposta, "data-delete-trigger")
-        self.assertContains(resposta, "Cadastrar usuário")
+        self.assertContains(resposta, reverse("usuarios:usuario_lista"))
 
     def test_interface_de_consulta_esconde_acoes_e_resumo(self):
         self.criar_equipamento()

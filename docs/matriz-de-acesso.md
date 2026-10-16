@@ -19,6 +19,7 @@ Esta matriz registra as decisões aprovadas para atender ao `RF-01`. Inventário
 | Consultar equipamentos e disponibilidade | Sim | Sim | Sim |
 | Cadastrar, importar, alterar, excluir ou inativar equipamentos | Sim | Não | Não |
 | Cadastrar usuários e atribuir o grupo funcional | Sim | Não | Não |
+| Consultar, desativar e reativar usuários funcionais | Sim | Não | Não |
 | Consultar, criar, editar, inativar e reativar turmas, disciplinas e atividades pedagógicas | Sim | Não | Não |
 | Consultar registros de auditoria | Sim | Não | Não |
 | Visualizar o painel resumido e os indicadores pedagógicos | Sim | Não | Não |
@@ -51,11 +52,18 @@ O comando `python manage.py configurar_perfis`, executado depois de `migrate`, a
 
 | Grupo | Permissões atuais |
 |---|---|
-| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auditoria.view_registroauditoria`, `movimentacoes.view_movimentacao`; no app `pedagogico`: `view_turma`, `add_turma`, `change_turma`, `view_disciplina`, `add_disciplina`, `change_disciplina`, `view_atividadepedagogica`, `add_atividadepedagogica`, `change_atividadepedagogica`; no app `manutencoes`: `view_manutencao`, `add_manutencao`, `change_manutencao` |
+| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auth.view_user`, `auth.change_user`, `auditoria.view_registroauditoria`, `movimentacoes.view_movimentacao`; no app `pedagogico`: `view_turma`, `add_turma`, `change_turma`, `view_disciplina`, `add_disciplina`, `change_disciplina`, `view_atividadepedagogica`, `add_atividadepedagogica`, `change_atividadepedagogica`; no app `manutencoes`: `view_manutencao`, `add_manutencao`, `change_manutencao` |
 | Operador | `view_equipamento`, `movimentacoes.add_movimentacao` (retirada com ou sem reserva e devolução com ou sem encaminhamento para manutenção), `movimentacoes.view_movimentacao` |
 | Professor | `view_equipamento`, `add_reserva`, `view_reserva`, `change_reserva`; no app `pedagogico`: `view_utilizacaopedagogica`, `add_utilizacaopedagogica`, `change_utilizacaopedagogica` |
 
 As permissões das funcionalidades futuras serão acrescentadas somente quando suas respectivas rotas forem implementadas.
+
+A gestão de usuários acrescenta `auth.view_user` e `auth.change_user` ao
+Administrador em `configurar_perfis`, sem conceder `auth.delete_user`. As rotas
+`/usuarios/`, `/usuarios/<id>/desativar/` e `/usuarios/<id>/reativar/` exigem
+Administrador funcional ativo, sem privilégios técnicos. Alterações aceitam somente
+POST com CSRF. As restrições e a preservação do histórico estão descritas em
+[Autenticação](autenticacao.md#desativação-reversível-de-usuários).
 
 As rotas sob `/pedagogico/turmas/`, `/pedagogico/disciplinas/` e `/pedagogico/atividades/` exigem conta ativa, sem Superuser, pertencente exclusivamente ao grupo Administrador. Consulta exige `view`, criação exige `add`, e edição/inativação/reativação exigem `change` do modelo correspondente. Uma permissão individual não substitui o grupo correto. Não há permissão de exclusão atribuída, rota de exclusão nem registro desses modelos no Django Admin. Os links exigem a permissão de consulta. Os [cenários e resultados](cadastros-pedagogicos.md) incluem bloqueio por acesso direto e por POST.
 
