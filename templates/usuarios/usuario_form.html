@@ -9,6 +9,7 @@
             <h1>Cadastrar usuário</h1>
             <p>Crie uma conta comum e atribua um único perfil funcional.</p>
         </div>
+        {% if pode_consultar_usuarios %}<a class="btn btn-secondary-sigee" href="{% url 'usuarios:usuario_lista' %}">Consultar usuários</a>{% endif %}
     </header>
 
     <section class="form-card" aria-labelledby="form-section-title">

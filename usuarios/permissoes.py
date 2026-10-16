@@ -27,6 +27,8 @@ PERMISSOES_POR_GRUPO = {
         "inventario.delete_equipamento",
         "inventario.view_resumo_inventario",
         PERMISSAO_CADASTRAR_USUARIO,
+        "auth.view_user",
+        "auth.change_user",
         PERMISSAO_CONSULTAR_AUDITORIA,
         "movimentacoes.view_movimentacao",
         "manutencoes.view_manutencao",
@@ -62,7 +64,7 @@ PERMISSOES_POR_GRUPO = {
 # A RN-18 diferencia o Superuser técnico do perfil funcional Administrador.
 # Por isso, o Administrador deve pertencer exclusivamente ao seu grupo funcional.
 def e_administrador_funcional(user):
-    if not user.is_authenticated or user.is_superuser:
+    if not user.is_authenticated or not user.is_active or user.is_superuser:
         return False
 
     grupos_do_usuario = set(user.groups.values_list("name", flat=True))
@@ -70,7 +72,7 @@ def e_administrador_funcional(user):
 
 
 def e_professor_funcional(user):
-    if not user.is_authenticated or user.is_superuser:
+    if not user.is_authenticated or not user.is_active or user.is_superuser:
         return False
 
     grupos_do_usuario = set(user.groups.values_list("name", flat=True))
@@ -114,13 +116,24 @@ def pode_consultar_indicadores_pedagogicos(user):
     )
 
 
-def usuarios_funcionais_ativos():
+def usuarios_funcionais():
     # Conta com grupos adicionais também viola a atribuição exclusiva da RN-18.
     return (
-        get_user_model().objects.filter(is_active=True, is_superuser=False)
+        get_user_model().objects.filter(is_staff=False, is_superuser=False)
         .annotate(total_grupos=Count("groups"))
         .filter(total_grupos=1, groups__name__in=GRUPOS_FUNCIONAIS)
         .order_by("first_name", "last_name", "username")
+    )
+
+
+def usuarios_funcionais_ativos():
+    return usuarios_funcionais().filter(is_active=True)
+
+
+def pode_gerenciar_usuarios(user, acao="view"):
+    return (
+        e_administrador_funcional(user) and not user.is_staff
+        and user.has_perm(f"auth.{acao}_user")
     )
 
 

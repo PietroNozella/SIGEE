@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Usuários | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content">
+    <header class="page-header">
+        <div><h1>Usuários</h1><p>Desativar bloqueia o acesso e preserva os dados e o histórico.</p></div>
+        {% if pode_cadastrar_usuario %}<a class="btn btn-primary-sigee" href="{% url 'usuarios:usuario_novo' %}">Cadastrar usuário</a>{% endif %}
+    </header>
+    <section class="inventory-card" aria-labelledby="usuarios-heading">
+        <h2 id="usuarios-heading" class="visually-hidden">Lista de usuários</h2>
+        <form class="reservation-filter-toolbar" method="get" role="search">
+            <div class="reservation-filter-field"><label for="busca">Nome, usuário ou e-mail</label><input class="form-control" type="search" id="busca" name="busca" value="{{ busca }}"></div>
+            <div class="reservation-filter-field"><label for="situacao">Situação</label>
+                <select class="form-select" id="situacao" name="situacao">
+                    <option value=""{% if not situacao %} selected{% endif %}>Todas</option>
+                    <option value="ativos"{% if situacao == 'ativos' %} selected{% endif %}>Ativos</option>
+                    <option value="inativos"{% if situacao == 'inativos' %} selected{% endif %}>Inativos</option>
+                </select>
+            </div>
+            <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Filtrar</button><a class="btn btn-secondary-sigee" href="{% url 'usuarios:usuario_lista' %}">Limpar</a></div>
+        </form>
+        {% if pagina.object_list %}
+        <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Usuários; use rolagem horizontal em telas pequenas">
+            <table class="table inventory-table mb-0">
+                <caption class="visually-hidden">Usuários com nome, e-mail, perfil, situação e ações disponíveis</caption>
+                <thead><tr><th scope="col">Nome</th><th scope="col">E-mail</th><th scope="col">Perfil</th><th scope="col">Situação</th><th scope="col">Ações</th></tr></thead>
+                <tbody>{% for usuario in pagina %}<tr>
+                    <td><strong>{{ usuario.get_full_name|default:usuario.username }}</strong><br>{{ usuario.username }}</td>
+                    <td>{{ usuario.email|default:"—" }}</td>
+                    <td>{% for grupo in usuario.groups.all %}{{ grupo.name }}{% endfor %}</td>
+                    <td>{% if usuario.is_active %}Ativo{% else %}Inativo{% endif %}</td>
+                    <td>{% if usuario.pk == request.user.pk %}Sua conta{% elif pode_alterar_usuarios %}
+                        <form method="post" action="{% if usuario.is_active %}{% url 'usuarios:usuario_desativar' usuario.pk %}{% else %}{% url 'usuarios:usuario_reativar' usuario.pk %}{% endif %}">
+                            {% csrf_token %}<button class="btn btn-secondary-sigee" type="submit" aria-label="{% if usuario.is_active %}Desativar{% else %}Reativar{% endif %} {{ usuario.username }}">{% if usuario.is_active %}Desativar{% else %}Reativar{% endif %}</button>
+                        </form>
+                    {% else %}Somente consulta{% endif %}</td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        <footer class="inventory-pagination">
+            <p>Mostrando {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }} usuários</p>
+            {% if pagina.paginator.num_pages > 1 %}<nav aria-label="Paginação dos usuários"><ul class="pagination mb-0">
+                {% if pagina.has_previous %}<li class="page-item"><a class="page-link" href="?{{ parametros_paginacao }}&amp;pagina={{ pagina.previous_page_number }}">Anterior</a></li>{% endif %}
+                <li class="page-item active"><span class="page-link" aria-current="page">{{ pagina.number }} de {{ pagina.paginator.num_pages }}</span></li>
+                {% if pagina.has_next %}<li class="page-item"><a class="page-link" href="?{{ parametros_paginacao }}&amp;pagina={{ pagina.next_page_number }}">Próxima</a></li>{% endif %}
+            </ul></nav>{% endif %}
+        </footer>
+        {% else %}<div class="inventory-empty"><h2>Nenhum usuário encontrado</h2><p>Revise os filtros ou cadastre um usuário.</p></div>{% endif %}
+    </section>
+</div>
+{% endblock %}

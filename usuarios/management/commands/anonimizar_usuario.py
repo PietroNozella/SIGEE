@@ -2,24 +2,13 @@ from uuid import uuid4
 
 from axes.models import AccessAttempt, AccessLog
 from django.contrib.auth import get_user_model
-from django.contrib.sessions.models import Session
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.utils import timezone
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
-
-
-def _invalidar_sessoes(usuario_id):
-    sessoes = Session.objects.filter(expire_date__gte=timezone.now())
-    ids = [
-        sessao.pk
-        for sessao in sessoes
-        if sessao.get_decoded().get("_auth_user_id") == str(usuario_id)
-    ]
-    return Session.objects.filter(pk__in=ids).delete()[0]
+from usuarios.services import invalidar_sessoes_usuario
 
 
 class Command(BaseCommand):
@@ -79,7 +68,7 @@ class Command(BaseCommand):
             )
             usuario.groups.clear()
             usuario.user_permissions.clear()
-            sessoes_removidas = _invalidar_sessoes(usuario.pk)
+            sessoes_removidas = invalidar_sessoes_usuario(usuario.pk)
             AccessAttempt.objects.filter(username=username_original).delete()
             AccessLog.objects.filter(username=username_original).delete()
             registrar_evento(

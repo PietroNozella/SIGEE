@@ -122,7 +122,12 @@
             {% endif %}
 
             <span class="sidebar-section-title">Administração</span>
-            {% if pode_cadastrar_usuario %}
+            {% if pode_consultar_usuarios %}
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'usuarios' %} is-active{% endif %}" href="{% url 'usuarios:usuario_lista' %}"{% if request.resolver_match.namespace == 'usuarios' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/users.svg' %}" alt="" aria-hidden="true">
+                    Usuários
+                </a>
+            {% elif pode_cadastrar_usuario %}
                 <a class="side-nav-item{% if request.resolver_match.namespace == 'usuarios' %} is-active{% endif %}" href="{% url 'usuarios:usuario_novo' %}"{% if request.resolver_match.namespace == 'usuarios' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/users.svg' %}" alt="" aria-hidden="true">
                     Cadastrar usuário
