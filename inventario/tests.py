@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.models import AnonymousUser, Group
+from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -545,7 +545,7 @@ class AutenticacaoTests(TestCase):
         self.assertNotEqual(self.usuario.password, self.SENHA)
         self.assertTrue(self.usuario.check_password(self.SENHA))
 
-    def test_login_correto_inicia_sessao_e_redireciona_para_listagem(self):
+    def test_login_do_administrador_inicia_sessao_e_redireciona_para_painel(self):
         resposta = self.client.post(
             reverse("login"),
             {"username": self.usuario.username, "password": self.SENHA},
@@ -553,13 +553,42 @@ class AutenticacaoTests(TestCase):
 
         self.assertRedirects(
             resposta,
-            reverse("inventario:equipamento_lista"),
+            reverse("inventario:painel"),
             fetch_redirect_response=False,
         )
         self.assertEqual(
             int(self.client.session["_auth_user_id"]),
             self.usuario.pk,
         )
+
+    def test_login_dos_demais_perfis_preserva_destino_da_listagem(self):
+        for perfil in ("Operador", "Professor"):
+            with self.subTest(perfil=perfil):
+                self.client.logout()
+                self.usuario.groups.set([Group.objects.get(name=perfil)])
+                resposta = self.client.post(
+                    reverse("login"),
+                    {"username": self.usuario.username, "password": self.SENHA},
+                )
+                self.assertRedirects(resposta, reverse("inventario:equipamento_lista"))
+
+    def test_login_administrador_sem_acesso_ao_painel_preserva_listagem(self):
+        Group.objects.get(name=GRUPO_ADMINISTRADOR).permissions.remove(
+            Permission.objects.get(codename="view_resumo_inventario"),
+        )
+        resposta = self.client.post(
+            reverse("login"),
+            {"username": self.usuario.username, "password": self.SENHA},
+        )
+        self.assertRedirects(resposta, reverse("inventario:equipamento_lista"))
+
+    def test_login_rejeita_next_externo_e_usa_painel_do_administrador(self):
+        resposta = self.client.post(
+            reverse("login"),
+            {"username": self.usuario.username, "password": self.SENHA,
+             "next": "https://exemplo-malicioso.invalid/"},
+        )
+        self.assertRedirects(resposta, reverse("inventario:painel"))
 
     def test_credenciais_invalidas_exibem_a_mesma_mensagem_neutra(self):
         tentativas = (

@@ -24,7 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path(
         'login/',
-        auth_views.LoginView.as_view(
+        usuarios_views.EntrarView.as_view(
             template_name='registration/login.html',
         ),
         name='login',
