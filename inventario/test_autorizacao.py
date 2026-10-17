@@ -142,6 +142,7 @@ class AutorizacaoInventarioTests(TestCase):
             reverse("inventario:equipamento_editar", args=[equipamento.pk]),
         )
         self.assertContains(resposta, "data-delete-trigger")
+        self.assertContains(resposta, "Usuários")
         self.assertContains(resposta, reverse("usuarios:usuario_lista"))
 
     def test_interface_de_consulta_esconde_acoes_e_resumo(self):
@@ -157,7 +158,7 @@ class AutorizacaoInventarioTests(TestCase):
                 self.assertNotContains(resposta, "Importar CSV")
                 self.assertNotContains(resposta, "Editar")
                 self.assertNotContains(resposta, "data-delete-trigger")
-                self.assertNotContains(resposta, "Cadastrar usuário")
+                self.assertNotContains(resposta, reverse("usuarios:usuario_novo"))
                 self.assertContains(resposta, "Equipamentos")
 
     def test_professor_visualiza_uma_linha_por_tipo_e_local_com_quantidade(self):

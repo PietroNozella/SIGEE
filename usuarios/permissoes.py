@@ -31,6 +31,7 @@ PERMISSOES_POR_GRUPO = {
         "auth.change_user",
         PERMISSAO_CONSULTAR_AUDITORIA,
         "movimentacoes.view_movimentacao",
+        "reservas.view_reserva",
         "manutencoes.view_manutencao",
         "manutencoes.add_manutencao",
         "manutencoes.change_manutencao",
@@ -106,6 +107,13 @@ def pode_consultar_painel(user):
     return (
         user.is_active and e_administrador_funcional(user)
         and user.has_perm("inventario.view_resumo_inventario")
+    )
+
+
+def pode_consultar_reservas_administrativas(user):
+    return (
+        user.is_active and e_administrador_funcional(user)
+        and user.has_perm(PERMISSAO_CONSULTAR_RESERVA)
     )
 
 

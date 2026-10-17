@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Reservas | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content">
+    <header class="page-header">
+        <div><h1>Reservas</h1><p>Acompanhe as reservas dos Professores. A entrega e a devolução são registradas pelo Operador.</p></div>
+    </header>
+    <section class="inventory-card" aria-labelledby="reservations-heading">
+        <h2 class="visually-hidden" id="reservations-heading">Consulta administrativa de reservas</h2>
+        <form class="reservation-filter-toolbar" method="get">
+            <div class="reservation-filter-field">
+                <label for="busca">Professor, equipamento, local ou patrimônio</label>
+                <input class="form-control" id="busca" name="busca" type="search" value="{{ busca }}" maxlength="200" placeholder="Busque uma reserva ou seu número">
+            </div>
+            <div class="reservation-filter-field">
+                <label for="status">Situação registrada</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todas</option>
+                    {% for valor, rotulo in status_choices %}<option value="{{ valor }}"{% if status == valor %} selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Buscar</button>{% if busca or status %}<a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_consulta' %}">Limpar</a>{% endif %}</div>
+        </form>
+        {% if pagina.object_list %}
+        <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Reservas; use rolagem horizontal em telas pequenas">
+            <table class="table inventory-table reservation-table mb-0">
+                <caption class="visually-hidden">Reservas de todos os Professores, do início mais recente para o mais antigo. Situações conforme registradas.</caption>
+                <thead><tr><th scope="col">Reserva e Professor</th><th scope="col">Equipamento e local</th><th scope="col">Período</th><th scope="col">Unidades alocadas</th><th scope="col">Situação registrada</th><th scope="col">Retirada</th></tr></thead>
+                <tbody>{% for reserva in pagina %}<tr>
+                    <td><strong>Reserva #{{ reserva.pk }}</strong><span class="table-metadata">{{ reserva.professor.get_full_name|default:reserva.professor.username }}</span><span class="table-metadata">{{ reserva.professor.username }}</span></td>
+                    <td>{{ reserva.tipo_equipamento.nome }}<span class="table-metadata">{{ reserva.local.nome }}</span></td>
+                    <td>{{ reserva.inicio|date:"d/m/Y H:i" }}<span class="table-metadata">Até {{ reserva.fim|date:"d/m/Y H:i" }}</span></td>
+                    <td><strong>{{ reserva.quantidade }}</strong><details><summary>Consultar patrimônios</summary><ul class="mb-0 ps-3">{% for item in reserva.itens.all %}<li>{{ item.equipamento.numero_patrimonio }}</li>{% empty %}<li>Nenhuma unidade alocada registrada.</li>{% endfor %}</ul></details></td>
+                    <td><span class="status-badge reservation-status-{{ reserva.status|lower }}">{{ reserva.get_status_display }}</span></td>
+                    <td>{% if reserva.retirada_registrada %}Registrada{% else %}Sem registro{% endif %}</td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        {% include "movimentacoes/_paginacao.html" %}
+        {% else %}<div class="empty-state" role="status"><h2>Nenhuma reserva encontrada</h2><p>{% if busca or status %}Revise a busca e a situação selecionada.{% else %}As reservas aparecerão aqui quando forem registradas pelos Professores.{% endif %}</p></div>{% endif %}
+    </section>
+</div>
+{% endblock %}

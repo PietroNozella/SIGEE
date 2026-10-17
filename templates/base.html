@@ -76,10 +76,12 @@
                     Equipamentos
                 </span>
             {% endif %}
-            <span class="side-nav-item is-disabled" aria-disabled="true">
+            {% if pode_consultar_reservas_administrativas %}
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' %} is-active{% endif %}" href="{% url 'reservas:reserva_consulta' %}"{% if request.resolver_match.namespace == 'reservas' %} aria-current="page"{% endif %}>
                 <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
                 Reservas
-            </span>
+            </a>
+            {% endif %}
             {% if pode_registrar_retirada %}
             <a class="side-nav-item{% if request.resolver_match.namespace == 'movimentacoes' %} is-active{% endif %}" href="{% url 'movimentacoes:retirada_sem_reserva' %}"{% if request.resolver_match.namespace == 'movimentacoes' %} aria-current="page"{% endif %}>
                 <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">

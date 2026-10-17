@@ -12,7 +12,8 @@ from django.views.decorators.http import require_GET, require_POST
 
 from inventario.models import Local, TipoEquipamento
 from movimentacoes.models import Movimentacao
-from usuarios.permissoes import e_professor_funcional
+from movimentacoes.services import reservas_para_retirada
+from usuarios.permissoes import e_professor_funcional, pode_consultar_reservas_administrativas
 
 from .brasilapi import consultar_feriados_no_periodo
 from .forms import DisponibilidadeReservaForm, ReservaForm
@@ -28,6 +29,30 @@ from .services import (
 def _exigir_professor_funcional(user):
     if not e_professor_funcional(user):
         raise PermissionDenied
+
+
+@login_required
+@require_GET
+def reserva_consulta(request):
+    if not pode_consultar_reservas_administrativas(request.user):
+        raise PermissionDenied
+    busca = request.GET.get("busca", "").strip()[:200]
+    status = request.GET.get("status", "").strip()
+    if status not in Reserva.Status.values:
+        status = ""
+    reservas = (
+        reservas_para_retirada(busca=busca, status=status)
+        .prefetch_related("itens__equipamento")
+        .order_by("-inicio", "-pk")
+    )
+    pagina = Paginator(reservas, 15).get_page(request.GET.get("pagina"))
+    parametros = request.GET.copy()
+    parametros.pop("pagina", None)
+    return render(request, "reservas/reserva_consulta.html", {
+        "pagina": pagina, "busca": busca, "status": status,
+        "status_choices": Reserva.Status.choices,
+        "parametros_paginacao": parametros.urlencode(),
+    })
 
 
 def _adicionar_erros_validacao(form, erro):

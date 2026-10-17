@@ -25,6 +25,7 @@ Esta matriz registra as decisões aprovadas para atender ao `RF-01`. Inventário
 | Visualizar o painel resumido e os indicadores pedagógicos | Sim | Não | Não |
 | Criar reserva própria | Não | Não | Sim |
 | Consultar e cancelar reserva própria | Não | Não | Sim |
+| Consultar reservas de todos os Professores para acompanhamento, sem alterações | Sim | Não | Não |
 | Consultar reservas para conferir a entrega | Não | Sim | Não |
 | Registrar retirada e devolução | Não | Sim | Não |
 | Consultar histórico de movimentações | Sim | Sim | Não |
@@ -40,6 +41,7 @@ Esta matriz registra as decisões aprovadas para atender ao `RF-01`. Inventário
 | Criação por tipo/modelo e local, e cancelamento de reserva própria pelo Professor | RN-02, RN-07 e RN-12 |
 | Bloqueio de reserva passada ou em fim de semana | RF-04 e RN-19 |
 | Retirada e devolução por Operador | RN-08 e RN-13 |
+| Administrador consulta reservas de todos os Professores, sem criar, cancelar ou confirmar entrega | Decisão aprovada em 15/10/2026; complemento de consulta do RF-04, preservando RN-07, RN-08 e RN-12 |
 | Encaminhamento para manutenção na devolução | RN-14 |
 | Cadastro controlado de contas e separação do Superuser técnico | RN-18 |
 | Consulta controlada dos registros de auditoria | RS-09 e RS-11 |
@@ -52,7 +54,7 @@ O comando `python manage.py configurar_perfis`, executado depois de `migrate`, a
 
 | Grupo | Permissões atuais |
 |---|---|
-| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auth.view_user`, `auth.change_user`, `auditoria.view_registroauditoria`, `movimentacoes.view_movimentacao`; no app `pedagogico`: `view_turma`, `add_turma`, `change_turma`, `view_disciplina`, `add_disciplina`, `change_disciplina`, `view_atividadepedagogica`, `add_atividadepedagogica`, `change_atividadepedagogica`; no app `manutencoes`: `view_manutencao`, `add_manutencao`, `change_manutencao` |
+| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auth.view_user`, `auth.change_user`, `auditoria.view_registroauditoria`, `movimentacoes.view_movimentacao`, `reservas.view_reserva`; no app `pedagogico`: `view_turma`, `add_turma`, `change_turma`, `view_disciplina`, `add_disciplina`, `change_disciplina`, `view_atividadepedagogica`, `add_atividadepedagogica`, `change_atividadepedagogica`; no app `manutencoes`: `view_manutencao`, `add_manutencao`, `change_manutencao` |
 | Operador | `view_equipamento`, `movimentacoes.add_movimentacao` (retirada com ou sem reserva e devolução com ou sem encaminhamento para manutenção), `movimentacoes.view_movimentacao` |
 | Professor | `view_equipamento`, `add_reserva`, `view_reserva`, `change_reserva`; no app `pedagogico`: `view_utilizacaopedagogica`, `add_utilizacaopedagogica`, `change_utilizacaopedagogica` |
 
@@ -76,3 +78,13 @@ No app `manutencoes`, o comando `configurar_perfis` acrescenta ao Administrador 
 A rota `/pedagogico/reservas/<reserva_id>/utilizacao/` exige conta ativa exclusivamente no grupo Professor, sem Superuser, e `pedagogico.view_utilizacaopedagogica`. Gravação exige adicionalmente `add` na criação ou `change` na edição, com nova conferência no serviço. Somente reservas próprias são acessíveis; reserva alheia retorna 404. O vínculo requer retirada efetiva e pelo menos uma unidade pendente de devolução. A devolução integral encerra criação e edição. Não há permissão de exclusão nem acesso ao histórico geral pelo Professor. Administrador e Operador consultam o contexto pelo histórico existente, sem obter permissão de edição. As [evidências do incremento](utilizacao-pedagogica-reserva.md) registram o recorte e os testes.
 
 As rotas `/pedagogico/utilizacoes/` e `/pedagogico/retiradas/<retirada_id>/utilizacao/` usam as mesmas permissões pedagógicas do Professor. A lista reúne somente retiradas próprias, inclusive encerradas. O detalhe sem reserva exige que o Professor seja destinatário de todo o lote; retiradas alheias, inexistentes, originadas de reserva ou movimentações de devolução retornam 404. O contexto é aplicado ao UUID do lote; retiradas antigas sem UUID são individuais. Criação e edição encerram na devolução integral. Nenhuma permissão para consultar o histórico geral foi acrescentada.
+
+## Consulta administrativa de reservas — decisão aprovada em 15/10/2026
+
+O Administrador pode consultar as reservas de todos os Professores em `/reservas/consulta/`, com busca por número, Professor, equipamento, local ou patrimônio, filtro pela situação registrada e paginação de 15 registros. A lista apresenta Professor, tipo/modelo, local, período, quantidade, patrimônios alocados, situação registrada e existência de retirada. A ordenação é por início mais recente, com desempate pelo identificador mais recente.
+
+A rota aceita somente GET e exige Administrador funcional ativo, sem Superuser, pertencente exclusivamente ao seu grupo e com `reservas.view_reserva`. O menu usa a mesma verificação. Não concede criação, alteração, cancelamento, confirmação de entrega ou devolução. A lista própria do Professor e as rotas operacionais permanecem com suas restrições anteriores. Uma permissão individual de gravação não substitui o perfil correto.
+
+Esta consulta não grava nem sincroniza expiração: apresenta as situações persistidas, identificadas na interface como **Situação registrada**. A sincronização automática de reservas vencidas permanece nos fluxos existentes de reserva e retirada.
+
+A matriz executável de `configurar_perfis` inclui somente `reservas.view_reserva` para o Administrador. A migration aditiva `usuarios.0003_permissao_consulta_reservas_administrador` vincula essa permissão ao grupo em instalações existentes e novas, sem substituir suas permissões nem conceder acesso a outros perfis. A migration anterior de indicadores permanece preservada. Para publicar este incremento, aplicar a nova migration no banco do ambiente correspondente.
