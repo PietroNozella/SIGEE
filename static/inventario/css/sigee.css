@@ -230,25 +230,6 @@ textarea:focus-visible,
     gap: 16px;
 }
 
-.topbar-icon {
-    display: inline-flex;
-    width: 40px;
-    height: 40px;
-    align-items: center;
-    justify-content: center;
-}
-
-.topbar-icon img {
-    width: 20px;
-    height: 20px;
-}
-
-.topbar-divider {
-    width: 1px;
-    height: 32px;
-    background: var(--sigee-border);
-}
-
 .user-summary {
     gap: 8px;
     text-align: right;
@@ -2278,8 +2259,6 @@ textarea:focus-visible,
         padding: 96px 16px 32px;
     }
 
-    .topbar-icon,
-    .topbar-divider,
     .user-summary > span:first-child {
         display: none;
     }
