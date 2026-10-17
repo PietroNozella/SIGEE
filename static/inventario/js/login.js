@@ -1,7 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".login-password-toggle").forEach((passwordToggle) => {
         const passwordControl = passwordToggle.closest(".login-control");
-        const passwordInput = passwordControl?.querySelector("input");
+        const passwordInput = document.getElementById(passwordToggle.getAttribute("aria-controls"))
+            || passwordControl?.querySelector("input");
 
         if (!passwordInput) {
             return;
