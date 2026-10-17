@@ -5,17 +5,17 @@
 
 {% block extra_styles %}
 <style>
-    .user-password-label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+    .user-password-control {
+        position: relative;
     }
 
-    .user-password-label .login-password-toggle {
-        position: relative;
-        top: auto;
-        right: auto;
-        transform: none;
+    .user-password-control .form-control {
+        padding-right: 44px;
+    }
+
+    .user-password-control .form-control.is-invalid {
+        padding-right: 72px;
+        background-position: right 44px center;
     }
 </style>
 {% endblock %}
@@ -55,19 +55,21 @@
             <div class="equipment-form-grid">
                 {% for field in form %}
                     <div class="form-field">
-                        {% if field.field.widget.input_type == "password" %}<div class="user-password-label">{% endif %}
                         <label class="form-label" for="{{ field.id_for_label }}">
                             {{ field.label }}
                             <span class="required-mark" aria-hidden="true">*</span>
                             <span class="visually-hidden">(obrigatório)</span>
                         </label>
                         {% if field.field.widget.input_type == "password" %}
+                        <div class="user-password-control">
+                            {{ field }}
                             <button class="login-password-toggle" type="button" aria-label="Mostrar senha" aria-pressed="false" aria-controls="{{ field.id_for_label }}">
                                 <img src="{% static 'inventario/icons/login-eye.svg' %}" alt="" aria-hidden="true">
                             </button>
                         </div>
+                        {% else %}
+                            {{ field }}
                         {% endif %}
-                        {{ field }}
                         {% if field.help_text %}
                             <div class="form-help" id="{{ field.id_for_label }}_help">{{ field.help_text }}</div>
                         {% endif %}
