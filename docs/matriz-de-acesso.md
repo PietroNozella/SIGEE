@@ -1,6 +1,10 @@
 # Matriz de acesso
 
-Esta matriz registra as decisões aprovadas para atender ao `RF-01`. Inventário, usuários, auditoria, reservas, movimentações, cadastros pedagógicos, manutenção, associação pedagógica com reserva e painel estão integrados à `main`. A branch `feat/utilizacao-sem-reserva` acrescenta associação sem reserva e Minhas Utilizações. Indicadores pedagógicos permanecem planejados.
+Esta matriz registra as decisões aprovadas para atender ao `RF-01`. A versão
+atual implementa inventário, usuários, auditoria, reservas, movimentações,
+manutenção, cadastros e utilização pedagógica com e sem reserva, painel e
+indicadores pedagógicos. As [evidências de 27/10/2026](evidencias-pedagogico-indicadores.md)
+registram as verificações publicadas de RF-10/RF-11 e seus limites.
 
 ## Princípios
 
@@ -54,9 +58,13 @@ O comando `python manage.py configurar_perfis`, executado depois de `migrate`, a
 
 | Grupo | Permissões atuais |
 |---|---|
-| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auth.view_user`, `auth.change_user`, `auditoria.view_registroauditoria`, `movimentacoes.view_movimentacao`, `reservas.view_reserva`; no app `pedagogico`: `view_turma`, `add_turma`, `change_turma`, `view_disciplina`, `add_disciplina`, `change_disciplina`, `view_atividadepedagogica`, `add_atividadepedagogica`, `change_atividadepedagogica`; no app `manutencoes`: `view_manutencao`, `add_manutencao`, `change_manutencao` |
+| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auth.view_user`, `auth.change_user`, `auditoria.view_registroauditoria`, `movimentacoes.view_movimentacao`, `reservas.view_reserva`; no app `pedagogico`: `view_turma`, `add_turma`, `change_turma`, `view_disciplina`, `add_disciplina`, `change_disciplina`, `view_atividadepedagogica`, `add_atividadepedagogica`, `change_atividadepedagogica`, `view_utilizacaopedagogica`; no app `manutencoes`: `view_manutencao`, `add_manutencao`, `change_manutencao` |
 | Operador | `view_equipamento`, `movimentacoes.add_movimentacao` (retirada com ou sem reserva e devolução com ou sem encaminhamento para manutenção), `movimentacoes.view_movimentacao` |
 | Professor | `view_equipamento`, `add_reserva`, `view_reserva`, `change_reserva`; no app `pedagogico`: `view_utilizacaopedagogica`, `add_utilizacaopedagogica`, `change_utilizacaopedagogica` |
+
+Para o Administrador, `pedagogico.view_utilizacaopedagogica` permite consultar
+os indicadores. O grupo funcional também é verificado: essa permissão não
+autoriza gravar contextos nem acessar os detalhes próprios do Professor.
 
 As permissões das funcionalidades futuras serão acrescentadas somente quando suas respectivas rotas forem implementadas.
 

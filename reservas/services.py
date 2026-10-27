@@ -80,13 +80,18 @@ def _expirar_reserva_bloqueada(reserva, agora):
 
 
 def expirar_reservas_vencidas(agora=None):
+    from movimentacoes.models import Movimentacao
+
     agora = agora or timezone.now()
     limite = agora - Reserva.TOLERANCIA_RETIRADA
+    retiradas = Movimentacao.objects.filter(
+        reserva_id=OuterRef("pk"), tipo=Movimentacao.Tipo.RETIRADA,
+    )
     candidatos = list(
         Reserva.objects.filter(
             status=Reserva.Status.ATIVA,
             inicio__lte=limite,
-        ).values_list("pk", flat=True)
+        ).filter(~Exists(retiradas)).values_list("pk", flat=True)
     )
 
     expiradas = 0

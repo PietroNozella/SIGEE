@@ -8,8 +8,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.core.management import call_command
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -315,6 +316,37 @@ class ExpirarReservasVencidasTests(ReservaBaseTests):
         reserva.refresh_from_db()
         self.assertEqual(quantidade, 0)
         self.assertEqual(reserva.status, Reserva.Status.ATIVA)
+
+    def test_historico_com_retiradas_nao_aumenta_consultas_da_expiracao(self):
+        agora = self.inicio + timedelta(weeks=40)
+
+        def criar_historico(semana):
+            inicio = self.inicio + timedelta(weeks=semana)
+            reserva = self.salvar_reserva_com_itens(
+                inicio=inicio, fim=inicio + timedelta(hours=1),
+            )
+            retirada = Movimentacao.objects.create(
+                equipamento=self.equipamento, operador=self.operador,
+                destinatario=self.professor, tipo=Movimentacao.Tipo.RETIRADA,
+                reserva=reserva,
+            )
+            Movimentacao.objects.create(
+                equipamento=self.equipamento, operador=self.operador,
+                destinatario=self.professor, tipo=Movimentacao.Tipo.DEVOLUCAO,
+                reserva=reserva, retirada_origem=retirada,
+            )
+
+        criar_historico(0)
+        with CaptureQueriesContext(connection) as consultas_iniciais:
+            self.assertEqual(expirar_reservas_vencidas(agora=agora), 0)
+        for semana in range(1, 20):
+            criar_historico(semana)
+        with CaptureQueriesContext(connection) as consultas_com_historico:
+            self.assertEqual(expirar_reservas_vencidas(agora=agora), 0)
+
+        self.assertEqual(len(consultas_iniciais), len(consultas_com_historico))
+        self.assertEqual(Reserva.objects.filter(status=Reserva.Status.ATIVA).count(), 20)
+        self.assertFalse(RegistroAuditoria.objects.filter(acao=AcaoAuditoria.RESERVA_EXPIRADA).exists())
 
     def test_expiracao_libera_todo_o_lote_na_consulta_de_disponibilidade(self):
         self.salvar_reserva_com_itens(

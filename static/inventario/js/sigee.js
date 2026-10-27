@@ -2,20 +2,62 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebar = document.querySelector("#app-sidebar");
     const toggle = document.querySelector("[data-sidebar-toggle]");
     const closeControl = document.querySelector("[data-sidebar-close]");
+    const dismissControl = sidebar?.querySelector("[data-sidebar-dismiss]");
+    const mobileSidebar = window.matchMedia("(max-width: 991.98px)");
+    const sidebarBackground = document.querySelectorAll(".app-main, .app-topbar, .skip-link");
 
-    const setSidebarOpen = (open) => {
+    const setSidebarOpen = (open, { restoreFocus = false } = {}) => {
         if (!sidebar || !toggle) return;
+        open = open && mobileSidebar.matches;
+        sidebar.inert = mobileSidebar.matches && !open;
+        sidebarBackground.forEach((element) => { element.inert = open; });
         document.body.classList.toggle("sidebar-is-open", open);
         toggle.setAttribute("aria-expanded", String(open));
+        if (open) {
+            sidebar.setAttribute("role", "dialog");
+            sidebar.setAttribute("aria-modal", "true");
+            dismissControl?.focus({ preventScroll: true });
+        } else {
+            sidebar.removeAttribute("role");
+            sidebar.removeAttribute("aria-modal");
+            if (restoreFocus && mobileSidebar.matches) toggle.focus({ preventScroll: true });
+        }
     };
 
     toggle?.addEventListener("click", () => {
         setSidebarOpen(!document.body.classList.contains("sidebar-is-open"));
     });
-    closeControl?.addEventListener("click", () => setSidebarOpen(false));
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") setSidebarOpen(false);
+    [closeControl, dismissControl].forEach((control) => {
+        control?.addEventListener("click", () => setSidebarOpen(false, { restoreFocus: true }));
     });
+    document.addEventListener("keydown", (event) => {
+        if (!document.body.classList.contains("sidebar-is-open") || document.querySelector("dialog[open]")) return;
+        if (event.key === "Escape") {
+            event.preventDefault();
+            setSidebarOpen(false, { restoreFocus: true });
+        }
+        if (event.key === "Tab") {
+            const controls = sidebar.querySelectorAll("a[href], button:not([disabled])");
+            const first = controls[0];
+            const last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last?.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first?.focus();
+            }
+        }
+    });
+    mobileSidebar.addEventListener("change", () => {
+        const focusInSidebar = sidebar?.contains(document.activeElement);
+        const focusOnToggle = document.activeElement === toggle;
+        setSidebarOpen(false, { restoreFocus: focusInSidebar });
+        if (!mobileSidebar.matches && (focusOnToggle || document.activeElement === dismissControl)) {
+            sidebar?.querySelector("a[href]")?.focus();
+        }
+    });
+    setSidebarOpen(false);
 
     const userMenu = document.querySelector(".user-menu");
     document.addEventListener("click", (event) => {
@@ -76,7 +118,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     logoutDialog?.addEventListener("close", () => {
-        if (!logoutConfirmed) logoutTrigger?.focus();
+        if (!logoutConfirmed) {
+            const returnControl = sidebar?.inert ? toggle : logoutTrigger;
+            returnControl?.focus();
+        }
     });
 
     const deleteDialog = document.querySelector("[data-delete-dialog]");

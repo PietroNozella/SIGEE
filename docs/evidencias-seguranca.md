@@ -1,8 +1,89 @@
 # Evidências de autenticação, autorização e privacidade
 
-Este documento reúne evidências reproduzíveis dos incrementos de segurança e privacidade associados ao `RF-01`, ao `RNF-01` e ao baseline `RS-01` a `RS-12`. As verificações usam dados sintéticos e banco de testes isolado do Django.
+Este documento reúne evidências reproduzíveis dos incrementos de segurança e privacidade associados ao `RF-01`, ao `RNF-01` e ao baseline `RS-01` a `RS-12`. Os testes automatizados usam dados sintéticos e banco isolado do Django. As conferências no ambiente publicado são identificadas separadamente.
+
+Para o estado consolidado de 27/10/2026, consultar também as evidências de
+[desempenho e da suíte completa de 458 testes](evidencias-desempenho.md),
+[configurações e feriados](evidencias-configuracoes-feriados.md) e os recortes
+funcionais listados no README. As contagens e pendências dos registros antigos
+descrevem a situação de cada data; não substituem essas verificações posteriores.
+
+## Login e permissões no ambiente publicado — 27/10/2026
+
+Em `https://sigee-psi.vercel.app`, o navegador verificou login real, destino
+inicial, links do menu, cookie de sessão, autorização por acesso direto e logout
+dos três perfis funcionais. Cada conta temporária de QA recebeu exatamente um
+grupo, sem `is_staff`, `is_superuser` ou permissões individuais. As permissões dos
+grupos existentes foram comparadas ao código, sem alterar a configuração dos
+grupos ou das contas anteriores.
+
+| Perfil | Destino após login | Consultas GET permitidas | Consultas GET negadas com 403 | Resultado |
+|---|---|---:|---:|---|
+| Administrador | `/equipamentos/painel/` | 12 | 4 | Passou |
+| Operador | `/equipamentos/` | 4 | 12 | Passou |
+| Professor | `/equipamentos/` | 3 | 13 | Passou |
+
+As **48 verificações** cobriram listagem, painel, cadastro e importação de
+equipamentos; consulta e cadastro de usuários; auditoria; consulta administrativa
+e formulário de nova reserva; formulários de retirada e devolução; histórico;
+manutenção; turmas; utilizações próprias e indicadores pedagógicos. Os menus
+corresponderam aos links esperados para cada perfil. O cookie `sessionid`
+apresentou `Secure`, `HttpOnly` e `SameSite=Lax` nos três logins.
+
+O logout rejeitou GET com HTTP 405. A confirmação pela interface encerrou cada
+sessão por POST, e o acesso posterior a equipamentos voltou ao login. Antes da
+validação autenticada, quatro páginas públicas responderam HTTP 200 e 12 rotas
+internas redirecionaram visitantes ao login, preservando `next`.
+
+O primeiro login sem aceite vigente foi direcionado a `/aceite/`. Para testar
+as permissões seguintes, as versões vigentes dos documentos foram registradas
+por serviço somente nas três contas sintéticas. Esse preparo de QA não
+representa consentimento humano nem comprova a validade jurídica do aceite.
+
+As três contas foram desativadas ao final, receberam senhas inutilizáveis e
+tiveram as sessões conhecidas removidas. Os eventos de QA foram preservados na
+auditoria. Contagens e agrupamentos de situação dos equipamentos e reservas,
+assim como as contagens de movimentações e manutenções, permaneceram iguais
+antes e depois do ensaio. Não foram submetidos formulários de operações do
+domínio. As listas que sincronizam expiração de reservas foram excluídas deste
+recorte para evitar atualização das reservas existentes.
+
+Uma primeira tentativa excedeu o limite de tempo do comando do navegador e
+encerrou as contas de QA por segurança. O ensaio foi retomado com as mesmas
+contas em blocos de quatro rotas, concluindo as verificações acima. Os resultados
+por rota e o registro da desativação estão em
+`.tmp/acesso-publicado-20261027/resultado.json`, fora do versionamento e sem
+senhas ou cookies. Isso valida as consultas e os bloqueios descritos; ainda não
+comprova gravação de reservas, retiradas, devoluções ou manutenção em produção,
+recuperação por e-mail, desempenho ou acessibilidade.
+
+### Execução local com banco explicitamente isolado
+
+O arquivo `config/settings_testes.py` fixa SQLite em memória e e-mail em memória
+para as novas execuções locais. No PowerShell, definir `DATABASE_URL` como string
+vazia pode remover a variável, permitindo que `python-dotenv` carregue a conexão
+remota do `.env`. Portanto, os comandos históricos abaixo não devem ser copiados
+como garantia de isolamento. Para executar a suíte local:
+
+```powershell
+python manage.py check --settings=config.settings_testes
+python manage.py test --settings=config.settings_testes
+```
+
+Em 27/10/2026, o recorte de autenticação, usuários, autorização do inventário e
+documentos legais aprovou **65 testes em 15,029 segundos**. A suíte completa
+executou **456 testes em 48,218 segundos: 441 aprovados e 15 ignorados**, sem
+falhas ou erros. Os ignorados dependem de bloqueios de linhas do PostgreSQL;
+este resultado não os considera aprovados. `check` não encontrou problemas,
+com `axes.W006` intencionalmente silenciado. Não houve nova medição de cobertura.
+A configuração de produção permanece em `config.settings`.
 
 ## Validação integrada em 06/10/2026
+
+**Registro histórico.** Os estados de implementação, commits, comandos e
+pendências das seções datadas de 03/10 e 06/10 preservam o contexto daquela
+entrega. Utilizar a configuração de testes isolados indicada acima e os
+recortes de 27/10 para avaliar a versão atual.
 
 Após a integração do PR #19 e a implementação dos cadastros pedagógicos na `main`, a suíte completa executou **310 testes: 304 aprovados e seis ignorados no SQLite**, dependentes de concorrência em PostgreSQL. `check`, verificação de migrations e revisão de whitespace passaram. Os 19 testes pedagógicos incluem perfis incompatíveis, Superuser técnico, inatividade, permissões por ação, CSRF, ausência de gravação por GET, rollback e minimização da auditoria. Os comandos e fluxos observados no navegador estão nas [evidências da entrega](cadastros-pedagogicos.md). A revisão técnica e a validação publicada continuam pendentes; os resultados anteriores abaixo são registros históricos.
 
@@ -72,7 +153,7 @@ System check identified no issues (1 silenced).
 
 O check silenciado é `axes.W006`. A configuração por nome de usuário sem IP é intencional para minimizar dados; o bloqueio continua abrangendo origens diferentes para a mesma conta.
 
-### Estado local mais recente — 03/10/2026
+### Estado local registrado em 03/10/2026
 
 O commit local `98c7a39`, na branch `feat/retirada-sem-reserva`, inclui retirada vinculada à reserva, histórico com filtros e paginação e organização da navegação do Operador. Ainda não foi publicado nem integrado à `main`. Não exige novas migrations além das `0003` e `0004` já presentes.
 

@@ -107,7 +107,7 @@ Edite o arquivo `.env`, defina uma chave local em `DJANGO_SECRET_KEY` e escolha 
 | `DJANGO_SECRET_KEY` | Sim | Chave usada pelos mecanismos criptográficos do Django. |
 | `DJANGO_DEBUG` | Não | Ativa o modo de depuração; use `False` em produção. |
 | `DJANGO_ALLOWED_HOSTS` | Não | Lista de hosts permitidos, separados por vírgula. |
-| `DATABASE_URL` | Não | Conexão PostgreSQL; sem valor, utiliza SQLite local. |
+| `DATABASE_URL` | Não | Conexão PostgreSQL; no Supabase, inclua `sslmode=require`. Sem valor, utiliza SQLite local. |
 | `SIGEE_CONTATO_PRIVACIDADE` | Não | E-mail exibido nos documentos de privacidade. |
 | `DJANGO_SESSION_COOKIE_AGE` | Não | Duração máxima da sessão em segundos; padrão de 14 dias. |
 | `DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE` | Não | Encerra a sessão ao fechar o navegador quando definido como `True`. |
@@ -136,14 +136,22 @@ A suíte automatizada cobre autenticação, bloqueio de tentativas, autorizaçã
 Para validar o projeto com SQLite:
 
 ```powershell
-$env:DATABASE_URL=''
-python manage.py check
-python manage.py test
+python manage.py check --settings=config.settings_testes
+python manage.py test --settings=config.settings_testes
 ```
+
+Essa configuração usa SQLite em memória, independentemente do `DATABASE_URL`
+presente no `.env`. No PowerShell, atribuir uma string vazia à variável de
+ambiente pode removê-la e permitir que a conexão remota do `.env` seja carregada
+novamente. Para testar concorrência em PostgreSQL, use uma instância isolada e
+uma configuração específica; `settings_testes` destina-se aos testes locais em
+SQLite.
 
 ## Funcionalidades disponíveis nesta entrega
 
-Manutenção, utilização pedagógica com reserva e painel estão integrados à `main`. O incremento sem reserva está implementado em `feat/utilizacao-sem-reserva`, com revisão e integração pendentes. Os testes de concorrência passaram em PostgreSQL isolado; isso não comprova os fluxos no ambiente publicado.
+A versão atual inclui manutenção, utilização pedagógica com e sem reserva,
+painel e indicadores pedagógicos. As evidências de cada recorte distinguem testes
+isolados e verificações dos fluxos no ambiente publicado.
 
 - [x] cadastro, importação, consulta, edição e inativação de equipamentos;
 - [x] reservas próprias por Professor, com quantidade e controle de disponibilidade;
@@ -158,6 +166,7 @@ Manutenção, utilização pedagógica com reserva e painel estão integrados à
 - [x] criação, consulta, edição, inativação e reativação de turmas, disciplinas e atividades pedagógicas pelo Administrador, com permissões e auditoria;
 - [x] associação pedagógica das utilizações com e sem reserva pelo Professor, aplicada ao lote após a retirada, com edição até a devolução integral e preservação no histórico;
 - [x] Minhas Utilizações reúne as retiradas próprias com e sem reserva, inclusive encerradas;
+- [x] indicadores pedagógicos por turma, disciplina e atividade, com utilizações, retiradas e equipamentos distintos;
 - [x] painel do Administrador com totais, gráfico por situação e dez movimentações recentes;
 - [x] consulta informativa de feriados nacionais pela BrasilAPI.
 - [x] transparência de privacidade, inventário de dados e aceite versionado;
@@ -165,9 +174,9 @@ Manutenção, utilização pedagógica com reserva e painel estão integrados à
 
 ## Roadmap
 
-- [ ] validação dos fluxos no ambiente publicado;
-- [ ] revisão cruzada e integração do incremento pedagógico sem reserva;
-- [ ] indicadores de utilização pedagógica.
+- [ ] conclusão da validação dos fluxos no ambiente publicado;
+- [ ] revisão cruzada do incremento pedagógico sem reserva;
+- [x] indicadores de utilização pedagógica.
 
 ![BrasilAPI](https://img.shields.io/badge/integração%20ativa-BrasilAPI-009C3B?style=for-the-badge)
 
@@ -175,12 +184,23 @@ Manutenção, utilização pedagógica com reserva e painel estão integrados à
 
 - [Arquitetura do sistema](docs/arquitetura-do-sistema.md)
 - [Matriz de acesso](docs/matriz-de-acesso.md)
+- [Evidências de criação, conflitos e cancelamento de reservas](docs/evidencias-reservas.md)
+- [Evidências de retiradas e devoluções](docs/evidencias-movimentacoes.md)
+- [Evidências de devolução com problema e manutenção](docs/evidencias-manutencoes.md)
+- [Evidências de utilização pedagógica e indicadores](docs/evidencias-pedagogico-indicadores.md)
+- [Evidências de cadastros de equipamentos e usuários](docs/evidencias-cadastros.md)
+- [Evidências do painel do inventário](docs/evidencias-painel.md)
+- [Interface e acessibilidade básica: primeiro recorte](docs/evidencias-interface.md)
+- [Medições de contraste e compatibilidade em Chrome e Edge](docs/evidencias-contraste-compatibilidade.md)
+- [Desempenho das consultas e correção da expiração de reservas](docs/evidencias-desempenho.md)
+- [Configurações, TLS e consulta real de feriados](docs/evidencias-configuracoes-feriados.md)
 - [Cadastros pedagógicos e evidências da entrega](docs/cadastros-pedagogicos.md)
 - [Utilização pedagógica com reserva e evidências](docs/utilizacao-pedagogica-reserva.md)
 - [Utilização pedagógica sem reserva e evidências](docs/utilizacao-pedagogica-sem-reserva.md)
 - [Autenticação e autorização](docs/autenticacao.md)
 - [Auditoria de acessos e ações](docs/auditoria.md)
 - [Segurança](docs/evidencias-seguranca.md)
+- [Proteção das tabelas Django no Supabase](docs/seguranca-banco-supabase.md)
 - [Privacidade e termos](docs/privacidade-e-termos.md)
 - [Governança e inventário de dados pessoais](docs/governanca-dados-pessoais.md)
 - [Plano de retenção e descarte](docs/plano-retencao-descarte.md)

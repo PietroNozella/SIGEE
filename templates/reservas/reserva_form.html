@@ -48,7 +48,6 @@
                             {{ field.label }}
                             {% if field.name == 'quantidade' %}
                                 <span class="availability-label" data-reservation-quantity-label aria-live="polite">(Disponível: --)</span>
-                                <span class="visually-hidden" data-reservation-availability-message role="status" aria-live="polite"></span>
                             {% endif %}
                         </label>
                         {% if field.name == 'data_reserva' %}
@@ -112,6 +111,9 @@
                         {% endif %}
                         {% if field.help_text %}
                             <div class="form-help" id="{{ field.id_for_label }}_help">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% if field.name == 'quantidade' %}
+                            <div class="form-help" data-reservation-availability-message role="status" aria-live="polite"></div>
                         {% endif %}
                         {% if field.errors %}
                             <div class="field-error" id="id_{{ field.name }}_error">

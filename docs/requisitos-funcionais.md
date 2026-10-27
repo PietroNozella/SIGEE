@@ -16,6 +16,16 @@ Este documento registra o baseline aprovado de requisitos funcionais do SIGEE. A
 | RF-10 | Vincular a utilização ao contexto pedagógico. | O Professor associa a utilização do equipamento a turma, disciplina e atividade pedagógica, preservando essas informações no respectivo registro. |
 | RF-11 | Exibir indicadores de utilização pedagógica. | O Administrador visualiza informações consolidadas sobre a utilização por turma, disciplina e atividade pedagógica. |
 
+## Validação de RF-10 e RF-11 — 27/10/2026
+
+A versão atual implementa utilização pedagógica com e sem reserva, Minhas
+Utilizações e indicadores por turma, disciplina e atividade. Os 79 testes do app
+pedagógico passaram em PostgreSQL isolado, e os fluxos publicados foram
+verificados com dados de QA. As [evidências](evidencias-pedagogico-indicadores.md)
+registram os cálculos, os controles de acesso, a preservação do histórico e os
+limites dessa validação. As seções seguintes preservam estados de entregas
+anteriores.
+
 ## Estado de RF-05 e RF-06
 
 A retirada com ou sem reserva, a devolução básica total ou parcial e a consulta do histórico foram integradas à `main` pelo PR #19, no commit `4071580`. A retirada com reserva entrega integralmente as unidades alocadas ao Professor proprietário, a partir do início e antes dos 30 minutos de tolerância, com gravação e auditoria atômicas. A devolução com problema (RN-14) e o ciclo de manutenção (RF-07) foram integrados pelo PR #21 (`2ed8ca4`). Os testes estão em `manutencoes/tests.py`. Concorrência em PostgreSQL e validação dos fluxos publicados não foram comprovadas nesta etapa.

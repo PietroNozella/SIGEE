@@ -4,7 +4,7 @@ Este documento registra a arquitetura para o SIGEE. O diagrama representa a solu
 
 ## Diagrama final da arquitetura
 
-![Diagrama final da arquitetura e implantação do SIGEE](diagrama-arquitetura.png)
+![Diagrama final da arquitetura e implantação do SIGEE](diagramas/diagrama-arquitetura.png)
 
 ## Visão geral
 
@@ -104,6 +104,6 @@ A implantação da aplicação na Vercel permanece condicionada à validação d
 |---|---|---|
 | Monólito Django com templates | Mantém a solução simples, integrada e compatível com o escopo acadêmico. | Não há frontend separado nem API própria desacoplada. |
 | Recursos nativos do Django para autenticação e autorização | Evitam duplicação de mecanismos de identidade e facilitam a aplicação de permissões no servidor. | A configuração de grupos e permissões precisa ser mantida pela própria aplicação. |
-| Supabase somente para hospedar o PostgreSQL | Fornece infraestrutura gerenciada para o banco sem alterar o modelo de autenticação definido. | Recursos como Supabase Auth e políticas RLS não fazem parte da solução. |
+| Supabase somente para hospedar o PostgreSQL | Fornece infraestrutura gerenciada para o banco sem alterar o modelo de autenticação definido. | Supabase Auth não é utilizado. A autorização funcional permanece no Django; RLS e grants restringem o acesso das roles da Data API às tabelas internas, conforme a [proteção do banco](seguranca-banco-supabase.md). |
 | BrasilAPI como integração não bloqueante | Acrescenta informação sobre feriados sem comprometer o fluxo principal de reserva. | A aplicação precisa tratar falhas e tempo limite e continuar funcionando sem a resposta externa. |
 | Vercel como implantação | Mantém a infraestrutura enxuta para o escopo do SIGEE. | Logs, região, suboperadores e migrations precisam ser acompanhados no processo de implantação. |
