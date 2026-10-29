@@ -50,7 +50,9 @@ SQLite não comprova bloqueios concorrentes. A validação também deve executar
 
 Resultado final em 29/10/2026: **447 testes aprovados em PostgreSQL 17.6, sem casos ignorados** (100,139 segundos). A execução inclui os testes de concorrência e as regressões de busca/paginação. `check`, `makemigrations --check --dry-run`, `node --check static/inventario/js/sigee.js` e `git diff --check` passaram. A consulta no navegador também foi conferida em 1280 × 900 e 390 × 844, sem transbordamento horizontal da página; tabelas largas usam rolagem própria.
 
-Antes de publicar, preparar backup e aplicar as duas migrations no ambiente correto, coordenando com a nova versão do código. Reverter somente o código pode manter as colunas aditivas. Reverter a migration `0005` remove o planejamento registrado nas novas colunas; Git não recupera esses dados.
+Antes de publicar, preparar backup e aplicar as duas migrations no ambiente correto, coordenando com a nova versão do código. A migração `0005` cria `observacao_pedagogica` como `NOT NULL`, sem default persistente de banco: a versão antiga não fornece essa coluna ao criar reservas. Portanto, manter a manutenção até promover a versão nova. Uma recuperação com código antigo precisa tratar também esse default, além de reconciliar o contexto. Reverter a migration `0005` remove o planejamento registrado nas novas colunas; Git não recupera esses dados.
+
+Na aplicação em PostgreSQL com dados existentes, definir `SET CONSTRAINTS ALL IMMEDIATE` depois de aplicar `0005` e antes de executar `0006`. Isso evita eventos diferidos das novas FKs entre o backfill e a criação do CHECK na mesma transação. O procedimento operacional aplica ambas numa transação curta e confere preservação dos dados e das permissões antes do commit.
 
 ## Limite deste recorte
 
@@ -63,3 +65,5 @@ Monografia, dados de produção e credenciais existentes não são alterados por
 O envio do código para a `main` foi autorizado em 29/10/2026. Como o projeto Vercel acompanha essa branch e não possui comando de migração configurado no build, `vercel.json` desativa temporariamente o deploy automático da `main` com `git.deploymentEnabled.main = false`. A região `gru1` é preservada; o envio do código não deve substituir a versão publicada antes da preparação do banco.
 
 Para ativar o fluxo em produção: preparar backup, aplicar e conferir as migrations `reservas.0005` e `reservas.0006`, remover essa suspensão do deploy automático e publicar a versão validada. A suspensão pode ser desfeita removendo o bloco `git` de `vercel.json`; isso não executa nem desfaz migrações por si só.
+
+Em 29/10/2026, foi autorizada a aplicação e publicação sem repetir a suíte de testes. O bloco de suspensão foi removido neste incremento; o push dessa remoção ocorre somente depois do backup e do commit das migrações. A versão nova deve ficar `READY` e ser promovida explicitamente antes de retomar o acesso ao projeto.
