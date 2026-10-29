@@ -32,16 +32,13 @@
                     <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
                     Equipamentos
                 </a>
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' %} is-active{% endif %}" href="{% url 'reservas:reserva_lista' %}"{% if request.resolver_match.namespace == 'reservas' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} is-active{% endif %}" href="{% url 'reservas:reserva_lista' %}"{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
                     Minhas Reservas
                 </a>
-                {% if pode_consultar_utilizacoes %}
-                <a class="side-nav-item{% if request.resolver_match.url_name == 'utilizacao_lista' or request.resolver_match.url_name == 'utilizacao_retirada' %} is-active{% endif %}" href="{% url 'pedagogico:utilizacao_lista' %}"{% if request.resolver_match.url_name == 'utilizacao_lista' or request.resolver_match.url_name == 'utilizacao_retirada' %} aria-current="page"{% endif %}>
-                    <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">
-                    Minhas Utilizações
+                <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or aba_fluxo == 'em_uso' %} is-active{% endif %}" href="{% url 'movimentacoes:devolucao_lista' %}">
+                    <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">Em uso
                 </a>
-                {% endif %}
             {% elif e_operador %}
                 {% if perms.inventario.view_equipamento %}
                 <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>
@@ -50,13 +47,13 @@
                 </a>
                 {% endif %}
                 {% if pode_registrar_retirada %}
-                <a class="side-nav-item{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or request.resolver_match.url_name == 'retirada_sem_reserva' %} is-active{% endif %}" href="{% url 'movimentacoes:retirada_reserva_lista' %}"{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or request.resolver_match.url_name == 'retirada_sem_reserva' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or aba_fluxo == 'reservas' %} is-active{% endif %}" href="{% url 'movimentacoes:retirada_reserva_lista' %}"{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or aba_fluxo == 'reservas' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
                     Reservas
                 </a>
                 {% endif %}
                 {% if pode_registrar_devolucao %}
-                <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' %} is-active{% endif %}" href="{% url 'movimentacoes:devolucao_lista' %}"{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' or aba_fluxo == 'em_uso' %} is-active{% endif %}" href="{% url 'movimentacoes:devolucao_lista' %}"{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' or aba_fluxo == 'em_uso' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">
                     Em uso
                 </a>
@@ -80,21 +77,15 @@
                 </span>
             {% endif %}
             {% if pode_consultar_reservas_administrativas %}
-            <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' %} is-active{% endif %}" href="{% url 'reservas:reserva_consulta' %}"{% if request.resolver_match.namespace == 'reservas' %} aria-current="page"{% endif %}>
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} is-active{% endif %}" href="{% url 'reservas:reserva_consulta' %}"{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} aria-current="page"{% endif %}>
                 <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
                 Reservas
             </a>
             {% endif %}
-            {% if pode_registrar_retirada %}
-            <a class="side-nav-item{% if request.resolver_match.namespace == 'movimentacoes' %} is-active{% endif %}" href="{% url 'movimentacoes:retirada_sem_reserva' %}"{% if request.resolver_match.namespace == 'movimentacoes' %} aria-current="page"{% endif %}>
-                <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
-                Registrar retirada
+            {% if pode_consultar_historico %}
+            <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or aba_fluxo == 'em_uso' %} is-active{% endif %}" href="{% url 'movimentacoes:devolucao_lista' %}">
+                <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">Em uso
             </a>
-            {% elif not pode_consultar_historico %}
-            <span class="side-nav-item is-disabled" aria-disabled="true">
-                <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
-                Movimentações
-            </span>
             {% endif %}
             {% if pode_consultar_manutencoes %}
             <a class="side-nav-item{% if request.resolver_match.namespace == 'manutencoes' %} is-active{% endif %}" href="{% url 'manutencoes:manutencao_lista' %}"{% if request.resolver_match.namespace == 'manutencoes' %} aria-current="page"{% endif %}>
@@ -151,9 +142,9 @@
             {% endif %}
             {% endif %}
             {% if pode_consultar_historico %}
-            <a class="side-nav-item{% if request.resolver_match.url_name == 'historico_lista' %} is-active{% endif %}" href="{% url 'movimentacoes:historico_lista' %}"{% if request.resolver_match.url_name == 'historico_lista' %} aria-current="page"{% endif %}>
+            <a class="side-nav-item{% if request.resolver_match.url_name == 'historico_lista' or aba_fluxo == 'historico' %} is-active{% endif %}" href="{% url 'movimentacoes:historico_lista' %}"{% if request.resolver_match.url_name == 'historico_lista' or aba_fluxo == 'historico' %} aria-current="page"{% endif %}>
                 <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
-                {% if e_operador %}Histórico{% else %}Histórico de movimentações{% endif %}
+                Histórico
             </a>
             {% endif %}
         </nav>
@@ -224,7 +215,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="{% static 'inventario/js/sigee.js' %}?v=20261027.2"></script>
+    <script src="{% static 'inventario/js/sigee.js' %}?v=20261029.1"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

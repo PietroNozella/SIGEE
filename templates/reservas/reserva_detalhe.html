@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Reserva #{{ reserva.pk }} | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content">
+    <header class="page-header"><div><h1>Reserva #{{ reserva.pk }}</h1><p>{{ reserva.professor.get_full_name|default:reserva.professor.username }} · {{ reserva.tipo_equipamento.nome }} · {{ reserva.local.nome }}</p></div></header>
+    <section class="inventory-card p-3" aria-label="Detalhes da reserva">
+        <p><strong>Situação:</strong> {% if reserva.etapa == 'AGUARDANDO' %}Aguardando retirada{% elif reserva.etapa == 'EM_USO' %}Em uso{% elif reserva.etapa == 'ENCERRADA' %}Encerrada{% else %}{{ reserva.get_status_display }}{% endif %}</p>
+        <p><strong>Período reservado:</strong> {{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }} · {{ reserva.quantidade }} unidade(s)</p>
+        {% include "reservas/_contexto.html" %}
+        {% if e_professor and reserva.etapa == 'AGUARDANDO' or e_professor and reserva.etapa == 'EM_USO' %}<p><a class="btn btn-secondary-sigee" href="{% url 'pedagogico:utilizacao_reserva' reserva.pk %}">Editar contexto pedagógico</a></p>{% endif %}
+        <h2>Patrimônios reservados</h2>
+        <ul>{% for item in unidades %}<li>{{ item.equipamento.numero_patrimonio }} · {{ item.equipamento.tipo.nome }}</li>{% endfor %}</ul>
+        <h2>Entregas e devoluções</h2>
+        <div class="table-responsive"><table class="table"><caption>Registros da reserva, em ordem de ocorrência</caption>
+            <thead><tr><th scope="col">Movimentação</th><th scope="col">Patrimônio</th><th scope="col">Data e hora</th><th scope="col">Operador</th><th scope="col">Detalhes</th></tr></thead>
+            <tbody>{% for registro in registros %}<tr><td>{{ registro.get_tipo_display }} #{{ registro.pk }}</td><td>{{ registro.equipamento.numero_patrimonio }}</td><td>{{ registro.data_hora|date:"d/m/Y H:i:s" }}</td><td>{{ registro.operador.get_full_name|default:registro.operador.username }}</td><td>{{ registro.observacao|linebreaksbr }}{% if registro.retirada_origem_id %}<span>Retirada de origem #{{ registro.retirada_origem_id }}</span>{% endif %}{% if registro.manutencao %}<span>Manutenção #{{ registro.manutencao.pk }} · {{ registro.manutencao.get_estado_display }}</span>{% endif %}{% if registro.tipo == 'RETIRADA' %}{% include "pedagogico/_contexto_historico.html" with contexto=registro.utilizacao_pedagogica %}{% endif %}</td></tr>{% empty %}<tr><td colspan="5">Nenhuma entrega registrada.</td></tr>{% endfor %}</tbody>
+        </table></div>
+        <a class="btn btn-secondary-sigee" href="{{ url_voltar }}">Voltar para {{ rotulo_voltar }}</a>
+    </section>
+</div>
+{% endblock %}

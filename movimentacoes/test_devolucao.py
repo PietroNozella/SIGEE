@@ -1,3 +1,4 @@
+from movimentacoes.fixtures_testes import criar_retirada_legada
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
@@ -18,14 +19,14 @@ from legal.services import registrar_aceite_vigente
 from reservas.models import Reserva
 
 from .models import Movimentacao
-from .services import grupos_devolucao, registrar_devolucao, registrar_devolucoes, registrar_retirada_sem_reserva, retiradas_abertas
+from .services import grupos_devolucao, registrar_devolucao, registrar_devolucoes, retiradas_abertas
 from .tests import criar_cenario
 
 
 def retirar(cenario, equipamentos=None):
     equipamento = cenario["equipamento"]
     unidades = equipamentos if equipamentos is not None else [equipamento]
-    return registrar_retirada_sem_reserva(
+    return criar_retirada_legada(
         operador=cenario["operador"], tipo_equipamento=equipamento.tipo,
         local=equipamento.local, quantidade=len(unidades), equipamentos=unidades,
         destinatario=cenario["professor"], observacao="Observação original da retirada.",
@@ -155,7 +156,8 @@ class DevolucaoTests(TestCase):
                     if url == self.lista and metodo == "post":
                         continue
                     with self.subTest(usuario=usuario.username, url=url, metodo=metodo):
-                        self.assertEqual(getattr(self.client, metodo)(url).status_code, 403)
+                        esperado = 200 if url == self.lista and usuario in (self.cenario["administrador"], self.cenario["professor"]) else 403
+                        self.assertEqual(getattr(self.client, metodo)(url).status_code, esperado)
             with self.assertRaises(PermissionDenied):
                 self.devolver(operador=usuario)
         self.assert_aberta()
@@ -164,10 +166,11 @@ class DevolucaoTests(TestCase):
         Group.objects.get(name="Operador").permissions.remove(
             Permission.objects.get(codename="add_movimentacao"),
         )
-        self.assertEqual(self.client.get(self.lista).status_code, 403)
+        self.assertEqual(self.client.get(self.lista).status_code, 200)
         self.assertEqual(self.client.post(self.url).status_code, 403)
         inventario = self.client.get(reverse("inventario:equipamento_lista"))
-        self.assertNotContains(inventario, f'href="{self.lista}"')
+        resposta = self.client.get(self.lista)
+        self.assertNotContains(resposta, "Conferir devolução")
         with self.assertRaises(PermissionDenied):
             self.devolver()
         self.assert_aberta()

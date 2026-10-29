@@ -32,7 +32,13 @@ def criar_reserva_alocada(cenario, quantidade=3):
     unidades = [Equipamento.objects.create(
         numero_patrimonio=f"RESERVA-{indice:02}", tipo=equipamento.tipo, local=equipamento.local,
     ) for indice in range(quantidade)]
-    reserva = Reserva.objects.create(
+    from pedagogico.models import Turma, Disciplina, AtividadePedagogica
+    contexto = {
+        "turma": Turma.objects.get_or_create(nome="Turma da reserva")[0],
+        "disciplina": Disciplina.objects.get_or_create(nome="Disciplina da reserva")[0],
+        "atividade": AtividadePedagogica.objects.get_or_create(nome="Atividade da reserva")[0],
+    }
+    reserva = Reserva.objects.create(**contexto,
         professor=cenario["professor"], tipo_equipamento=equipamento.tipo, local=equipamento.local,
         quantidade=quantidade, inicio=inicio, fim=inicio + timedelta(hours=2),
     )

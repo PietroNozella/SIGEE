@@ -74,13 +74,65 @@ def _professor_autorizado(professor):
 
 
 def salvar_contexto_reserva(*, professor, reserva_id, turma, disciplina, atividade, observacao=""):
+    try:
+        return _salvar_contexto_da_reserva(
+            professor=professor, reserva_id=reserva_id, turma=turma,
+            disciplina=disciplina, atividade=atividade, observacao=observacao,
+        )
+    except (ValidationError, IntegrityError):
+        registrar_evento(
+            usuario=professor, acao=AcaoAuditoria.UTILIZACAO_PEDAGOGICA_EDITADA if UtilizacaoPedagogica.objects.filter(movimentacao__reserva_id=reserva_id).exists() else AcaoAuditoria.UTILIZACAO_PEDAGOGICA_CRIADA,
+            resultado=RegistroAuditoria.Resultado.FALHA,
+            entidade="reservas.Reserva", entidade_id=reserva_id,
+        )
+        raise
+
+
+def _salvar_contexto_da_reserva(*, professor, reserva_id, turma, disciplina, atividade, observacao):
     professor_atual = _professor_autorizado(professor)
-    reserva = get_object_or_404(Reserva, pk=reserva_id, professor=professor_atual)
-    retiradas = Movimentacao.objects.filter(reserva=reserva, tipo=Movimentacao.Tipo.RETIRADA)
-    return _salvar_contexto(
-        professor=professor_atual, retiradas=retiradas, origem=reserva,
-        turma=turma, disciplina=disciplina, atividade=atividade, observacao=observacao,
-    )
+    with transaction.atomic():
+        reserva = get_object_or_404(Reserva.objects.select_for_update(), pk=reserva_id, professor=professor_atual)
+        retiradas = Movimentacao.objects.filter(reserva=reserva, tipo=Movimentacao.Tipo.RETIRADA)
+        if retiradas.exists():
+            salvas = _salvar_contexto(
+                professor=professor_atual, retiradas=retiradas, origem=reserva,
+                turma=turma, disciplina=disciplina, atividade=atividade, observacao=observacao,
+            )
+            escolhas = {"turma": turma, "disciplina": disciplina, "atividade": atividade}
+        else:
+            from django.utils import timezone
+            if reserva.status != Reserva.Status.ATIVA or timezone.now() >= reserva.inicio + Reserva.TOLERANCIA_RETIRADA:
+                raise ValidationError("Somente reservas aguardando retirada permitem alterar o contexto.")
+            acao = "change" if reserva.turma_id else "add"
+            if not pode_gerenciar_utilizacao_pedagogica(professor_atual, acao):
+                raise PermissionDenied
+            escolhas = validar_contexto_pedagogico(
+                turma=turma, disciplina=disciplina, atividade=atividade, existente=reserva,
+            )
+            salvas = []
+            registrar_evento(
+                usuario=professor_atual, acao=AcaoAuditoria.UTILIZACAO_PEDAGOGICA_EDITADA,
+                resultado=RegistroAuditoria.Resultado.SUCESSO,
+                entidade="reservas.Reserva", entidade_id=reserva.pk,
+            )
+        for campo, registro in escolhas.items():
+            setattr(reserva, campo, registro)
+        reserva.observacao_pedagogica = observacao.strip()
+        reserva.save(update_fields=("turma", "disciplina", "atividade", "observacao_pedagogica", "data_atualizacao"))
+        return salvas
+
+
+def validar_contexto_pedagogico(*, turma, disciplina, atividade, existente=None):
+    escolhas = {}
+    for campo, modelo, selecionado in (("turma", Turma, turma), ("disciplina", Disciplina, disciplina), ("atividade", AtividadePedagogica, atividade)):
+        if selecionado is None or selecionado.pk is None:
+            raise ValidationError({campo: "Informe o contexto pedagógico da reserva."})
+        registro = modelo.objects.select_for_update().filter(pk=selecionado.pk).first()
+        mantido = existente is not None and getattr(existente, f"{campo}_id") == selecionado.pk
+        if registro is None or (not registro.ativo and not mantido):
+            raise ValidationError({campo: "Selecione um cadastro pedagógico ativo."})
+        escolhas[campo] = registro
+    return escolhas
 
 
 def salvar_contexto_retirada(*, professor, retirada_id, turma, disciplina, atividade, observacao=""):

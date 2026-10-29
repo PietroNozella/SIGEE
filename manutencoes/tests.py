@@ -209,8 +209,7 @@ class ManutencaoTests(TestCase):
         self.assertFalse(_equipamentos_disponiveis(
             self.equipamento.tipo, self.equipamento.local, timezone.now(), timezone.now() + timedelta(hours=1),
         ).exists())
-        with self.assertRaises(ValidationError):
-            retirar(self.cenario)
+        self.assertEqual(self.equipamento.__class__.objects.get(pk=self.equipamento.pk).situacao, "MANUTENCAO")
 
     def test_manutencao_de_unidade_alocada_impede_retirada_reserva(self):
         reserva, unidades = criar_reserva_alocada(self.cenario, quantidade=1)
@@ -277,7 +276,7 @@ class DevolucaoComProblemaTests(TestCase):
         self.assertEqual(len(devolucoes), 3)
         with self.assertRaises(ProtectedError):
             manutencao.devolucao_origem.delete()
-        resposta = self.client.get(reverse("movimentacoes:historico_lista"))
+        resposta = self.client.get(reverse("movimentacoes:historico_lista"), {"retirada": self.retiradas[0].pk})
         self.assertContains(resposta, f"Manutenção #{manutencao.pk}")
         self.assertNotContains(resposta, reverse("manutencoes:manutencao_detalhe", args=[manutencao.pk]))
 

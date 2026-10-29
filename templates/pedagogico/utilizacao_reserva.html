@@ -23,7 +23,7 @@
         </div>
         {% endif %}
         {% if pode_editar %}
-        <p class="form-help">O contexto será aplicado a todo o lote, incluindo unidades já devolvidas parcialmente. Você pode corrigir os dados até a devolução integral. O vínculo é opcional; ao registrá-lo, preencha os três campos obrigatórios.</p>
+        <p class="form-help">O contexto acompanha a reserva e todas as unidades do lote. Você pode corrigir os dados até a devolução integral. Preencha turma, disciplina e atividade pedagógica. A observação é opcional.</p>
         {% if form.cadastros_faltantes %}<p role="status">Não há opções para: {{ form.cadastros_faltantes|join:", " }}. Solicite ao Administrador o cadastro ou a reativação antes de salvar.</p>{% endif %}
         <form method="post" novalidate>
             {% csrf_token %}
@@ -46,7 +46,7 @@
             {% if retiradas and not pendentes %}<p>A devolução integral encerrou o registro e a edição do contexto pedagógico.</p>{% endif %}
             {% if utilizacao %}
                 <dl><dt>Turma</dt><dd>{{ utilizacao.turma.nome }}</dd><dt>Disciplina</dt><dd>{{ utilizacao.disciplina.nome }}</dd><dt>Atividade pedagógica</dt><dd>{{ utilizacao.atividade.nome }}</dd>{% if utilizacao.observacao %}<dt>Observação</dt><dd>{{ utilizacao.observacao|linebreaksbr }}</dd>{% endif %}</dl>
-            {% else %}<p>Nenhum contexto pedagógico foi registrado.</p>{% endif %}
+            {% elif reserva.turma_id %}{% include "reservas/_contexto.html" %}{% else %}<p>Nenhum contexto pedagógico foi registrado.</p>{% endif %}
             <a class="btn btn-secondary-sigee" href="{{ url_voltar }}">Voltar para {{ rotulo_voltar }}</a>
         {% endif %}
     </section>

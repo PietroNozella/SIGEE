@@ -1,0 +1,8 @@
+{% if reserva.turma_id %}
+<dl class="equipment-form-grid">
+    <div><dt>Turma</dt><dd>{{ reserva.turma.nome }}</dd></div>
+    <div><dt>Disciplina</dt><dd>{{ reserva.disciplina.nome }}</dd></div>
+    <div><dt>Atividade pedagógica</dt><dd>{{ reserva.atividade.nome }}</dd></div>
+    {% if reserva.observacao_pedagogica %}<div><dt>Observação pedagógica</dt><dd>{{ reserva.observacao_pedagogica|linebreaksbr }}</dd></div>{% endif %}
+</dl>
+{% else %}<p>Reserva anterior sem contexto pedagógico no cadastro.</p>{% endif %}

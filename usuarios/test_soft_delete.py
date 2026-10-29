@@ -330,7 +330,8 @@ class ConcorrenciaSoftDeleteTests(TransactionTestCase):
                 try:
                     if criando_reserva:
                         criar_reserva(professor=professor, tipo_equipamento=reserva.tipo_equipamento,
-                                      local=reserva.local, quantidade=1, inicio=reserva.inicio, fim=reserva.fim)
+                                      local=reserva.local, quantidade=1, inicio=reserva.inicio, fim=reserva.fim,
+                                      turma=reserva.turma, disciplina=reserva.disciplina, atividade=reserva.atividade)
                     else:
                         alterar_situacao_usuario(administrador=administrador, usuario_id=professor.pk, ativo=False)
                 except ValidationError:

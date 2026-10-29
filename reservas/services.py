@@ -24,6 +24,7 @@ def _equipamentos_disponiveis(
     conflitos = ReservaEquipamento.objects.filter(
         equipamento_id=OuterRef("pk"),
         reserva__status=Reserva.Status.ATIVA,
+        reserva_id__in=Reserva.objects.com_etapa().filter(etapa__in=("AGUARDANDO", "EM_USO")),
         reserva__inicio__lt=fim,
         reserva__fim__gt=inicio,
     )
@@ -137,6 +138,10 @@ def criar_reserva(
     quantidade,
     inicio,
     fim,
+    turma=None,
+    disciplina=None,
+    atividade=None,
+    observacao="",
 ):
     if not e_professor_funcional(professor):
         raise ValidationError(
@@ -167,10 +172,16 @@ def criar_reserva(
 
     with transaction.atomic():
         # A desativação bloqueia esta mesma conta antes de conferir suas reservas.
-        professor_atual = get_user_model().objects.select_for_update().get(pk=professor.pk)
+        professor_atual = get_user_model().objects.select_for_update(no_key=True).get(pk=professor.pk)
         if not e_professor_funcional(professor_atual):
             raise ValidationError({"professor": "O Professor precisa estar ativo para criar uma reserva."})
         reserva.professor = professor_atual
+        from pedagogico.services import validar_contexto_pedagogico
+
+        escolhas = validar_contexto_pedagogico(turma=turma, disciplina=disciplina, atividade=atividade)
+        for campo, registro in escolhas.items():
+            setattr(reserva, campo, registro)
+        reserva.observacao_pedagogica = observacao.strip()
         try:
             tipo_bloqueado = TipoEquipamento.objects.select_for_update().get(
                 pk=tipo_equipamento.pk,

@@ -3,7 +3,6 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods
 
@@ -14,14 +13,14 @@ from inventario.models import Equipamento
 from usuarios.permissoes import pode_consultar_historico, pode_registrar_devolucao, pode_registrar_retirada
 from reservas.models import Reserva
 from reservas.services import expirar_reservas_vencidas
+from reservas.consultas import historico_reservas
 
-from .forms import ConsultaRetiradaForm, DevolucaoForm, HistoricoFiltroForm, RetiradaReservaForm, RetiradaSemReservaForm
+from .forms import DevolucaoForm, HistoricoFiltroForm, RetiradaReservaForm
 from .models import Movimentacao
 from .services import (
-    equipamentos_disponiveis_para_retirada,
     grupos_devolucao,
+    grupos_legados_encerrados,
     registrar_devolucoes,
-    registrar_retirada_sem_reserva,
     retiradas_do_grupo,
     consultar_historico,
     registrar_retirada_reserva,
@@ -35,12 +34,35 @@ def historico_lista(request):
     if not pode_consultar_historico(request.user):
         raise PermissionDenied
     form = HistoricoFiltroForm(request.GET)
-    registros = consultar_historico(form.cleaned_data) if form.is_valid() else Movimentacao.objects.none()
-    pagina = Paginator(registros, 25).get_page(request.GET.get("pagina"))
+    expirar_reservas_vencidas()
+    valido = form.is_valid()
     parametros = request.GET.copy()
     parametros.pop("pagina", None)
-    return render(request, "movimentacoes/historico_lista.html", {
+    if valido and form.cleaned_data.get("retirada"):
+        registros = consultar_historico(form.cleaned_data, usuario=request.user)
+        return render(request, "movimentacoes/historico_lista.html", {
+            "form": form, "pagina": Paginator(registros, 25).get_page(request.GET.get("pagina")),
+            "parametros_paginacao": parametros.urlencode(),
+        })
+    reservas = historico_reservas(request.user, form.cleaned_data) if valido else Reserva.objects.none()
+    pagina = Paginator(reservas, 15).get_page(request.GET.get("pagina"))
+    legados = grupos_legados_encerrados(request.user) if valido else []
+    if valido:
+        filtros = form.cleaned_data
+        if filtros.get("reserva"):
+            legados = []
+        elif any(filtros.get(campo) for campo in ("busca", "tipo", "inicio", "fim")):
+            correspondencias = consultar_historico(filtros, usuario=request.user).values("pk")
+            # A busca localiza o lote sem reduzir sua contagem de unidades.
+            from .services import _chave_grupo
+            chaves = Movimentacao.objects.filter(pk__in=correspondencias).annotate(chave_grupo=_chave_grupo()).values("chave_grupo")
+            legados = legados.filter(chave_grupo__in=chaves)
+    parametros_legados = request.GET.copy()
+    parametros_legados.pop("pagina_legados", None)
+    return render(request, "movimentacoes/historico_reservas.html", {
         "form": form, "pagina": pagina, "parametros_paginacao": parametros.urlencode(),
+        "pagina_legados": Paginator(legados, 10).get_page(request.GET.get("pagina_legados")),
+        "parametros_legados": parametros_legados.urlencode(),
     })
 
 
@@ -96,123 +118,25 @@ def retirada_reserva_registrar(request, reserva_id):
     })
 
 
-def _dados_disponibilidade(consulta):
-    tipo = consulta.cleaned_data["tipo_equipamento"]
-    locais = list(consulta.fields["local"].queryset)
-    local = consulta.cleaned_data["local"]
-    if local is None and len(locais) == 1:
-        local = locais[0]
-    equipamentos = []
-    if local is not None:
-        equipamentos = list(equipamentos_disponiveis_para_retirada(
-            tipo_equipamento=tipo, local=local,
-        ).select_related("tipo", "local"))
-    return {
-        "locais": [{"id": item.pk, "nome": item.nome} for item in locais],
-        "local": local.pk if local else None,
-        "disponiveis": len(equipamentos),
-        "equipamentos": [
-            {"id": item.pk, "patrimonio": item.numero_patrimonio,
-             "tipo": item.tipo.nome, "local": item.local.nome}
-            for item in equipamentos
-        ],
-    }
+@login_required
+@require_http_methods(["GET", "POST"])
+def retirada_sem_reserva(request):
+    raise PermissionDenied("Toda retirada exige uma reserva.")
 
 
 @login_required
 @require_GET
 def retirada_disponibilidade(request):
-    if not pode_registrar_retirada(request.user):
-        raise PermissionDenied
-    consulta = ConsultaRetiradaForm(request.GET)
-    if not consulta.is_valid():
-        return JsonResponse({"erros": consulta.errors.get_json_data()}, status=400)
-    return JsonResponse(_dados_disponibilidade(consulta))
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def retirada_sem_reserva(request):
-    if not pode_registrar_retirada(request.user):
-        raise PermissionDenied
-
-    consultando = request.method == "POST" and request.POST.get("acao") == "consultar"
-    form = RetiradaSemReservaForm(request.POST if request.method == "POST" else None)
-    disponibilidade = None
-    erros_consulta = None
-    selecionados = request.POST.getlist("equipamentos") if request.method == "POST" else []
-    if consultando:
-        consulta = ConsultaRetiradaForm(request.POST)
-        if consulta.is_valid():
-            disponibilidade = _dados_disponibilidade(consulta)
-            initial = request.POST.dict()
-            initial["local"] = disponibilidade["local"]
-            form = RetiradaSemReservaForm(initial=initial)
-            quantidade = consulta.cleaned_data["quantidade"] or 1
-            form.initial["quantidade"] = quantidade
-            selecionados = [
-                str(item["id"]) for item in disponibilidade["equipamentos"][:quantidade]
-            ]
-        else:
-            # Consulta não exige destinatário nem seleciona/grava movimentações.
-            form = RetiradaSemReservaForm(initial=request.POST.dict())
-            erros_consulta = consulta
-    elif request.method == "POST":
-        if form.is_valid():
-            try:
-                movimentacoes = registrar_retirada_sem_reserva(
-                    operador=request.user,
-                    tipo_equipamento=form.cleaned_data["tipo_equipamento"],
-                    local=form.cleaned_data["local"],
-                    quantidade=form.cleaned_data["quantidade"],
-                    equipamentos=form.cleaned_data["equipamentos"],
-                    destinatario=form.cleaned_data["destinatario"],
-                    observacao=form.cleaned_data["observacao"],
-                )
-            except ValidationError as erro:
-                if hasattr(erro, "message_dict"):
-                    for campo, erros in erro.message_dict.items():
-                        form.add_error(campo if campo in form.fields else None, erros)
-                else:
-                    form.add_error(None, erro)
-            except IntegrityError:
-                form.add_error(
-                    None,
-                    "Não foi possível registrar a retirada. Nenhuma alteração foi salva. "
-                    "Tente novamente.",
-                )
-            else:
-                messages.success(
-                    request,
-                    f"Retirada de {len(movimentacoes)} equipamento(s) registrada com sucesso. "
-                    "Os equipamentos estão em uso.",
-                )
-                return redirect("movimentacoes:devolucao_lista")
-
-        registrar_evento(
-            usuario=request.user, acao=AcaoAuditoria.RETIRADA_REGISTRADA,
-            resultado=RegistroAuditoria.Resultado.FALHA,
-            entidade="movimentacoes.Movimentacao",
-        )
-
-    if disponibilidade is None and request.method == "POST":
-        consulta = ConsultaRetiradaForm(request.POST)
-        if consulta.is_valid():
-            disponibilidade = _dados_disponibilidade(consulta)
-    return render(request, "movimentacoes/retirada_form.html", {
-        "form": form, "disponibilidade": disponibilidade,
-        "selecionados": selecionados,
-        "erros_consulta": erros_consulta,
-    })
+    raise PermissionDenied("Toda retirada exige uma reserva.")
 
 
 @login_required
 @require_GET
 def devolucao_lista(request):
-    if not pode_registrar_devolucao(request.user):
+    if not pode_consultar_historico(request.user):
         raise PermissionDenied
     busca = request.GET.get("busca", "").strip()
-    pagina = Paginator(grupos_devolucao(busca), 15).get_page(request.GET.get("pagina"))
+    pagina = Paginator(grupos_devolucao(busca, usuario=request.user), 15).get_page(request.GET.get("pagina"))
     grupos = list(pagina.object_list)
     referencias = Movimentacao.objects.select_related(
         "equipamento__tipo", "destinatario", "operador",

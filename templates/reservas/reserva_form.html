@@ -20,7 +20,7 @@
     <section class="form-card reservation-form-card" aria-labelledby="reservation-form-title">
         <div class="form-card-header">
             <h2 id="reservation-form-title">Dados da reserva</h2>
-            <p>Todos os campos são obrigatórios.</p>
+            <p>Informe também o contexto pedagógico. Apenas a observação é opcional.</p>
         </div>
 
         {% if form.errors %}
@@ -39,13 +39,14 @@
             </div>
         {% endif %}
 
+        {% if form.cadastros_faltantes %}<p class="form-help" role="status">Solicite ao Administrador o cadastro ou a reativação de: {{ form.cadastros_faltantes|join:", " }}.</p>{% endif %}
         <form method="post" data-reservation-form data-availability-url="{% url 'reservas:reserva_disponibilidade' %}">
             {% csrf_token %}
             <div class="equipment-form-grid reservation-form-grid">
                 {% for field in form %}
-                    <div class="form-field{% if field.name == 'tipo_equipamento' or field.name == 'local' %} form-field-full{% elif field.name == 'data_reserva' or field.name == 'hora_inicio' or field.name == 'hora_fim' %} reservation-period-field{% elif field.name == 'quantidade' %} reservation-quantity-field is-disabled{% endif %}">
+                    <div class="form-field{% if field.name == 'tipo_equipamento' or field.name == 'local' or field.name == 'observacao' %} form-field-full{% elif field.name == 'data_reserva' or field.name == 'hora_inicio' or field.name == 'hora_fim' %} reservation-period-field{% elif field.name == 'quantidade' %} reservation-quantity-field is-disabled{% endif %}">
                         <label class="form-label" for="{{ field.id_for_label }}">
-                            {{ field.label }}
+                            {{ field.label }}{% if not field.field.required %} (opcional){% endif %}
                             {% if field.name == 'quantidade' %}
                                 <span class="availability-label" data-reservation-quantity-label aria-live="polite">(Disponível: --)</span>
                             {% endif %}
@@ -151,6 +152,9 @@
                 </header>
 
                 <dl class="reservation-confirm-details">
+                    <div><dt>Turma</dt><dd data-reservation-confirm-turma>—</dd></div>
+                    <div><dt>Disciplina</dt><dd data-reservation-confirm-disciplina>—</dd></div>
+                    <div><dt>Atividade pedagógica</dt><dd data-reservation-confirm-atividade>—</dd></div>
                     <div>
                         <dt>Equipamento</dt>
                         <dd data-reservation-confirm-equipment>—</dd>

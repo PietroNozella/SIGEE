@@ -56,13 +56,19 @@ class Command(BaseCommand):
                     "fim": _data_hora(reserva.fim),
                     "quantidade": reserva.quantidade,
                     "status": reserva.status,
+                    "contexto_pedagogico": {
+                        "turma": reserva.turma.nome if reserva.turma_id else None,
+                        "disciplina": reserva.disciplina.nome if reserva.disciplina_id else None,
+                        "atividade": reserva.atividade.nome if reserva.atividade_id else None,
+                        "observacao": reserva.observacao_pedagogica,
+                    },
                     "patrimonios": [
                         item.equipamento.numero_patrimonio
                         for item in reserva.itens.all()
                     ],
                 }
                 for reserva in usuario.reservas.select_related(
-                    "tipo_equipamento", "local"
+                    "tipo_equipamento", "local", "turma", "disciplina", "atividade"
                 ).prefetch_related("itens__equipamento")
             ],
             "movimentacoes_como_operador": [

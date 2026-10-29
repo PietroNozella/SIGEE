@@ -55,6 +55,13 @@ class ReservaBaseTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         call_command("configurar_perfis", stdout=StringIO())
+        from pedagogico.models import Turma, Disciplina, AtividadePedagogica
+        cls.contexto = {
+            "turma": Turma.objects.create(nome="Turma testes reserva"),
+            "disciplina": Disciplina.objects.create(nome="Disciplina testes reserva"),
+            "atividade": AtividadePedagogica.objects.create(nome="Atividade testes reserva"),
+        }
+        cls.contexto_dados = {campo: registro.pk for campo, registro in cls.contexto.items()}
         cls.categoria = Categoria.objects.create(nome="Categoria para reservas")
         cls.tipo = TipoEquipamento.objects.create(categoria=cls.categoria, nome="Notebook Dell Latitude 5420")
         cls.local = Local.objects.create(nome="Local para reservas")
@@ -217,7 +224,7 @@ class CriarReservaServiceTests(ReservaBaseTests):
         super().setUp(); self.equipamento_2 = self.criar_equipamento("RES-002"); self.equipamento_3 = self.criar_equipamento("RES-003")
 
     def test_cria_uma_reserva_em_lote_com_itens_e_auditoria(self):
-        reserva = criar_reserva(professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=2, inicio=self.inicio, fim=self.fim)
+        reserva = criar_reserva(**self.contexto, professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=2, inicio=self.inicio, fim=self.fim)
         self.assertEqual(reserva.quantidade, 2)
         self.assertEqual(reserva.local, self.local)
         self.assertEqual(list(reserva.itens.values_list("equipamento__numero_patrimonio", flat=True)), ["RES-001", "RES-002"])
@@ -227,18 +234,18 @@ class CriarReservaServiceTests(ReservaBaseTests):
     def test_nao_aloca_equipamento_inativo_em_uso_ou_de_outro_tipo(self):
         self.equipamento.ativo = False; self.equipamento.save(update_fields=["ativo"]); self.equipamento_2.situacao = Equipamento.Situacao.MANUTENCAO; self.equipamento_2.save(update_fields=["situacao"])
         outro_tipo = TipoEquipamento.objects.create(categoria=self.categoria, nome="Projetor multimídia"); outro = self.criar_equipamento("OUT-001", tipo=outro_tipo)
-        reserva = criar_reserva(professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=1, inicio=self.inicio, fim=self.fim)
+        reserva = criar_reserva(**self.contexto, professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=1, inicio=self.inicio, fim=self.fim)
         self.assertEqual(set(reserva.itens.values_list("equipamento_id", flat=True)), {self.equipamento_3.pk}); self.assertNotIn(outro.pk, set(reserva.itens.values_list("equipamento_id", flat=True)))
 
     def test_conflito_ativo_reduz_disponibilidade(self):
         self.salvar_reserva_com_itens(equipamentos=[self.equipamento])
         self.assertEqual(consultar_disponibilidade(professor=self.professor, tipo_equipamento=self.tipo, local=self.local, inicio=self.inicio, fim=self.fim), 2)
-        reserva = criar_reserva(professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=2, inicio=self.inicio, fim=self.fim)
+        reserva = criar_reserva(**self.contexto, professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=2, inicio=self.inicio, fim=self.fim)
         self.assertNotIn(self.equipamento.pk, set(reserva.itens.values_list("equipamento_id", flat=True)))
 
     def test_periodo_adjacente_e_reserva_cancelada_liberam_unidade(self):
         self.salvar_reserva_com_itens(equipamentos=[self.equipamento]); self.salvar_reserva_com_itens(equipamentos=[self.equipamento_2], status=Reserva.Status.CANCELADA)
-        reserva = criar_reserva(professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=2, inicio=self.fim, fim=self.fim + timedelta(hours=1))
+        reserva = criar_reserva(**self.contexto, professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=2, inicio=self.fim, fim=self.fim + timedelta(hours=1))
         self.assertEqual(reserva.itens.count(), 2)
 
     def test_quantidade_insuficiente_nao_cria_reserva_parcial(self):
@@ -247,18 +254,18 @@ class CriarReservaServiceTests(ReservaBaseTests):
             "RES-OUTRO-LOCAL",
             local=outro_local,
         )
-        with self.assertRaises(ValidationError) as contexto: criar_reserva(professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=4, inicio=self.inicio, fim=self.fim)
+        with self.assertRaises(ValidationError) as contexto: criar_reserva(**self.contexto, professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=4, inicio=self.inicio, fim=self.fim)
         self.assertIn("quantidade", contexto.exception.message_dict); self.assertFalse(Reserva.objects.exists()); self.assertFalse(ReservaEquipamento.objects.exists())
         self.assertIn("Há somente 3 unidade(s)", contexto.exception.messages[0])
         self.assertTrue(Equipamento.objects.filter(pk=equipamento_de_outro_local.pk).exists())
 
     def test_perfil_nao_autorizado_e_rejeitado(self):
-        with self.assertRaises(ValidationError): criar_reserva(professor=self.operador, tipo_equipamento=self.tipo, local=self.local, quantidade=1, inicio=self.inicio, fim=self.fim)
+        with self.assertRaises(ValidationError): criar_reserva(**self.contexto, professor=self.operador, tipo_equipamento=self.tipo, local=self.local, quantidade=1, inicio=self.inicio, fim=self.fim)
         self.assertFalse(Reserva.objects.exists())
 
     def test_periodo_invalido_e_rejeitado(self):
         sabado = self.inicio + timedelta(days=5)
-        with self.assertRaises(ValidationError): criar_reserva(professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=1, inicio=sabado, fim=sabado + timedelta(hours=1))
+        with self.assertRaises(ValidationError): criar_reserva(**self.contexto, professor=self.professor, tipo_equipamento=self.tipo, local=self.local, quantidade=1, inicio=sabado, fim=sabado + timedelta(hours=1))
 
 
 class ExpirarReservasVencidasTests(ReservaBaseTests):
@@ -448,7 +455,7 @@ class ReservaFrontendTests(ReservaBaseTests):
         ids_exibidos = [reserva.pk for reserva in resposta.context["pagina"].object_list]
         self.assertEqual(
             ids_exibidos[:4],
-            [proxima.pk, distante.pk, passado_recente.pk, passado_antigo.pk],
+            [proxima.pk, distante.pk],
         )
 
     def test_operador_nao_acessa_telas_de_reserva(self):
@@ -602,25 +609,25 @@ class ReservaFrontendTests(ReservaBaseTests):
     @patch("reservas.views.consultar_feriados_no_periodo")
     def test_endpoint_rejeita_periodo_invalido_antes_da_brasilapi(self, consultar_feriados):
         sabado = self.inicio + timedelta(days=5)
-        resposta = self.client.get(reverse("reservas:reserva_disponibilidade"), {"tipo_equipamento": self.tipo.pk, "local": self.local.pk, "data_reserva": sabado.strftime("%Y-%m-%d"), "hora_inicio": "09:00", "hora_fim": "10:00"})
+        resposta = self.client.get(reverse("reservas:reserva_disponibilidade"), {**self.contexto_dados, "tipo_equipamento": self.tipo.pk, "local": self.local.pk, "data_reserva": sabado.strftime("%Y-%m-%d"), "hora_inicio": "09:00", "hora_fim": "10:00"})
         self.assertEqual(resposta.status_code, 400)
         self.assertIn("sábado ou domingo", resposta.json()["erro"])
         consultar_feriados.assert_not_called()
 
     def test_criacao_pela_tela_vincula_professor_quantidade_e_itens(self):
-        resposta = self.client.post(reverse("reservas:reserva_nova"), {"tipo_equipamento": self.tipo.pk, "local": self.local.pk, "quantidade": 2, "data_reserva": self.inicio.strftime("%Y-%m-%d"), "hora_inicio": self.inicio.strftime("%H:%M"), "hora_fim": self.fim.strftime("%H:%M")}, follow=True)
+        resposta = self.client.post(reverse("reservas:reserva_nova"), {**self.contexto_dados, "tipo_equipamento": self.tipo.pk, "local": self.local.pk, "quantidade": 2, "data_reserva": self.inicio.strftime("%Y-%m-%d"), "hora_inicio": self.inicio.strftime("%H:%M"), "hora_fim": self.fim.strftime("%H:%M")}, follow=True)
         self.assertRedirects(resposta, reverse("reservas:reserva_lista")); reserva = Reserva.objects.get(); self.assertEqual(reserva.professor, self.professor); self.assertEqual(reserva.local, self.local); self.assertEqual(reserva.quantidade, 2); self.assertEqual(reserva.itens.count(), 2); self.assertContains(resposta, self.local.nome); self.assertContains(resposta, 'data-auto-dismiss="true"')
 
     def test_quantidade_indisponivel_retorna_erro_sem_reserva_parcial(self):
-        resposta = self.client.post(reverse("reservas:reserva_nova"), {"tipo_equipamento": self.tipo.pk, "local": self.local.pk, "quantidade": 3, "data_reserva": self.inicio.strftime("%Y-%m-%d"), "hora_inicio": self.inicio.strftime("%H:%M"), "hora_fim": self.fim.strftime("%H:%M")})
+        resposta = self.client.post(reverse("reservas:reserva_nova"), {**self.contexto_dados, "tipo_equipamento": self.tipo.pk, "local": self.local.pk, "quantidade": 3, "data_reserva": self.inicio.strftime("%Y-%m-%d"), "hora_inicio": self.inicio.strftime("%H:%M"), "hora_fim": self.fim.strftime("%H:%M")})
         self.assertEqual(resposta.status_code, 200); self.assertContains(resposta, "Há somente 2 unidade(s)"); self.assertFalse(Reserva.objects.exists())
 
     @patch("reservas.views.consultar_feriados_no_periodo")
     def test_periodo_invalido_na_tela_nao_consulta_api(self, consultar_feriados):
-        sabado = self.inicio + timedelta(days=5); resposta = self.client.post(reverse("reservas:reserva_nova"), {"tipo_equipamento": self.tipo.pk, "local": self.local.pk, "quantidade": 1, "data_reserva": sabado.strftime("%Y-%m-%d"), "hora_inicio": "09:00", "hora_fim": "10:00"}); self.assertContains(resposta, "sábado ou domingo"); self.assertFalse(Reserva.objects.exists()); consultar_feriados.assert_not_called()
+        sabado = self.inicio + timedelta(days=5); resposta = self.client.post(reverse("reservas:reserva_nova"), {**self.contexto_dados, "tipo_equipamento": self.tipo.pk, "local": self.local.pk, "quantidade": 1, "data_reserva": sabado.strftime("%Y-%m-%d"), "hora_inicio": "09:00", "hora_fim": "10:00"}); self.assertContains(resposta, "sábado ou domingo"); self.assertFalse(Reserva.objects.exists()); consultar_feriados.assert_not_called()
 
     def test_hora_final_exibe_mensagem_simplificada(self):
-        resposta = self.client.post(reverse("reservas:reserva_nova"), {"tipo_equipamento": self.tipo.pk, "local": self.local.pk, "quantidade": 1, "data_reserva": self.inicio.strftime("%Y-%m-%d"), "hora_inicio": self.inicio.strftime("%H:%M"), "hora_fim": self.inicio.strftime("%H:%M")})
+        resposta = self.client.post(reverse("reservas:reserva_nova"), {**self.contexto_dados, "tipo_equipamento": self.tipo.pk, "local": self.local.pk, "quantidade": 1, "data_reserva": self.inicio.strftime("%Y-%m-%d"), "hora_inicio": self.inicio.strftime("%H:%M"), "hora_fim": self.inicio.strftime("%H:%M")})
         self.assertContains(resposta, "A hora final deve ser posterior ao inicio da reserva")
         self.assertNotContains(resposta, "A data e a hora final devem ser posteriores ao início da reserva.")
 
@@ -647,7 +654,8 @@ class ReservaFrontendTests(ReservaBaseTests):
 
         reserva.refresh_from_db()
         self.assertEqual(reserva.status, Reserva.Status.EXPIRADA)
-        self.assertContains(resposta, "Expirada")
+        self.assertEqual(len(resposta.context["pagina"]), 0)
+        self.assertContains(self.client.get(reverse("movimentacoes:historico_lista")), "Expirada")
         self.assertNotContains(
             resposta,
             reverse("reservas:reserva_cancelar", args=(reserva.pk,)),

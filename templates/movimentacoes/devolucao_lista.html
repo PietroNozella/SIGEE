@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page-content">
     <header class="page-header">
-        <div><h1>Em uso</h1><p>Consulte os equipamentos ainda não devolvidos, agrupados por retirada ou reserva. Abra um lote para confirmar a devolução total ou parcial.</p></div>
+        <div><h1>Em uso</h1><p>Consulte os equipamentos ainda não devolvidos, agrupados por retirada ou reserva. O Operador confirma o recebimento total ou parcial.</p></div>
     </header>
     <section class="inventory-card" aria-labelledby="returns-heading">
         <h2 class="visually-hidden" id="returns-heading">Grupos com devolução pendente</h2>
@@ -34,7 +34,7 @@
                     <td>{{ grupo.retirada.destinatario.get_full_name|default:grupo.retirada.destinatario.username }}<span class="table-metadata">{{ grupo.retirada.destinatario.username }}</span></td>
                     <td><strong>{{ grupo.pendentes }} em aberto</strong><span class="table-metadata">{{ grupo.devolvidas }} devolvidas de {{ grupo.total }}</span></td>
                     <td>{{ grupo.inicio|date:"d/m/Y H:i" }}{% if not grupo.retirada.reserva_id and not grupo.retirada.lote_retirada %}<span class="table-metadata">Desde a primeira retirada</span>{% endif %}</td>
-                    <td><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_registrar' grupo.retirada_id %}" aria-label="Conferir devolução para {{ grupo.retirada.destinatario.get_full_name|default:grupo.retirada.destinatario.username }}, {{ grupo.pendentes }} unidades em aberto">Conferir devolução</a></td>
+                    <td>{% if pode_registrar_devolucao %}<a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_registrar' grupo.retirada_id %}">Conferir devolução</a>{% elif grupo.retirada.reserva_id %}<a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' grupo.retirada.reserva_id %}">Consultar uso</a>{% else %}<span>Registro anterior sem reserva</span>{% if e_professor %}<a href="{% url 'pedagogico:utilizacao_retirada' grupo.retirada_id %}">Consultar contexto</a>{% endif %}{% endif %}</td>
                 </tr>{% endfor %}</tbody>
             </table>
         </div>

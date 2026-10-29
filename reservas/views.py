@@ -4,9 +4,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Case, DateTimeField, Exists, OuterRef, Value, When
+from django.db.models import Case, DateTimeField, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
@@ -18,6 +19,7 @@ from usuarios.permissoes import e_professor_funcional, pode_consultar_reservas_a
 from .brasilapi import consultar_feriados_no_periodo
 from .forms import DisponibilidadeReservaForm, ReservaForm
 from .models import Reserva
+from .consultas import reservas_visiveis
 from .services import (
     cancelar_reserva,
     consultar_disponibilidade,
@@ -33,9 +35,36 @@ def _exigir_professor_funcional(user):
 
 @login_required
 @require_GET
+def reserva_detalhe(request, reserva_id):
+    reservas = reservas_visiveis(request.user)
+    expirar_reservas_vencidas()
+    reserva = get_object_or_404(reservas.com_etapa(), pk=reserva_id)
+    registros = Movimentacao.objects.filter(reserva=reserva).select_related(
+        "equipamento__tipo", "operador", "manutencao", "utilizacao_pedagogica__turma",
+        "utilizacao_pedagogica__disciplina", "utilizacao_pedagogica__atividade",
+    ).order_by("data_hora", "pk")
+    if reserva.etapa == "AGUARDANDO":
+        rota = "reservas:reserva_lista" if e_professor_funcional(request.user) else (
+            "reservas:reserva_consulta" if pode_consultar_reservas_administrativas(request.user) else "movimentacoes:retirada_reserva_lista"
+        )
+        rotulo = "Reservas"
+    else:
+        rota = "movimentacoes:devolucao_lista" if reserva.etapa == "EM_USO" else "movimentacoes:historico_lista"
+        rotulo = "Em uso" if reserva.etapa == "EM_USO" else "Histórico"
+    return render(request, "reservas/reserva_detalhe.html", {
+        "reserva": reserva, "registros": registros,
+        "unidades": reserva.itens.select_related("equipamento__tipo"),
+        "url_voltar": reverse(rota), "rotulo_voltar": rotulo,
+        "aba_fluxo": "reservas" if reserva.etapa == "AGUARDANDO" else ("em_uso" if reserva.etapa == "EM_USO" else "historico"),
+    })
+
+
+@login_required
+@require_GET
 def reserva_consulta(request):
     if not pode_consultar_reservas_administrativas(request.user):
         raise PermissionDenied
+    expirar_reservas_vencidas()
     busca = request.GET.get("busca", "").strip()[:200]
     status = request.GET.get("status", "").strip()
     if status not in Reserva.Status.values:
@@ -80,15 +109,11 @@ def reserva_lista(request):
 
     expirar_reservas_vencidas()
     agora = timezone.now()
-    retiradas = Movimentacao.objects.filter(reserva_id=OuterRef("pk"), tipo=Movimentacao.Tipo.RETIRADA)
     reservas = (
-        Reserva.objects.filter(professor=request.user)
+        Reserva.objects.aguardando_retirada().filter(professor=request.user)
         .select_related("tipo_equipamento", "tipo_equipamento__categoria", "local")
         .prefetch_related("itens__equipamento", "itens__equipamento__local")
         .annotate(
-            tem_retirada=Exists(retiradas),
-            tem_pendentes=Exists(retiradas.filter(devolucoes__isnull=True)),
-            tem_contexto=Exists(retiradas.filter(utilizacao_pedagogica__isnull=False)),
             grupo_temporal=Case(
                 When(inicio__gte=agora, then=Value(0)),
                 default=Value(1),
@@ -164,6 +189,8 @@ def reserva_nova(request):
                 quantidade=form.cleaned_data["quantidade"],
                 inicio=form.cleaned_data["inicio"],
                 fim=form.cleaned_data["fim"],
+                turma=form.cleaned_data["turma"], disciplina=form.cleaned_data["disciplina"],
+                atividade=form.cleaned_data["atividade"], observacao=form.cleaned_data["observacao"],
             )
         except ValidationError as erro:
             _adicionar_erros_validacao(form, erro)

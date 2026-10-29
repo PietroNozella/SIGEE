@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.db import models
-from django.db.models import F, Q
+from django.db.models import Case, CharField, Exists, F, OuterRef, Q, Value, When
 from django.utils import timezone
 
 from usuarios.permissoes import e_professor_funcional
@@ -26,7 +26,34 @@ def periodo_inclui_fim_de_semana(inicio, fim):
     )
 
 
+class ReservaQuerySet(models.QuerySet):
+    def com_etapa(self):
+        from movimentacoes.models import Movimentacao
+
+        retiradas = Movimentacao.objects.filter(reserva_id=OuterRef("pk"), tipo="RETIRADA")
+        return self.annotate(
+            tem_retirada=Exists(retiradas),
+            tem_pendentes=Exists(retiradas.filter(devolucoes__isnull=True)),
+        ).annotate(etapa=Case(
+            When(tem_pendentes=True, then=Value("EM_USO")),
+            When(tem_retirada=True, then=Value("ENCERRADA")),
+            When(status="CANCELADA", then=Value("CANCELADA")),
+            When(status="EXPIRADA", then=Value("EXPIRADA")),
+            default=Value("AGUARDANDO"), output_field=CharField(),
+        ))
+
+    def aguardando_retirada(self):
+        return self.com_etapa().filter(etapa="AGUARDANDO")
+
+    def em_uso(self):
+        return self.com_etapa().filter(etapa="EM_USO")
+
+    def encerradas(self):
+        return self.com_etapa().filter(etapa__in=("ENCERRADA", "CANCELADA", "EXPIRADA"))
+
+
 class Reserva(models.Model):
+    objects = ReservaQuerySet.as_manager()
     TOLERANCIA_RETIRADA = timedelta(minutes=30)
 
     class Status(models.TextChoices):
@@ -52,6 +79,11 @@ class Reserva(models.Model):
     inicio = models.DateTimeField("início")
     fim = models.DateTimeField()
     quantidade = models.PositiveIntegerField(default=1)
+    # Nulos preservam reservas anteriores à exigência de contexto no cadastro.
+    turma = models.ForeignKey("pedagogico.Turma", on_delete=models.PROTECT, null=True, blank=True)
+    disciplina = models.ForeignKey("pedagogico.Disciplina", on_delete=models.PROTECT, null=True, blank=True)
+    atividade = models.ForeignKey("pedagogico.AtividadePedagogica", on_delete=models.PROTECT, null=True, blank=True)
+    observacao_pedagogica = models.TextField(blank=True)
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -65,6 +97,11 @@ class Reserva(models.Model):
         verbose_name = "reserva"
         verbose_name_plural = "reservas"
         constraints = [
+            models.CheckConstraint(
+                condition=(Q(turma__isnull=True, disciplina__isnull=True, atividade__isnull=True)
+                           | Q(turma__isnull=False, disciplina__isnull=False, atividade__isnull=False)),
+                name="reserva_contexto_completo_ou_legado",
+            ),
             models.CheckConstraint(
                 condition=Q(fim__gt=F("inicio")),
                 name="reserva_fim_posterior_inicio",

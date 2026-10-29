@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-content">
     <header class="page-header">
-        <div><h1>Reservas</h1><p>Acompanhe as reservas dos Professores. A entrega e a devolução são registradas pelo Operador.</p></div>
+        <div><h1>Reservas</h1><p>Acompanhe as reservas aguardando retirada. A entrega é confirmada pelo Operador.</p></div>
     </header>
     <section class="inventory-card" aria-labelledby="reservations-heading">
         <h2 class="visually-hidden" id="reservations-heading">Consulta administrativa de reservas</h2>
@@ -12,13 +12,7 @@
                 <label for="busca">Professor, equipamento, local ou patrimônio</label>
                 <input class="form-control" id="busca" name="busca" type="search" value="{{ busca }}" maxlength="200" placeholder="Busque uma reserva ou seu número">
             </div>
-            <div class="reservation-filter-field">
-                <label for="status">Situação registrada</label>
-                <select class="form-select" id="status" name="status">
-                    <option value="">Todas</option>
-                    {% for valor, rotulo in status_choices %}<option value="{{ valor }}"{% if status == valor %} selected{% endif %}>{{ rotulo }}</option>{% endfor %}
-                </select>
-            </div>
+
             <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Buscar</button>{% if busca or status %}<a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_consulta' %}">Limpar</a>{% endif %}</div>
         </form>
         {% if pagina.object_list %}
@@ -31,8 +25,8 @@
                     <td>{{ reserva.tipo_equipamento.nome }}<span class="table-metadata">{{ reserva.local.nome }}</span></td>
                     <td>{{ reserva.inicio|date:"d/m/Y H:i" }}<span class="table-metadata">Até {{ reserva.fim|date:"d/m/Y H:i" }}</span></td>
                     <td><strong>{{ reserva.quantidade }}</strong><details><summary>Consultar patrimônios</summary><ul class="mb-0 ps-3">{% for item in reserva.itens.all %}<li>{{ item.equipamento.numero_patrimonio }}</li>{% empty %}<li>Nenhuma unidade alocada registrada.</li>{% endfor %}</ul></details></td>
-                    <td><span class="status-badge reservation-status-{{ reserva.status|lower }}">{{ reserva.get_status_display }}</span></td>
-                    <td>{% if reserva.retirada_registrada %}Registrada{% else %}Sem registro{% endif %}</td>
+                    <td><span class="status-badge reservation-status-{{ reserva.status|lower }}">Aguardando retirada</span></td>
+                    <td><a href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Consultar reserva</a></td>
                 </tr>{% endfor %}</tbody>
             </table>
         </div>

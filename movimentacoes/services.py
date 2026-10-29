@@ -23,7 +23,7 @@ def reservas_para_retirada(*, busca="", status=Reserva.Status.ATIVA):
     retiradas = Movimentacao.objects.filter(
         reserva_id=OuterRef("pk"), tipo=Movimentacao.Tipo.RETIRADA,
     )
-    reservas = Reserva.objects.select_related("professor", "tipo_equipamento", "local").annotate(
+    reservas = Reserva.objects.aguardando_retirada().select_related("professor", "tipo_equipamento", "local", "turma", "disciplina", "atividade").annotate(
         retirada_registrada=Exists(retiradas),
         nome_professor=Concat("professor__first_name", Value(" "), "professor__last_name"),
     )
@@ -68,6 +68,14 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao=""):
             # A tentativa de retirada não grava movimentações nem altera unidades.
             expirou = True
         else:
+            from pedagogico.models import UtilizacaoPedagogica
+            from pedagogico.services import validar_contexto_pedagogico
+
+            if not all((reserva.turma_id, reserva.disciplina_id, reserva.atividade_id)):
+                raise ValidationError("O Professor precisa completar o contexto pedagógico da reserva antes da retirada.")
+            escolhas = validar_contexto_pedagogico(
+                turma=reserva.turma, disciplina=reserva.disciplina, atividade=reserva.atividade, existente=reserva,
+            )
             destinatario = usuarios_funcionais_ativos().filter(
                 pk=reserva.professor_id, groups__name="Professor",
             ).first()
@@ -99,6 +107,15 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao=""):
                 )
                 movimentacao.full_clean()
                 movimentacao.save()
+                contexto = UtilizacaoPedagogica.objects.create(
+                    movimentacao=movimentacao, professor_id=reserva.professor_id,
+                    **escolhas, observacao=reserva.observacao_pedagogica,
+                )
+                registrar_evento(
+                    usuario=operador_atual, acao=AcaoAuditoria.UTILIZACAO_PEDAGOGICA_CRIADA,
+                    resultado=RegistroAuditoria.Resultado.SUCESSO,
+                    entidade="pedagogico.UtilizacaoPedagogica", entidade_id=contexto.pk,
+                )
                 equipamento.situacao = Equipamento.Situacao.EM_USO
                 equipamento.save(update_fields=("situacao", "data_atualizacao"))
                 registrar_evento(
@@ -112,7 +129,11 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao=""):
     return movimentacoes
 
 
-def consultar_historico(filtros):
+def consultar_historico(filtros, *, usuario):
+    from usuarios.permissoes import e_professor_funcional, pode_consultar_historico
+
+    if not pode_consultar_historico(usuario):
+        raise PermissionDenied
     movimentacoes = Movimentacao.objects.select_related(
         "equipamento__tipo", "operador", "destinatario", "retirada_origem", "manutencao",
         "utilizacao_pedagogica__turma", "utilizacao_pedagogica__disciplina",
@@ -121,6 +142,18 @@ def consultar_historico(filtros):
         "retirada_origem__utilizacao_pedagogica__disciplina",
         "retirada_origem__utilizacao_pedagogica__atividade",
     ).prefetch_related("devolucoes").order_by("-data_hora", "-pk")
+    if e_professor_funcional(usuario):
+        movimentacoes = movimentacoes.filter(destinatario=usuario)
+    fechadas = Reserva.objects.encerradas().values("pk")
+    legados = grupos_legados_encerrados(usuario).values("chave_grupo")
+    origens_legadas = _retiradas_com_devolucao().annotate(chave_grupo=_chave_grupo()).filter(
+        reserva__isnull=True, chave_grupo__in=legados,
+    ).values("pk")
+    movimentacoes = movimentacoes.filter(
+        Q(reserva_id__in=fechadas)
+        | Q(pk__in=origens_legadas)
+        | Q(retirada_origem_id__in=origens_legadas),
+    )
     if filtros.get("busca"):
         busca = filtros["busca"]
         movimentacoes = movimentacoes.annotate(
@@ -136,9 +169,13 @@ def consultar_historico(filtros):
     if filtros.get("reserva"):
         movimentacoes = movimentacoes.filter(reserva_id=filtros["reserva"])
     if filtros.get("retirada"):
+        origem = Movimentacao.objects.filter(pk=filtros["retirada"], tipo="RETIRADA").first()
+        if origem is None:
+            return movimentacoes.none()
+        ids = retiradas_do_grupo(origem).values("pk")
         movimentacoes = movimentacoes.filter(
-            Q(pk=filtros["retirada"], tipo=Movimentacao.Tipo.RETIRADA)
-            | Q(retirada_origem_id=filtros["retirada"]),
+            Q(pk__in=ids, tipo=Movimentacao.Tipo.RETIRADA)
+            | Q(retirada_origem_id__in=ids),
         )
     if filtros.get("inicio"):
         movimentacoes = movimentacoes.filter(data_hora__date__gte=filtros["inicio"])
@@ -167,64 +204,7 @@ def registrar_retirada_sem_reserva(
     if operador_atual is None or not pode_registrar_retirada(operador_atual):
         raise PermissionDenied
 
-    ids = [equipamento.pk for equipamento in equipamentos]
-    if quantidade < 1 or len(ids) != quantidade or len(set(ids)) != quantidade:
-        raise ValidationError({
-            "equipamentos": "Selecione exatamente a quantidade informada, sem repetir patrimônios.",
-        })
-
-    with transaction.atomic():
-        # Ordem estável evita bloqueios cruzados entre lotes que compartilham unidades.
-        # Revalidar os mesmos IDs conferidos evita substituições silenciosas.
-        bloqueados = list(
-            Equipamento.objects.select_for_update()
-            .filter(pk__in=ids).order_by("pk")
-        )
-        if len(bloqueados) != quantidade:
-            raise ValidationError({
-                "equipamentos": "Um dos equipamentos não está mais cadastrado. Revise o lote.",
-            })
-        for equipamento in bloqueados:
-            if equipamento.tipo_id != tipo_equipamento.pk or equipamento.local_id != local.pk:
-                raise ValidationError({
-                    "equipamentos": "Todos os patrimônios devem pertencer ao tipo/modelo e local selecionados.",
-                })
-            if not equipamento.ativo or equipamento.situacao != Equipamento.Situacao.DISPONIVEL:
-                raise ValidationError({
-                    "equipamentos": (
-                        f"O equipamento {equipamento.numero_patrimonio} está inativo ou "
-                        "não está disponível para retirada. Revise o lote."
-                    ),
-                })
-
-        try:
-            destinatario_atual = usuarios_funcionais_ativos().get(pk=destinatario.pk)
-        except get_user_model().DoesNotExist as erro:
-            raise ValidationError({
-                "destinatario": "Selecione um destinatário ativo com um único perfil funcional.",
-            }) from erro
-
-        lote_retirada = uuid4()
-        movimentacoes = []
-        for equipamento in bloqueados:
-            movimentacao = Movimentacao(
-                equipamento=equipamento, operador=operador_atual,
-                destinatario=destinatario_atual, tipo=Movimentacao.Tipo.RETIRADA,
-                observacao=observacao,
-                lote_retirada=lote_retirada,
-            )
-            movimentacao.full_clean()
-            movimentacao.save()
-            equipamento.situacao = Equipamento.Situacao.EM_USO
-            equipamento.save(update_fields=("situacao", "data_atualizacao"))
-            registrar_evento(
-                usuario=operador_atual, acao=AcaoAuditoria.RETIRADA_REGISTRADA,
-                resultado=RegistroAuditoria.Resultado.SUCESSO,
-                entidade="movimentacoes.Movimentacao", entidade_id=movimentacao.pk,
-            )
-            movimentacoes.append(movimentacao)
-
-    return movimentacoes
+    raise ValidationError("Toda retirada exige uma reserva. Confirme a entrega pela aba Reservas.")
 
 
 def _retiradas_com_devolucao():
@@ -256,13 +236,35 @@ def retiradas_do_grupo(retirada):
     )
 
 
-def grupos_devolucao(busca=""):
-    retiradas = _retiradas_com_devolucao().annotate(chave_grupo=Case(
+def _chave_grupo():
+    return Case(
         When(reserva__isnull=False, then=Concat(Value("reserva:"), Cast("reserva_id", CharField()))),
         When(lote_retirada__isnull=False, then=Concat(Value("lote:"), Cast("lote_retirada", CharField()))),
         default=Concat(Value("anteriores:"), Cast("destinatario_id", CharField())),
         output_field=CharField(),
-    ))
+    )
+
+
+def grupos_legados_encerrados(usuario):
+    from usuarios.permissoes import e_professor_funcional, pode_consultar_historico
+
+    if not pode_consultar_historico(usuario):
+        raise PermissionDenied
+    retiradas = _retiradas_com_devolucao().filter(reserva__isnull=True)
+    if e_professor_funcional(usuario):
+        retiradas = retiradas.filter(destinatario=usuario)
+    return retiradas.annotate(chave_grupo=_chave_grupo()).order_by().values("chave_grupo").annotate(
+        retirada_id=Min("pk"), total=Count("pk"),
+        pendentes=Count("pk", filter=Q(devolvida=False)), inicio=Min("data_hora"),
+    ).filter(pendentes=0).order_by("-inicio", "-retirada_id")
+
+
+def grupos_devolucao(busca="", *, usuario=None):
+    retiradas = _retiradas_com_devolucao().annotate(chave_grupo=_chave_grupo())
+    if usuario is not None:
+        from usuarios.permissoes import e_professor_funcional
+        if e_professor_funcional(usuario):
+            retiradas = retiradas.filter(destinatario=usuario)
     if busca:
         correspondencias = retiradas.annotate(nome_destinatario=Concat(
             "destinatario__first_name", Value(" "), "destinatario__last_name",
@@ -298,6 +300,10 @@ def registrar_devolucoes(*, operador, retirada_id, retiradas_ids, observacao="",
     if any(not descricao.strip() for descricao in problemas.values()):
         raise ValidationError("Descreva o problema de cada patrimônio encaminhado para manutenção.")
     with transaction.atomic():
+        reserva_id = Movimentacao.objects.filter(pk=retirada_id, tipo=Movimentacao.Tipo.RETIRADA).values_list("reserva_id", flat=True).first()
+        if reserva_id is not None:
+            # A edição pedagógica e a entrega também bloqueiam reserva antes das retiradas.
+            Reserva.objects.select_for_update().get(pk=reserva_id)
         # Ordem estável também quando dois lotes selecionam subconjuntos diferentes.
         # Sem joins anuláveis no SELECT FOR UPDATE do PostgreSQL.
         bloqueadas = list(Movimentacao.objects.select_for_update().filter(

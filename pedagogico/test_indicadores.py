@@ -1,3 +1,4 @@
+from movimentacoes.fixtures_testes import criar_retirada_legada
 from datetime import timedelta
 from importlib import import_module
 from unittest.mock import patch
@@ -13,7 +14,7 @@ from inventario.models import Equipamento
 from legal.services import registrar_aceite_vigente
 from movimentacoes.models import Movimentacao
 from movimentacoes.services import (
-    registrar_devolucoes, registrar_retirada_reserva, registrar_retirada_sem_reserva,
+    registrar_devolucoes, registrar_retirada_reserva,
 )
 from reservas.models import Reserva, ReservaEquipamento
 from usuarios.permissoes import pode_consultar_indicadores_pedagogicos
@@ -48,7 +49,7 @@ class IndicadoresPedagogicosTests(TestCase):
     def retirar_novamente(self, indice=1, unidades=None):
         unidades = [self.unidades[0]] if unidades is None else unidades
         inicio = self.reserva.inicio + timedelta(days=7 * indice)
-        reserva = Reserva.objects.create(
+        reserva = Reserva.objects.create(**self.escolhas,
             professor=self.cenario["professor"], tipo_equipamento=self.reserva.tipo_equipamento,
             local=self.reserva.local, quantidade=len(unidades), inicio=inicio, fim=inicio + timedelta(hours=1),
         )
@@ -57,11 +58,12 @@ class IndicadoresPedagogicosTests(TestCase):
         )
         with patch("movimentacoes.services.timezone.now", return_value=inicio):
             retiradas = registrar_retirada_reserva(operador=self.cenario["operador"], reserva_id=reserva.pk)
+        UtilizacaoPedagogica.objects.filter(movimentacao__reserva=reserva).delete()
         return reserva, retiradas
 
     def retirar_sem_reserva(self, unidades=None):
         unidades = self.unidades if unidades is None else unidades
-        return registrar_retirada_sem_reserva(
+        return criar_retirada_legada(
             operador=self.cenario["operador"], destinatario=self.cenario["professor"],
             tipo_equipamento=self.reserva.tipo_equipamento, local=self.reserva.local,
             quantidade=len(unidades), equipamentos=unidades,
@@ -205,7 +207,7 @@ class IndicadoresPedagogicosTests(TestCase):
         Equipamento.objects.filter(pk__in=[unidade.pk for unidade in self.unidades]).update(ativo=False)
         self.assertEqual(self.client.get(self.url).context["totais"], {"utilizacoes": 2, "retiradas": 6, "equipamentos": 3})
         self.client.force_login(self.cenario["professor"])
-        self.assertEqual(self.client.get(reverse("pedagogico:utilizacao_lista")).context["pagina"].paginator.count, 3)
+        self.assertEqual(self.client.get(reverse("pedagogico:utilizacao_lista")).context["pagina"].paginator.count, 0)
 
     def test_retiradas_antigas_sem_lote_sao_individuais(self):
         self.devolver()
@@ -221,7 +223,7 @@ class IndicadoresPedagogicosTests(TestCase):
         for grupo in resposta.context["grupos"]:
             self.assertEqual(list(grupo["pagina"])[0]["utilizacoes"], 3)
         self.client.force_login(self.cenario["professor"])
-        self.assertEqual(self.client.get(reverse("pedagogico:utilizacao_lista")).context["pagina"].paginator.count, 4)
+        self.assertEqual(self.client.get(reverse("pedagogico:utilizacao_lista")).context["pagina"].paginator.count, 3)
 
     def test_lote_sem_reserva_sem_contexto_nao_entra_nos_indicadores(self):
         self.salvar()

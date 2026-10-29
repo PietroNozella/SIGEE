@@ -1,3 +1,4 @@
+from movimentacoes.fixtures_testes import criar_retirada_legada
 import json
 from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
@@ -22,7 +23,7 @@ from inventario.models import Equipamento
 from legal.services import registrar_aceite_vigente
 from manutencoes.models import Manutencao
 from movimentacoes.models import Movimentacao
-from movimentacoes.services import registrar_devolucoes, registrar_retirada_reserva, registrar_retirada_sem_reserva
+from movimentacoes.services import registrar_devolucoes, registrar_retirada_reserva
 from movimentacoes.test_retirada_reserva import criar_reserva_alocada
 from movimentacoes.tests import criar_cenario
 from .models import AtividadePedagogica, Disciplina, Turma, UtilizacaoPedagogica
@@ -37,7 +38,7 @@ def preparar_sem_reserva():
             numero_patrimonio=f"SEM-RESERVA-{indice}",
             tipo=unidades[0].tipo, local=unidades[0].local,
         ))
-    retiradas = registrar_retirada_sem_reserva(
+    retiradas = criar_retirada_legada(
         operador=cenario["operador"], destinatario=cenario["professor"],
         tipo_equipamento=unidades[0].tipo, local=unidades[0].local,
         quantidade=3, equipamentos=unidades,
@@ -93,8 +94,7 @@ class UtilizacaoSemReservaTests(TestCase):
         self.assertNotContains(resposta, 'name="turma"')
         self.assertContains(self.client.post(self.url, self.dados), "devolução integral encerrou")
         self.assertEqual(UtilizacaoPedagogica.objects.filter(disciplina=disciplina).count(), 3)
-        grupo = self.client.get(self.lista).context["pagina"].object_list[0]
-        self.assertEqual((grupo["total"], grupo["pendentes"], grupo["com_contexto"]), (3, 0, 3))
+        self.assertEqual(len(self.client.get(self.lista).context["pagina"]), 0)
 
     def test_primeiro_registro_apos_devolucao_integral_e_bloqueado(self):
         self.devolver()
@@ -149,7 +149,7 @@ class UtilizacaoSemReservaTests(TestCase):
         self.assertEqual(pagina.object_list[0]["retirada_id"], novas[-1].pk)
         self.assertEqual(len(self.client.get(self.lista + "?pagina=2").context["pagina"].object_list), 2)
         self.devolver()
-        self.assertEqual(self.client.get(self.lista).context["pagina"].paginator.count, 12)
+        self.assertEqual(self.client.get(self.lista).context["pagina"].paginator.count, 11)
 
     def test_lista_vazia_e_get_sem_mutacao(self):
         Movimentacao.objects.all().delete()
@@ -285,7 +285,7 @@ class UtilizacaoSemReservaTests(TestCase):
         self.assertContains(self.client.get(self.url), self.escolhas["turma"].nome)
         for usuario in (self.cenario["operador"], self.cenario["administrador"]):
             self.client.force_login(usuario)
-            resposta = self.client.get(reverse("movimentacoes:historico_lista"))
+            resposta = self.client.get(reverse("movimentacoes:historico_lista"), {"retirada": self.retiradas[0].pk})
             self.assertContains(resposta, self.escolhas["atividade"].nome, count=6)
             self.assertContains(resposta, "&lt;script&gt;", count=6)
             self.assertNotContains(resposta, "<script>alert('x')</script>")

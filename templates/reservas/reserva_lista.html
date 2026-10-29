@@ -8,7 +8,7 @@
     <header class="page-header">
         <div>
             <h1>Minhas Reservas</h1>
-            <p>Consulte os períodos reservados e cancele uma reserva ativa quando necessário.</p>
+            <p>Somente reservas aguardando retirada. Após a entrega, acompanhe os equipamentos em Em uso.</p>
         </div>
         <a class="btn btn-primary-sigee" href="{% url 'reservas:reserva_nova' %}">
             <img src="{% static 'inventario/icons/add.svg' %}" alt="" aria-hidden="true">
@@ -19,23 +19,7 @@
     <section class="inventory-card" aria-labelledby="reservations-heading">
         <h2 class="visually-hidden" id="reservations-heading">Lista das minhas reservas</h2>
 
-        <form class="reservation-filter-toolbar" method="get">
-            <div class="reservation-filter-field">
-                <label for="status">Situação da reserva</label>
-                <select class="form-select" id="status" name="status">
-                    <option value="">Todas</option>
-                    {% for valor, rotulo in status_reserva.choices %}
-                        <option value="{{ valor }}"{% if status_atual == valor %} selected{% endif %}>{{ rotulo }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-actions">
-                <button class="btn btn-primary-sigee" type="submit">Filtrar</button>
-                {% if status_atual %}
-                    <a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_lista' %}">Limpar</a>
-                {% endif %}
-            </div>
-        </form>
+
 
         {% if pagina.object_list %}
             <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Tabela de reservas; use rolagem horizontal em telas pequenas">
@@ -66,21 +50,13 @@
                                 </td>
                                 <td>
                                     <span class="status-badge reservation-status-{{ reserva.status|lower }}">
-                                        {{ reserva.get_status_display }}
+                                        Aguardando retirada
                                     </span>
                                 </td>
                                 <td>
-                                    {% if reserva.tem_retirada %}
-                                        {% if perms.pedagogico.view_utilizacaopedagogica %}
-                                        <a class="btn btn-secondary-sigee" href="{% url 'pedagogico:utilizacao_reserva' reserva.pk %}">
-                                            {% if reserva.tem_pendentes %}
-                                                {% if reserva.tem_contexto and perms.pedagogico.change_utilizacaopedagogica %}Editar contexto pedagógico
-                                                {% elif not reserva.tem_contexto and perms.pedagogico.add_utilizacaopedagogica %}Vincular contexto pedagógico
-                                                {% else %}Consultar contexto pedagógico{% endif %}
-                                            {% else %}Consultar contexto pedagógico{% endif %}
-                                        </a>
-                                        {% endif %}
-                                    {% elif reserva.status == status_reserva.ATIVA %}
+                                    <a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Consultar reserva</a>
+                                    <a class="btn btn-secondary-sigee" href="{% url 'pedagogico:utilizacao_reserva' reserva.pk %}">{% if reserva.turma_id %}Editar contexto pedagógico{% else %}Completar contexto pedagógico{% endif %}</a>
+                                    {% if reserva.status == status_reserva.ATIVA %}
                                         <button
                                             class="btn btn-secondary-sigee"
                                             type="button"

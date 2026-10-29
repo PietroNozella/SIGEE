@@ -201,7 +201,8 @@ def utilizacao_reserva(request, reserva_id):
         contexto={
             "reserva": reserva,
             "descricao_origem": f"Reserva #{reserva.pk} · {reserva.tipo_equipamento.nome} · {reserva.local.nome}",
-            "url_voltar": reverse("reservas:reserva_lista"), "rotulo_voltar": "Minhas Reservas",
+            "url_voltar": reverse("reservas:reserva_detalhe", args=[reserva.pk]), "rotulo_voltar": "Reserva",
+            "contexto_reserva": reserva,
         },
     )
 
@@ -211,7 +212,7 @@ def utilizacao_reserva(request, reserva_id):
 def utilizacao_lista(request):
     if not pode_gerenciar_utilizacao_pedagogica(request.user):
         raise PermissionDenied
-    pagina = Paginator(grupos_utilizacao(request.user), 10).get_page(request.GET.get("pagina"))
+    pagina = Paginator(grupos_utilizacao(request.user).filter(pendentes__gt=0), 10).get_page(request.GET.get("pagina"))
     grupos = list(pagina.object_list)
     representantes = Movimentacao.objects.filter(
         pk__in=[grupo["retirada_id"] for grupo in grupos],
@@ -224,6 +225,7 @@ def utilizacao_lista(request):
         "pode_criar_utilizacao": pode_gerenciar_utilizacao_pedagogica(request.user, "add"),
         "pode_editar_utilizacao": pode_gerenciar_utilizacao_pedagogica(request.user, "change"),
     })
+
 
 
 @login_required
@@ -251,11 +253,13 @@ def utilizacao_retirada(request, retirada_id):
 
 def _utilizacao_form(request, *, origem, retiradas, salvar, contexto):
     utilizacao = getattr(retiradas[0], "utilizacao_pedagogica", None) if retiradas else None
+    reserva = contexto.get("contexto_reserva")
+    aguardando = reserva is not None and not retiradas and reserva.status == Reserva.Status.ATIVA
     pendentes = sum(not retirada.devolucoes.all() for retirada in retiradas)
-    acao_permissao = "change" if utilizacao else "add"
+    acao_permissao = "change" if utilizacao or (reserva and reserva.turma_id) else "add"
     pode_gravar = pode_gerenciar_utilizacao_pedagogica(request.user, acao_permissao)
     form = UtilizacaoPedagogicaForm(
-        request.POST if request.method == "POST" else None, utilizacao=utilizacao,
+        request.POST if request.method == "POST" else None, utilizacao=utilizacao, reserva=reserva,
     )
     if request.method == "POST":
         if not pode_gravar:
@@ -284,5 +288,5 @@ def _utilizacao_form(request, *, origem, retiradas, salvar, contexto):
     return render(request, "pedagogico/utilizacao_reserva.html", {
         **contexto, "retiradas": retiradas, "utilizacao": utilizacao,
         "pendentes": pendentes, "form": form,
-        "pode_editar": bool(pendentes and pode_gravar),
+        "pode_editar": bool((pendentes or aguardando) and pode_gravar),
     })

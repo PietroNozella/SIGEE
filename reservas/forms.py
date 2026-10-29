@@ -4,6 +4,7 @@ from django import forms
 from django.utils import timezone
 
 from inventario.models import Local, TipoEquipamento
+from pedagogico.forms import UtilizacaoPedagogicaForm
 
 
 class PeriodoReservaForm(forms.Form):
@@ -50,7 +51,7 @@ class PeriodoReservaForm(forms.Form):
         return cleaned_data
 
 
-class ReservaForm(PeriodoReservaForm):
+class ReservaForm(PeriodoReservaForm, UtilizacaoPedagogicaForm):
     tipo_equipamento = forms.ModelChoiceField(
         queryset=TipoEquipamento.objects.none(),
         label="Equipamento",
@@ -75,7 +76,7 @@ class ReservaForm(PeriodoReservaForm):
     )
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, marcar_erros=False, **kwargs)
 
         self.fields["tipo_equipamento"].queryset = (
             TipoEquipamento.objects.select_related("categoria")
@@ -116,6 +117,7 @@ class ReservaForm(PeriodoReservaForm):
                 "hora_inicio",
                 "hora_fim",
                 "quantidade",
+                "turma", "disciplina", "atividade", "observacao",
             )
         )
 

@@ -45,24 +45,31 @@ class UtilizacaoPedagogicaForm(forms.Form):
     atividade = forms.ModelChoiceField(queryset=AtividadePedagogica.objects.none(), label="Atividade pedagógica")
     observacao = forms.CharField(label="Observação", required=False, widget=forms.Textarea(attrs={"rows": 3}))
 
-    def __init__(self, *args, utilizacao=None, **kwargs):
+    def __init__(self, *args, utilizacao=None, reserva=None, marcar_erros=True, **kwargs):
+        contexto = utilizacao or reserva
         if utilizacao is not None:
             kwargs["initial"] = {
                 "turma": utilizacao.turma_id, "disciplina": utilizacao.disciplina_id,
                 "atividade": utilizacao.atividade_id, "observacao": utilizacao.observacao,
             }
+        elif reserva is not None:
+            kwargs["initial"] = {
+                "turma": reserva.turma_id, "disciplina": reserva.disciplina_id,
+                "atividade": reserva.atividade_id, "observacao": reserva.observacao_pedagogica,
+            }
         super().__init__(*args, **kwargs)
         self.cadastros_faltantes = []
         for campo, modelo in (("turma", Turma), ("disciplina", Disciplina), ("atividade", AtividadePedagogica)):
             criterio = Q(ativo=True)
-            if utilizacao is not None:
-                criterio |= Q(pk=getattr(utilizacao, f"{campo}_id"))
+            if contexto is not None:
+                criterio |= Q(pk=getattr(contexto, f"{campo}_id"))
             self.fields[campo].queryset = modelo.objects.filter(criterio)
             if not self.fields[campo].queryset.exists():
                 self.cadastros_faltantes.append(self.fields[campo].label)
-        for campo, field in self.fields.items():
+        for campo in ("turma", "disciplina", "atividade", "observacao"):
+            field = self.fields[campo]
             field.widget.attrs["class"] = "form-control" if campo == "observacao" else "form-select"
-            if self.is_bound and campo in self.errors:
+            if marcar_erros and self.is_bound and campo in self.errors:
                 field.widget.attrs.update({
                     "class": field.widget.attrs["class"] + " is-invalid",
                     "aria-invalid": "true", "aria-describedby": f"id_{campo}_error",

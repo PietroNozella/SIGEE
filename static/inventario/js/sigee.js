@@ -806,6 +806,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (reservationConfirmDate) reservationConfirmDate.textContent = data;
         if (reservationConfirmStart) reservationConfirmStart.textContent = reservationStart?.value || "—";
         if (reservationConfirmEnd) reservationConfirmEnd.textContent = reservationEnd?.value || "—";
+        ["turma", "disciplina", "atividade"].forEach((campo) => {
+            const destino = reservationConfirmDialog?.querySelector(`[data-reservation-confirm-${campo}]`);
+            const escolha = reservationForm?.elements.namedItem(campo);
+            if (destino) destino.textContent = escolha?.selectedOptions?.[0]?.textContent?.trim() || "—";
+        });
         preencherAvisoFeriado();
     };
 

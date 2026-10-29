@@ -3,14 +3,14 @@
 {% block content %}
 <div class="page-content">
     <header class="page-header">
-        <div><h1>Reservas</h1><p>Confira as reservas dos Professores para entregar os lotes. Para uma entrega sem reserva, use Registrar retirada.</p></div>
-        <a class="btn btn-primary-sigee" href="{% url 'movimentacoes:retirada_sem_reserva' %}">Registrar retirada</a>
+        <div><h1>Reservas</h1><p>Confira as reservas aguardando retirada e confirme a entrega dos lotes.</p></div>
+
     </header>
     <section class="inventory-card" aria-labelledby="reserved-heading">
         <h2 class="visually-hidden" id="reserved-heading">Reservas para conferência</h2>
         <form class="reservation-filter-toolbar" method="get">
             <div class="reservation-filter-field"><label for="busca">Reserva, Professor, patrimônio ou equipamento</label><input class="form-control" id="busca" name="busca" type="search" value="{{ busca }}" placeholder="Busque uma reserva"></div>
-            <div class="reservation-filter-field"><label for="status">Situação da reserva</label><select class="form-select" name="status" id="status"><option value=""{% if not status %} selected{% endif %}>Todas</option>{% for valor, rotulo in status_choices %}<option value="{{ valor }}"{% if status == valor %} selected{% endif %}>{{ rotulo }}</option>{% endfor %}</select></div>
+
             <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Buscar</button><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_lista' %}">Limpar</a></div>
         </form>
         {% if pagina.object_list %}
@@ -21,7 +21,7 @@
                     <td><strong>Reserva #{{ reserva.pk }}</strong><span class="table-metadata">{{ reserva.professor.get_full_name|default:reserva.professor.username }} ({{ reserva.professor.username }})</span></td>
                     <td>{{ reserva.tipo_equipamento.nome }}<span class="table-metadata">{{ reserva.local.nome }}</span></td>
                     <td>{{ reserva.inicio|date:"d/m/Y H:i" }}<span class="table-metadata">Até {{ reserva.fim|date:"d/m/Y H:i" }}</span></td>
-                    <td>{{ reserva.quantidade }}</td><td>{{ reserva.get_status_display }}{% if reserva.retirada_registrada %}<span class="table-metadata">Retirada registrada</span>{% endif %}</td>
+                    <td>{{ reserva.quantidade }}</td><td>Aguardando retirada{% if reserva.retirada_registrada %}<span class="table-metadata">Retirada registrada</span>{% endif %}</td>
                     <td><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_registrar' reserva.pk %}">Conferir reserva</a></td>
                 </tr>{% endfor %}</tbody>
             </table>

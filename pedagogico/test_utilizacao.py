@@ -35,6 +35,10 @@ def preparar_utilizacao():
     reserva, unidades = criar_reserva_alocada(cenario)
     with patch("movimentacoes.services.timezone.now", return_value=reserva.inicio):
         retiradas = registrar_retirada_reserva(operador=cenario["operador"], reserva_id=reserva.pk)
+    UtilizacaoPedagogica.objects.all().delete()
+    RegistroAuditoria.objects.filter(entidade="pedagogico.UtilizacaoPedagogica").delete()
+    Reserva.objects.filter(pk=reserva.pk).update(turma=None, disciplina=None, atividade=None)
+    reserva.refresh_from_db()
     escolhas = {
         "turma": Turma.objects.create(nome="Turma RF-10"),
         "disciplina": Disciplina.objects.create(nome="Disciplina RF-10"),
@@ -74,7 +78,7 @@ class UtilizacaoReservaTests(TestCase):
         )
 
     def test_fluxo_completo_lote_edicao_devolucao_parcial_integral_e_consulta(self):
-        lista = reverse("reservas:reserva_lista")
+        lista = reverse("pedagogico:utilizacao_lista")
         self.assertContains(self.client.get(lista), "Vincular contexto pedagógico")
         antes = list(Movimentacao.objects.values())
         self.assertRedirects(self.client.post(self.url, self.dados), self.url)
@@ -93,7 +97,8 @@ class UtilizacaoReservaTests(TestCase):
         resposta = self.client.get(self.url)
         self.assertContains(resposta, "Disciplina corrigida")
         self.assertNotContains(resposta, 'name="turma"')
-        self.assertContains(self.client.get(lista), "Consultar contexto pedagógico")
+        self.assertEqual(len(self.client.get(lista).context["pagina"]), 0)
+        self.assertContains(self.client.get(reverse("reservas:reserva_detalhe", args=[self.reserva.pk])), "Disciplina corrigida")
         self.dados["disciplina"] = self.escolhas["disciplina"].pk
         self.assertContains(self.client.post(self.url, self.dados), "devolução integral encerrou")
         self.assertEqual(UtilizacaoPedagogica.objects.filter(disciplina=disciplina).count(), 3)
@@ -104,11 +109,12 @@ class UtilizacaoReservaTests(TestCase):
             local=self.reserva.local, inicio=self.reserva.inicio, fim=self.reserva.fim,
         )
         url = reverse("pedagogico:utilizacao_reserva", args=[reserva.pk])
-        self.assertNotContains(self.client.get(url), 'name="turma"')
-        self.assertContains(self.client.post(url, self.dados), "após a retirada")
-        with self.assertRaisesMessage(ValidationError, "após a retirada"):
-            self.salvar(reserva_id=reserva.pk)
+        self.assertContains(self.client.get(url), 'name="turma"')
+        self.assertRedirects(self.client.post(url, self.dados), url)
+        reserva.refresh_from_db()
+        self.assertEqual(reserva.turma_id, self.escolhas["turma"].pk)
         self.assertFalse(UtilizacaoPedagogica.objects.exists())
+
 
     def test_primeiro_registro_depois_de_devolver_tudo_e_bloqueado(self):
         self.devolver()
@@ -250,12 +256,12 @@ class UtilizacaoReservaTests(TestCase):
         self.devolver()
         for usuario in (self.cenario["operador"], self.cenario["administrador"]):
             self.client.force_login(usuario)
-            resposta = self.client.get(reverse("movimentacoes:historico_lista"))
-            self.assertContains(resposta, "Atividade RF-10", count=6)
+            resposta = self.client.get(reverse("reservas:reserva_detalhe", args=[self.reserva.pk]))
+            self.assertContains(resposta, "Atividade RF-10")
             self.assertNotContains(resposta, "<script>alert('x')</script>")
-            self.assertContains(resposta, "&lt;script&gt;", count=6)
+            self.assertContains(resposta, "&lt;script&gt;")
         self.client.force_login(self.professor)
-        self.assertEqual(self.client.get(reverse("movimentacoes:historico_lista")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("movimentacoes:historico_lista")).status_code, 200)
 
     def test_exportacao_e_anonimizacao_preservam_vinculos(self):
         salvas = self.salvar()

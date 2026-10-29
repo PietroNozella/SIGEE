@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Histórico | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content">
+    <header class="page-header"><div><h1>Histórico</h1><p>Reservas encerradas, canceladas ou expiradas. Consulte os detalhes de cada reserva.</p></div></header>
+    <section class="inventory-card" aria-label="Reservas no histórico">
+        <p class="form-help px-3">O período filtra as datas das movimentações. Para reservas sem retirada, considera a data reservada.</p>
+        <form method="get" class="reservation-filter-toolbar">
+            {% for field in form.visible_fields %}<div class="reservation-filter-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for erro in field.errors %}<p class="field-error">{{ erro }}</p>{% endfor %}</div>{% endfor %}
+            <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Filtrar</button><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:historico_lista' %}">Limpar</a></div>
+        </form>
+        <div class="table-responsive"><table class="table inventory-table"><caption class="visually-hidden">Uma linha por reserva encerrada</caption>
+            <thead><tr><th scope="col">Reserva</th><th scope="col">Professor</th><th scope="col">Equipamentos e período</th><th scope="col">Situação</th><th scope="col">Consulta</th></tr></thead>
+            <tbody>{% for reserva in pagina %}<tr><td>#{{ reserva.pk }}</td><td>{{ reserva.professor.get_full_name|default:reserva.professor.username }}</td><td>{{ reserva.quantidade }} × {{ reserva.tipo_equipamento.nome }}<span class="table-metadata">{{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }}</span></td><td>{% if reserva.etapa == 'ENCERRADA' %}Encerrada{% else %}{{ reserva.get_status_display }}{% endif %}</td><td><a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Consultar detalhes</a></td></tr>{% empty %}<tr><td colspan="5">Nenhuma reserva no histórico para os filtros informados.</td></tr>{% endfor %}</tbody>
+        </table></div>
+        {% include "movimentacoes/_paginacao.html" %}
+    </section>
+    {% if pagina_legados.paginator.count %}
+    <section class="inventory-card p-3" aria-label="Registros anteriores sem reserva">
+        <h2>Registros anteriores sem reserva</h2><p>Somente consulta dos lotes já devolvidos. Novas retiradas exigem reserva.</p>
+        <ul>{% for grupo in pagina_legados %}<li>Retirada #{{ grupo.retirada_id }} · {{ grupo.total }} unidade(s) · <a href="?retirada={{ grupo.retirada_id }}">Consultar movimentações</a></li>{% endfor %}</ul>
+        {% if pagina_legados.has_previous %}<a href="?{{ parametros_legados }}&amp;pagina_legados={{ pagina_legados.previous_page_number }}">Anteriores</a>{% endif %}
+        {% if pagina_legados.has_next %}<a href="?{{ parametros_legados }}&amp;pagina_legados={{ pagina_legados.next_page_number }}">Próximos</a>{% endif %}
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

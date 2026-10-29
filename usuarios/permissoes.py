@@ -98,8 +98,10 @@ def pode_registrar_devolucao(user):
 def pode_consultar_historico(user):
     return (
         user.is_authenticated and user.is_active and not user.is_superuser
-        and (e_administrador_funcional(user) or e_operador_funcional(user))
-        and user.has_perm("movimentacoes.view_movimentacao")
+        and (
+            ((e_administrador_funcional(user) or e_operador_funcional(user)) and user.has_perm("movimentacoes.view_movimentacao"))
+            or (e_professor_funcional(user) and user.has_perm("reservas.view_reserva"))
+        )
     )
 
 

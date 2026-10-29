@@ -13,6 +13,8 @@
             <div class="form-field"><strong>Tipo/modelo e local</strong><p>{{ reserva.tipo_equipamento.nome }} · {{ reserva.local.nome }}</p></div>
             <div class="form-field"><strong>Situação da reserva</strong><p>{{ reserva.get_status_display }}{% if retirada %} · Retirada registrada{% endif %}</p></div>
         </div>
+        {% include "reservas/_contexto.html" %}
+        {% if not reserva.turma_id %}<p role="status">O Professor precisa completar o contexto pedagógico antes da entrega.</p>{% endif %}
         <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Patrimônios alocados à reserva">
             <table class="table inventory-table"><caption class="visually-hidden">Unidades que serão entregues integralmente, sem substituições</caption><thead><tr><th scope="col">Patrimônio</th><th scope="col">Equipamento e local</th><th scope="col">Situação</th></tr></thead><tbody>{% for item in unidades %}<tr><td><strong>{{ item.equipamento.numero_patrimonio }}</strong></td><td>{{ item.equipamento.tipo.nome }}<span class="table-metadata">{{ item.equipamento.local.nome }}</span></td><td>{{ item.equipamento.get_situacao_display }}{% if not item.equipamento.ativo %} · Inativo{% endif %}</td></tr>{% empty %}<tr><td colspan="3">Nenhuma unidade alocada. A retirada não poderá ser confirmada.</td></tr>{% endfor %}</tbody></table>
         </div>
