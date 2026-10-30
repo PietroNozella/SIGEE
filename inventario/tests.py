@@ -557,8 +557,8 @@ class AutenticacaoTests(TestCase):
             fetch_redirect_response=False,
         )
         self.assertEqual(
-            int(self.client.session["_auth_user_id"]),
-            self.usuario.pk,
+            self.client.session["_auth_user_id"],
+            str(self.usuario.pk),
         )
 
     def test_login_dos_demais_perfis_preserva_destino_da_listagem(self):

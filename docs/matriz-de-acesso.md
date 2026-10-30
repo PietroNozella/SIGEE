@@ -8,7 +8,7 @@ registram as verificações publicadas de RF-10/RF-11 e seus limites.
 
 ## Princípios
 
-- O SIGEE usa o `User` nativo do Django.
+- O SIGEE usa `contas.User`, derivado de `AbstractUser` do Django, com chave primária UUID.
 - Os perfis funcionais são os grupos `Administrador`, `Operador` e `Professor`.
 - Cada conta funcional pertence a exatamente um desses grupos. Uma conta sem grupo pode se autenticar, mas não recebe permissões funcionais.
 - O Django Superuser é uma conta técnica, usada para a configuração inicial, e não constitui um quarto perfil funcional.
@@ -58,7 +58,7 @@ O comando `python manage.py configurar_perfis`, executado depois de `migrate`, a
 
 | Grupo | Permissões atuais |
 |---|---|
-| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `auth.add_user`, `auth.view_user`, `auth.change_user`, `auditoria.view_registroauditoria`, `movimentacoes.view_movimentacao`, `reservas.view_reserva`; no app `pedagogico`: `view_turma`, `add_turma`, `change_turma`, `view_disciplina`, `add_disciplina`, `change_disciplina`, `view_atividadepedagogica`, `add_atividadepedagogica`, `change_atividadepedagogica`, `view_utilizacaopedagogica`; no app `manutencoes`: `view_manutencao`, `add_manutencao`, `change_manutencao` |
+| Administrador | `view_equipamento`, `add_equipamento`, `change_equipamento`, `delete_equipamento`, `view_resumo_inventario`, `contas.add_user`, `contas.view_user`, `contas.change_user`, `auditoria.view_registroauditoria`, `movimentacoes.view_movimentacao`, `reservas.view_reserva`; no app `pedagogico`: `view_turma`, `add_turma`, `change_turma`, `view_disciplina`, `add_disciplina`, `change_disciplina`, `view_atividadepedagogica`, `add_atividadepedagogica`, `change_atividadepedagogica`, `view_utilizacaopedagogica`; no app `manutencoes`: `view_manutencao`, `add_manutencao`, `change_manutencao` |
 | Operador | `view_equipamento`, `movimentacoes.add_movimentacao` (retirada com ou sem reserva e devolução com ou sem encaminhamento para manutenção), `movimentacoes.view_movimentacao` |
 | Professor | `view_equipamento`, `add_reserva`, `view_reserva`, `change_reserva`; no app `pedagogico`: `view_utilizacaopedagogica`, `add_utilizacaopedagogica`, `change_utilizacaopedagogica` |
 
@@ -68,8 +68,8 @@ autoriza gravar contextos nem acessar os detalhes próprios do Professor.
 
 As permissões das funcionalidades futuras serão acrescentadas somente quando suas respectivas rotas forem implementadas.
 
-A gestão de usuários acrescenta `auth.view_user` e `auth.change_user` ao
-Administrador em `configurar_perfis`, sem conceder `auth.delete_user`. As rotas
+A gestão de usuários acrescenta `contas.view_user` e `contas.change_user` ao
+Administrador em `configurar_perfis`, sem conceder `contas.delete_user`. As rotas
 `/usuarios/`, `/usuarios/<id>/desativar/` e `/usuarios/<id>/reativar/` exigem
 Administrador funcional ativo, sem privilégios técnicos. Alterações aceitam somente
 POST com CSRF. As restrições e a preservação do histórico estão descritas em

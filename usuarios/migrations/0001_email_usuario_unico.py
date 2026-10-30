@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import migrations
 from django.db.models import Count
 from django.db.models.functions import Lower
@@ -7,7 +8,7 @@ NOME_INDICE = "usuarios_user_email_ci_unique"
 
 
 def criar_indice_email_unico(apps, schema_editor):
-    User = apps.get_model("auth", "User")
+    User = apps.get_model(settings.AUTH_USER_MODEL)
     alias = schema_editor.connection.alias
     possui_duplicidade = (
         User.objects.using(alias)
@@ -41,6 +42,7 @@ def remover_indice_email_unico(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("auth", "0012_alter_user_first_name_max_length"),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [

@@ -1,6 +1,6 @@
 # Autenticação, recuperação de senha e autorização
 
-Este documento descreve os incrementos implementados do `RF-01` e do `RS-07`. O fluxo usa o `User`, os formulários, as views, os tokens, as sessões, os grupos e as permissões nativas do Django.
+Este documento descreve os incrementos implementados do `RF-01` e do `RS-07`. O fluxo usa `contas.User`, derivado de `AbstractUser`, com chave primária UUID, mantendo os formulários, as views, os tokens, as sessões, os grupos e as permissões nativas do Django.
 
 ## Fluxo implementado
 
@@ -30,17 +30,17 @@ Em desenvolvimento, o backend de e-mail exibe a mensagem no console. No ambiente
 - `Operador` e `Professor`: consultam a listagem e usam seus filtros.
 - Usuários autenticados sem a permissão exigida recebem `403`; usuários anônimos são redirecionados ao login com `next`.
 - Botões e links são exibidos conforme as permissões, mas a decisão final sempre ocorre na view.
-- O cadastro de usuários exige uma conta não Superuser pertencente somente ao grupo `Administrador` e com `auth.add_user`.
+- O cadastro de usuários exige uma conta não Superuser pertencente somente ao grupo `Administrador` e com `contas.add_user`.
 
 O formulário de cadastro estende `UserCreationForm`. Portanto, a senha inicial passa pelos validadores configurados e é armazenada com o hash do Django. A conta criada pertence a exatamente um dos três grupos funcionais e nunca recebe `is_staff` ou `is_superuser`.
 
-O e-mail é obrigatório para as contas funcionais e deve ser único sem diferenciação entre letras maiúsculas e minúsculas. O formulário rejeita a duplicidade com uma mensagem clara, e um índice único no banco preserva a regra mesmo quando a gravação não passa pelo formulário do SIGEE. Contas técnicas sem e-mail continuam permitidas pelo `User` nativo do Django.
+O e-mail é obrigatório para as contas funcionais e deve ser único sem diferenciação entre letras maiúsculas e minúsculas. O formulário rejeita a duplicidade com uma mensagem clara, e um índice único no banco preserva a regra mesmo quando a gravação não passa pelo formulário do SIGEE. Contas técnicas sem e-mail continuam permitidas pelo modelo derivado de `AbstractUser`.
 
 ## Desativação reversível de usuários
 
 A tela `/usuarios/` permite ao Administrador funcional consultar contas comuns,
 filtrar por nome, usuário, e-mail e situação, desativar e reativar. Consulta exige
-`auth.view_user`; alteração de situação exige `auth.change_user`. Execute
+`contas.view_user`; alteração de situação exige `contas.change_user`. Execute
 `python manage.py configurar_perfis` para aplicar essas permissões a bancos existentes.
 
 A desativação usa `is_active=False`, encerra as sessões da conta e preserva senha,
