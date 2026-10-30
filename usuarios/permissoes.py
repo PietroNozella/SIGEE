@@ -12,7 +12,7 @@ GRUPOS_FUNCIONAIS = (
     GRUPO_PROFESSOR,
 )
 
-PERMISSAO_CADASTRAR_USUARIO = "auth.add_user"
+PERMISSAO_CADASTRAR_USUARIO = "contas.add_user"
 PERMISSAO_CONSULTAR_AUDITORIA = "auditoria.view_registroauditoria"
 PERMISSAO_CRIAR_RESERVA = "reservas.add_reserva"
 PERMISSAO_CONSULTAR_RESERVA = "reservas.view_reserva"
@@ -27,8 +27,8 @@ PERMISSOES_POR_GRUPO = {
         "inventario.delete_equipamento",
         "inventario.view_resumo_inventario",
         PERMISSAO_CADASTRAR_USUARIO,
-        "auth.view_user",
-        "auth.change_user",
+        "contas.view_user",
+        "contas.change_user",
         PERMISSAO_CONSULTAR_AUDITORIA,
         "movimentacoes.view_movimentacao",
         "reservas.view_reserva",
@@ -143,7 +143,7 @@ def usuarios_funcionais_ativos():
 def pode_gerenciar_usuarios(user, acao="view"):
     return (
         e_administrador_funcional(user) and not user.is_staff
-        and user.has_perm(f"auth.{acao}_user")
+        and user.has_perm(f"contas.{acao}_user")
     )
 
 

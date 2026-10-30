@@ -392,7 +392,7 @@ class AuditoriaCadastroUsuarioTests(TestCase):
         self.assertRedirects(resposta, reverse("usuarios:usuario_novo"))
         self.assertEqual(registro.usuario, self.administrador)
         self.assertEqual(registro.resultado, RegistroAuditoria.Resultado.SUCESSO)
-        self.assertEqual(registro.entidade, "auth.User")
+        self.assertEqual(registro.entidade, get_user_model()._meta.label)
         self.assertEqual(registro.entidade_id, str(usuario_cadastrado.pk))
 
     def test_cadastro_invalido_registra_falha_sem_dados_do_formulario(self):
@@ -412,7 +412,7 @@ class AuditoriaCadastroUsuarioTests(TestCase):
         self.assertEqual(resposta.status_code, 200)
         self.assertEqual(registro.usuario, self.administrador)
         self.assertEqual(registro.resultado, RegistroAuditoria.Resultado.FALHA)
-        self.assertEqual(registro.entidade, "auth.User")
+        self.assertEqual(registro.entidade, get_user_model()._meta.label)
         self.assertEqual(registro.entidade_id, "")
         self.assertFalse(hasattr(registro, "dados_formulario"))
 

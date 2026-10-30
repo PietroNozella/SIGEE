@@ -35,7 +35,7 @@ class Command(BaseCommand):
 
         dados = {
             "conta": {
-                "id": usuario.pk,
+                "id": str(usuario.pk),
                 "username": usuario.username,
                 "first_name": usuario.first_name,
                 "last_name": usuario.last_name,

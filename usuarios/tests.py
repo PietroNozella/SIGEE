@@ -100,7 +100,7 @@ class CadastroUsuarioTests(TestCase):
         )
         cls.permissao_individual.user_permissions.add(
             Permission.objects.get(
-                content_type__app_label="auth",
+                content_type__app_label=get_user_model()._meta.app_label,
                 codename="add_user",
             )
         )
@@ -457,7 +457,7 @@ class RecuperacaoSenhaTests(TestCase):
                 usuario=self.usuario,
                 acao=AcaoAuditoria.SENHA_REDEFINIDA,
                 resultado=RegistroAuditoria.Resultado.SUCESSO,
-                entidade="auth.User",
+                entidade=get_user_model()._meta.label,
                 entidade_id=str(self.usuario.pk),
             ).exists()
         )

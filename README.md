@@ -129,6 +129,20 @@ O superusuário deve criar uma conta comum pelo Django Admin e atribuir somente 
 
 Execute `configurar_perfis` depois das migrations. O comando é idempotente e mantém as permissões dos perfis alinhadas à configuração do projeto.
 
+As contas usam UUID como chave primária na tabela `auth_user`. Para atualizar um
+banco que ainda usa IDs numéricos, guarde um backup e mantenha a aplicação em
+manutenção até publicar a versão nova. Execute, nessa ordem:
+
+```powershell
+python manage.py migrate contas 0001 --settings=config.settings_preparacao_uuid
+python manage.py migrate
+python manage.py configurar_perfis
+```
+
+A configuração de preparação é exclusiva para o primeiro comando. A conversão
+preserva as contas e seus vínculos, encerra as sessões e invalida links antigos
+de recuperação de senha. A reversão exige restaurar o backup e o código anterior.
+
 ## Testes
 
 A suíte automatizada cobre autenticação, bloqueio de tentativas, autorização, inventário, importação CSV, usuários, documentos legais, auditoria, reservas, disponibilidade, conflitos, cancelamento, manutenção, devolução com problema, direitos dos titulares e contingência da BrasilAPI.

@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'axes',
+    'contas',
     'auditoria',
     'inventario',
     'legal',
@@ -76,6 +77,8 @@ INSTALLED_APPS = [
     'reservas',
     'usuarios',
 ]
+
+AUTH_USER_MODEL = "contas.User"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

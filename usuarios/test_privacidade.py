@@ -106,6 +106,7 @@ class DireitosTitularesCommandsTests(TestCase):
         call_command("exportar_dados_usuario", "titular", stdout=saida)
 
         dados = json.loads(saida.getvalue())
+        self.assertEqual(dados["conta"]["id"], str(self.usuario.pk))
         self.assertEqual(dados["conta"]["email"], "titular@example.com")
         self.assertEqual(dados["reservas"][0]["id"], self.reserva.pk)
         self.assertNotIn("password", dados["conta"])

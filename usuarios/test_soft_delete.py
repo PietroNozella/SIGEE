@@ -3,6 +3,7 @@ from datetime import timedelta
 from io import StringIO
 from threading import Barrier
 from unittest.mock import patch
+from uuid import uuid4
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
@@ -95,7 +96,7 @@ class SoftDeleteUsuarioTests(TestCase):
         self.assertEqual(self.eventos_sucesso().count(), 2)
         for evento in self.eventos_sucesso():
             self.assertEqual(evento.usuario_id, self.administrador.pk)
-            self.assertEqual(evento.entidade, "auth.User")
+            self.assertEqual(evento.entidade, get_user_model()._meta.label)
             self.assertEqual(evento.entidade_id, str(self.professor.pk))
 
     def test_username_e_email_continuam_reservados_apos_desativacao(self):
@@ -189,7 +190,8 @@ class SoftDeleteUsuarioTests(TestCase):
             cliente_csrf = Client(enforce_csrf_checks=True)
             cliente_csrf.force_login(self.administrador)
             self.assertEqual(cliente_csrf.post(url).status_code, 403)
-        self.assertEqual(self.client.post(reverse("usuarios:usuario_desativar", args=[999999])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("usuarios:usuario_desativar", args=[uuid4()])).status_code, 404)
+        self.assertEqual(self.client.post("/usuarios/999999/desativar/").status_code, 404)
         self.assertFalse(self.eventos_sucesso().exists())
 
     def test_impede_propria_conta_ultimo_administrador_e_contas_tecnicas(self):
