@@ -11,7 +11,8 @@ from auditoria.services import registrar_evento
 from reservas.models import Reserva
 
 from .permissoes import (
-    GRUPOS_FUNCIONAIS, GRUPO_ADMINISTRADOR, pode_gerenciar_usuarios,
+    GRUPOS_FUNCIONAIS, GRUPO_ADMINISTRADOR, pode_alterar_situacao_usuario,
+    pode_gerenciar_usuarios,
     usuarios_funcionais,
 )
 
@@ -30,7 +31,7 @@ def alterar_situacao_usuario(*, administrador, usuario_id, ativo):
     if not administrador.is_authenticated:
         raise PermissionDenied
 
-    # A ordem também serializa dois administradores tentando inativar um ao outro.
+    # Revalida a autoridade no banco e bloqueia as contas em ordem estável.
     usuarios = {
         usuario.pk: usuario
         for usuario in get_user_model().objects.select_for_update().filter(
@@ -56,6 +57,11 @@ def alterar_situacao_usuario(*, administrador, usuario_id, ativo):
             raise ValidationError("O último Administrador ativo não pode ser desativado.")
         if usuario.pk == administrador_atual.pk:
             raise ValidationError("Você não pode desativar a própria conta.")
+
+    if not pode_alterar_situacao_usuario(administrador_atual, usuario):
+        raise PermissionDenied
+
+    if not ativo:
         if usuario.reservas.filter(
             status=Reserva.Status.ATIVA,
         ).exclude(movimentacoes__tipo="RETIRADA").exists():

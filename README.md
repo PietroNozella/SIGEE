@@ -127,6 +127,19 @@ python manage.py runserver
 
 O superusuário deve criar uma conta comum pelo Django Admin e atribuir somente o grupo `Administrador`. Essa conta funcional poderá cadastrar os demais usuários pela rota `/usuarios/novo/`.
 
+Prepare também uma conta Administrador para reserva de acesso, com senha e e-mail
+de recuperação, e designe-a como principal:
+
+```powershell
+python manage.py configurar_administrador_principal nome_da_conta_reserva
+```
+
+Somente o principal pode desativar e reativar administradores comuns. Ambos mantêm
+a gestão de Professores e Operadores. A conta principal permanece ativa e protegida;
+para transferir a função, use o mesmo comando com outra conta e `--substituir`.
+As migrations não promovem usuários existentes automaticamente. Consulte o
+[procedimento de configuração e recuperação](docs/autenticacao.md#administrador-principal-de-reserva).
+
 Execute `configurar_perfis` depois das migrations. O comando é idempotente e mantém as permissões dos perfis alinhadas à configuração do projeto.
 
 As contas usam UUID como chave primária na tabela `auth_user`. Para atualizar um

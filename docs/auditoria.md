@@ -72,9 +72,17 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `USUARIO_ANONIMIZADO` | Uma conta comum é desativada e tem identificadores diretos substituídos. | Sucesso |
 | `USUARIO_DESATIVADO` | Um Administrador desativa uma conta funcional preservando seus dados e histórico. | Sucesso ou falha |
 | `USUARIO_REATIVADO` | Um Administrador reativa uma conta funcional previamente desativada. | Sucesso ou falha |
+| `ADMINISTRADOR_PRINCIPAL_DESIGNADO` | O comando técnico designa uma conta Administrador como principal. | Sucesso |
+| `ADMINISTRADOR_PRINCIPAL_SUBSTITUIDO` | A conta principal anterior passa a administrador comum durante a transferência da função. | Sucesso |
 | `DADOS_EXPIRADOS_REMOVIDOS` | Uma limpeza confirmada remove registros segundo datas de corte explícitas. | Sucesso |
 
 Uma tentativa de login inválida é registrada sem vincular o nome de usuário informado a uma conta. Consultas registram que houve uso de filtros, mas não armazenam os termos pesquisados. A importação registra um evento para o lote e não copia o conteúdo do arquivo. No cadastro de contas, a auditoria identifica o Administrador responsável e, em caso de sucesso, o identificador da conta criada, sem copiar nome, e-mail, perfil ou senha.
+
+A designação do Administrador principal referencia a conta afetada. Uma
+substituição registra o anterior e o novo principal em eventos separados na mesma
+transação. Como a execução é por comando técnico, esses eventos não atribuem um
+usuário autenticado da aplicação. Tentativas funcionais de alterar administradores
+sem autoridade retornam 403 e seguem o registro existente de `ACESSO_NEGADO`.
 
 Na retirada e na devolução, o evento de sucesso referencia a nova movimentação e é salvo na mesma transação que ela e a atualização do equipamento. Uma falha nessa gravação desfaz as três alterações. Tentativas inválidas geram separadamente um evento de falha sem copiar destinatário ou observação; acessos negados seguem o middleware existente. Na devolução rejeitada pela view, o evento de falha referencia a retirada consultada.
 

@@ -10,6 +10,7 @@ registram as verificações publicadas de RF-10/RF-11 e seus limites.
 
 - O SIGEE usa `contas.User`, derivado de `AbstractUser` do Django, com chave primária UUID.
 - Os perfis funcionais são os grupos `Administrador`, `Operador` e `Professor`.
+- O grupo `Administrador` distingue uma conta principal e as contas comuns. O principal possui as mesmas permissões do grupo e autoridade exclusiva para alterar a situação de outros administradores; não é um Superuser técnico.
 - Cada conta funcional pertence a exatamente um desses grupos. Uma conta sem grupo pode se autenticar, mas não recebe permissões funcionais.
 - O Django Superuser é uma conta técnica, usada para a configuração inicial, e não constitui um quarto perfil funcional.
 - A autorização é verificada no servidor com `Groups` e `Permissions`. Nas ações que dependem do proprietário do registro, como cancelar uma reserva, a aplicação também verifica a relação entre o usuário e o objeto.
@@ -23,7 +24,10 @@ registram as verificações publicadas de RF-10/RF-11 e seus limites.
 | Consultar equipamentos e disponibilidade | Sim | Sim | Sim |
 | Cadastrar, importar, alterar, excluir ou inativar equipamentos | Sim | Não | Não |
 | Cadastrar usuários e atribuir o grupo funcional | Sim | Não | Não |
-| Consultar, desativar e reativar usuários funcionais | Sim | Não | Não |
+| Consultar usuários funcionais | Sim | Não | Não |
+| Desativar e reativar Professores e Operadores | Sim | Não | Não |
+| Desativar e reativar outros administradores comuns | Somente o principal | Não | Não |
+| Desativar o Administrador principal | Não | Não | Não |
 | Consultar, criar, editar, inativar e reativar turmas, disciplinas e atividades pedagógicas | Sim | Não | Não |
 | Consultar registros de auditoria | Sim | Não | Não |
 | Visualizar o painel resumido e os indicadores pedagógicos | Sim | Não | Não |
@@ -74,6 +78,12 @@ Administrador em `configurar_perfis`, sem conceder `contas.delete_user`. As rota
 Administrador funcional ativo, sem privilégios técnicos. Alterações aceitam somente
 POST com CSRF. As restrições e a preservação do histórico estão descritas em
 [Autenticação](autenticacao.md#desativação-reversível-de-usuários).
+
+A alteração de situação também considera a conta alvo: administradores comuns não
+desativam nem reativam administradores. O principal pode alterar a situação dos
+comuns, mantendo a exigência de `contas.change_user`. A conta principal é protegida,
+e todos continuam impedidos de desativar a própria conta. A listagem usa a mesma
+verificação de autorização do serviço para apresentar as ações disponíveis.
 
 As rotas sob `/pedagogico/turmas/`, `/pedagogico/disciplinas/` e `/pedagogico/atividades/` exigem conta ativa, sem Superuser, pertencente exclusivamente ao grupo Administrador. Consulta exige `view`, criação exige `add`, e edição/inativação/reativação exigem `change` do modelo correspondente. Uma permissão individual não substitui o grupo correto. Não há permissão de exclusão atribuída, rota de exclusão nem registro desses modelos no Django Admin. Os links exigem a permissão de consulta. Os [cenários e resultados](cadastros-pedagogicos.md) incluem bloqueio por acesso direto e por POST.
 

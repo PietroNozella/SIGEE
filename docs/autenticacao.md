@@ -49,7 +49,10 @@ e-mail continuam reservados. A reativação exige novo login; sessões anteriore
 não são recuperadas. Não há exclusão definitiva na interface funcional.
 
 O servidor impede desativar a própria conta, o último Administrador ativo ou
-contas técnicas. Contas sem um único perfil funcional, incluindo as anonimizadas,
+contas técnicas. Somente o Administrador principal pode desativar e reativar
+outros administradores comuns. O principal não pode ter sua situação alterada
+pelo fluxo funcional. Administradores comuns continuam gerenciando Professores e
+Operadores. Contas sem um único perfil funcional, incluindo as anonimizadas,
 não podem ser alteradas por esse fluxo. Reservas ativas sem retirada bloqueiam a
 desativação até serem canceladas pelo Professor ou expiradas pelo fluxo de reservas.
 Reservas com retirada e equipamentos em uso permanecem no histórico e podem ser
@@ -70,6 +73,80 @@ python manage.py configurar_perfis
 ```
 
 O comando cria os grupos ausentes e substitui suas permissões pela matriz oficial. Ele é idempotente e falha com uma mensagem clara quando alguma permissão esperada ainda não existe. Em seguida, um Superuser técnico deve criar pelo Django Admin a primeira conta comum e atribuir somente o grupo `Administrador`.
+
+### Administrador principal de reserva
+
+Depois de aplicar as migrations, crie uma conta comum exclusiva para a reserva de
+acesso, com senha utilizável, e-mail de recuperação e somente o grupo
+`Administrador`. Designe essa conta pelo terminal do ambiente correspondente:
+
+```powershell
+python manage.py configurar_administrador_principal nome_da_conta_reserva
+```
+
+O comando exige conta ativa, sem `is_staff` ou `is_superuser`, exclusivamente no
+grupo `Administrador` e com senha utilizável. Não cria usuários nem modifica
+credenciais ou permissões. Repetir a designação da mesma conta não duplica eventos.
+As migrations mantêm todos os usuários existentes como administradores comuns;
+nenhum é promovido automaticamente. Até designar o principal, os administradores
+continuam gerenciando Professores e Operadores, mas não alteram a situação de
+outros administradores.
+
+Para transferir a função a outra conta Administrador previamente preparada:
+
+```powershell
+python manage.py configurar_administrador_principal nome_do_substituto --substituir
+```
+
+A transferência é atômica: o anterior permanece ativo como administrador comum e
+o substituto passa a principal. Falhas desfazem a transferência e sua auditoria.
+O banco permite no máximo um principal e exige que a conta principal permaneça
+ativa e sem privilégios técnicos. A presença de um principal é uma etapa de
+configuração, não uma conta criada automaticamente pela migration.
+
+O campo mantém `FALSE` como padrão também no banco, permitindo que a versão
+anterior cadastre contas comuns durante a transição para o código atualizado.
+
+A conta reserva permanece ativa, embora não seja usada no cotidiano. Sua senha e
+o acesso ao e-mail de recuperação devem ficar sob a responsabilidade institucional.
+Se houver perda de acesso, a manutenção técnica pode redefinir a senha pelos
+mecanismos do Django ou preparar outra conta e transferir a função pelo comando.
+
+O campo de designação não faz parte do cadastro funcional e é somente leitura no
+Django Admin. No Admin, os campos de situação, privilégios técnicos e grupos do
+principal também são somente leitura, e sua exclusão é bloqueada. O comando de
+anonimização recusa a conta principal, inclusive com `--confirmar`; designe um
+substituto antes de seguir esse procedimento.
+
+Os testes estão em `usuarios/test_administrador_principal.py`, além dos cenários
+de desativação em `usuarios/test_soft_delete.py`. A aplicação e a reversão da
+migration são verificadas em `contas/test_administrador_principal.py`, preservando
+contas, grupos, auditoria e o índice de e-mail único.
+
+### Verificação local em 30/10/2026
+
+Na branch `feat/administrador-principal`, a suíte completa executou **467 testes:
+451 aprovados e 16 ignorados no SQLite**, sem falhas, em 111,010 segundos. Os casos
+ignorados exigem recursos de concorrência do PostgreSQL. Os 19 testes novos cobrem
+a autoridade sobre a conta alvo, sessões e auditoria, proteção no Django Admin,
+cadastro sem promoção, configuração e substituição do principal, restrições do
+banco e preservação dos dados na aplicação e reversão da migration.
+
+```powershell
+.\.venv\Scripts\python.exe manage.py test --settings=config.settings_testes --noinput
+.\.venv\Scripts\python.exe manage.py check --settings=config.settings_testes
+.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run --settings=config.settings_testes
+git diff --check
+```
+
+As verificações passaram. A migration foi exercitada somente em bancos isolados
+de testes; nenhuma conta real foi promovida. Concorrência em PostgreSQL e
+validação no ambiente publicado não foram executadas neste incremento.
+
+Após manter o padrão persistente `FALSE` para compatibilidade com a versão
+anterior, a suíte de contas e usuários executou 61 testes: 59 aprovados e dois
+ignorados no SQLite. O teste de migration também confere o cadastro pela versão
+anterior depois de adicionar a nova coluna.
 
 ## Mecanismos de segurança
 

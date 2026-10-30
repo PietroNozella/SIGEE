@@ -23,7 +23,6 @@ def permissoes_funcionais(request):
         "pode_consultar_utilizacoes": pode_gerenciar_utilizacao_pedagogica(request.user),
         "pode_cadastrar_usuario": pode_cadastrar_usuario(request.user),
         "pode_consultar_usuarios": pode_gerenciar_usuarios(request.user),
-        "pode_alterar_usuarios": pode_gerenciar_usuarios(request.user, "change"),
         "pode_consultar_auditoria": pode_consultar_auditoria(request.user),
         "pode_registrar_retirada": pode_registrar_retirada(request.user),
         "pode_registrar_devolucao": pode_registrar_devolucao(request.user),
