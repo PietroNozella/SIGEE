@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}SIGEE{% endblock %}</title>
     <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261027.3">
+    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261030.1">
     {% block extra_styles %}{% endblock %}
 </head>
 <body>
@@ -149,15 +149,6 @@
             {% endif %}
         </nav>
 
-        <div class="sidebar-footer">
-            <form class="logout-form" method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button class="side-nav-item logout-button" type="submit" data-logout-trigger aria-haspopup="dialog" aria-controls="logout-confirm-dialog">
-                    <img src="{% static 'inventario/icons/logout.svg' %}" alt="" aria-hidden="true">
-                    Sair
-                </button>
-            </form>
-        </div>
     </aside>
 
     <dialog class="modal-exclusao logout-confirm-dialog" id="logout-confirm-dialog" aria-labelledby="logout-confirm-title" aria-describedby="logout-confirm-description" data-logout-dialog>
@@ -197,6 +188,13 @@
                     <span class="user-menu-heading">Documentos legais</span>
                     <a href="{% url 'legal:termos_de_uso' %}" target="_blank" rel="noopener">Termos de Uso</a>
                     <a href="{% url 'legal:politica_privacidade' %}" target="_blank" rel="noopener">Política de Privacidade</a>
+                    <form class="logout-form" method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button class="user-menu-logout" type="submit" data-logout-trigger aria-haspopup="dialog" aria-controls="logout-confirm-dialog">
+                            <img src="{% static 'inventario/icons/logout.svg' %}" alt="" aria-hidden="true">
+                            Sair
+                        </button>
+                    </form>
                 </nav>
             </details>
         </div>
@@ -215,7 +213,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="{% static 'inventario/js/sigee.js' %}?v=20261029.1"></script>
+    <script src="{% static 'inventario/js/sigee.js' %}?v=20261030.1"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

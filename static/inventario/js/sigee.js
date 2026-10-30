@@ -92,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (logoutDialog && typeof logoutDialog.showModal === "function") {
             event.preventDefault();
+            if (userMenu) userMenu.open = false;
             logoutDialog.showModal();
             logoutConfirm?.focus();
         }
@@ -119,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     logoutDialog?.addEventListener("close", () => {
         if (!logoutConfirmed) {
-            const returnControl = sidebar?.inert ? toggle : logoutTrigger;
+            const returnControl = userMenu?.querySelector("summary");
             returnControl?.focus();
         }
     });

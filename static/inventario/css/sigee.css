@@ -178,35 +178,6 @@ summary:focus-visible,
     text-transform: uppercase;
 }
 
-.sidebar-footer {
-    padding: 16px;
-    border-top: 1px solid var(--sigee-border);
-}
-
-.logout-form {
-    margin: 0;
-}
-
-.logout-button {
-    width: 100%;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-    font-family: inherit;
-    text-align: left;
-}
-
-.logout-button:hover,
-.logout-button:focus-visible {
-    color: var(--sigee-error);
-    background: var(--sigee-error-soft);
-}
-
-.logout-button:hover img,
-.logout-button:focus-visible img {
-    filter: brightness(0) saturate(100%) invert(16%) sepia(94%) saturate(3533%) hue-rotate(353deg) brightness(92%) contrast(86%);
-}
-
 .app-topbar {
     position: fixed;
     z-index: 1020;
@@ -289,7 +260,11 @@ summary:focus-visible,
     text-transform: uppercase;
 }
 
-.user-menu-panel a {
+.user-menu-panel a,
+.user-menu-logout {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
     padding: 10px 12px;
     border-radius: 4px;
     color: var(--sigee-on-surface);
@@ -300,6 +275,40 @@ summary:focus-visible,
 .user-menu-panel a:focus {
     color: var(--sigee-primary);
     background: var(--sigee-primary-soft);
+}
+
+.user-menu-panel .logout-form {
+    margin: 8px 0 0;
+    padding-top: 8px;
+    border-top: 1px solid var(--sigee-border);
+}
+
+.user-menu-logout {
+    width: 100%;
+    gap: 8px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.user-menu-logout img {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    filter: grayscale(1);
+}
+
+.user-menu-logout:hover,
+.user-menu-logout:focus-visible {
+    color: var(--sigee-error);
+    background: var(--sigee-error-soft);
+}
+
+.user-menu-logout:hover img,
+.user-menu-logout:focus-visible img {
+    filter: brightness(0) saturate(100%) invert(16%) sepia(94%) saturate(3533%) hue-rotate(353deg) brightness(92%) contrast(86%);
 }
 
 .user-summary strong {
