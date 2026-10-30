@@ -31,6 +31,8 @@ class Command(BaseCommand):
 
         if usuario.is_superuser or usuario.is_staff:
             raise CommandError("Contas técnicas não podem ser anonimizadas por este comando.")
+        if usuario.is_administrador_principal:
+            raise CommandError("O Administrador principal não pode ser anonimizado. Designe um substituto primeiro.")
         if usuario.username.startswith("anonimizado-"):
             raise CommandError("A conta já está anonimizada.")
 
@@ -48,6 +50,8 @@ class Command(BaseCommand):
         username_original = usuario.username
         with transaction.atomic():
             usuario = User.objects.select_for_update().get(pk=usuario.pk)
+            if usuario.is_administrador_principal:
+                raise CommandError("O Administrador principal não pode ser anonimizado. Designe um substituto primeiro.")
             usuario.username = f"anonimizado-{uuid4().hex}"
             usuario.first_name = ""
             usuario.last_name = ""

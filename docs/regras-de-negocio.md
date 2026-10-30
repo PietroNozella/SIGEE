@@ -20,7 +20,7 @@ Este documento registra as 19 regras de negócio confirmadas para o SIGEE. Elas 
 - **RN-15 — Registro do contexto pedagógico:** utilização com finalidade pedagógica pode ser associada a turma, disciplina e atividade pedagógica.
 - **RN-16 — Vinculação pedagógica com ou sem reserva:** a associação pedagógica pode ser registrada em utilizações originadas de reserva ou de retirada sem reserva, preservando a movimentação.
 - **RN-17 — Indicadores baseados em registros pedagógicos:** indicadores pedagógicos são calculados somente a partir de registros efetivamente vinculados a turma, disciplina e atividade pedagógica.
-- **RN-18 — Cadastro controlado de usuários:** o SIGEE não permite cadastro público; novas contas de Administrador, Operador e Professor são criadas por um Administrador. O primeiro Administrador é configurado por meio de uma conta técnica de Django Superuser.
+- **RN-18 — Cadastro controlado de usuários:** o SIGEE não permite cadastro público; novas contas de Administrador, Operador e Professor são criadas por um Administrador. A configuração inicial usa uma conta técnica de Django Superuser. Dentro do perfil Administrador, uma única conta pode ser designada como Administrador principal, destinada à reserva de acesso administrativo. Somente o principal pode desativar e reativar outros administradores. Administradores comuns mantêm a gestão de Professores e Operadores. A conta principal permanece ativa e não pode ser desativada pelo fluxo funcional.
 - **RN-19 — Validade temporal e dias permitidos da reserva:** a data e a hora inicial da reserva não podem estar no passado. A data atual é permitida quando o horário inicial ainda não tiver passado. Reservas cujo período inclua sábado ou domingo são impedidas. Antes da efetivação da reserva, a coincidência com feriado nacional consultado pela BrasilAPI é informada no diálogo de confirmação e não impede a reserva.
 
 ## Decisão de modelagem da reserva em lote
@@ -33,6 +33,9 @@ Este documento registra as 19 regras de negócio confirmadas para o SIGEE. Elas 
 - O Django Superuser é uma conta técnica e não representa o perfil funcional Administrador do SIGEE.
 - O perfil é atribuído por um Administrador e não pode ser escolhido livremente pelo usuário.
 - O sistema pode possuir mais de um Administrador funcional sem conceder privilégios de superuser.
+- O Administrador principal pertence ao mesmo grupo `Administrador`, mantém suas permissões e não recebe `is_staff` nem `is_superuser`. A distinção é registrada em `is_administrador_principal`.
+- Novos administradores são comuns. A designação ou substituição do principal ocorre somente por comando técnico, com auditoria; a substituição mantém o anterior como administrador comum.
+- A conta principal não pode ser anonimizada enquanto exercer essa função. É necessário designar um substituto antes de encaminhar esse procedimento.
 - Cada conta funcional pertence a exatamente um grupo: Administrador, Operador ou Professor.
 
 As ações permitidas para cada grupo estão consolidadas na [Matriz de acesso](matriz-de-acesso.md).

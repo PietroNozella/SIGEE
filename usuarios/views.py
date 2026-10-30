@@ -17,6 +17,7 @@ from auditoria.services import registrar_evento
 
 from .forms import CadastroUsuarioForm
 from .permissoes import (
+    pode_alterar_situacao_usuario,
     pode_cadastrar_usuario,
     pode_consultar_painel,
     pode_gerenciar_usuarios,
@@ -121,8 +122,11 @@ def usuario_lista(request):
         situacao = ""
     parametros = request.GET.copy()
     parametros.pop("pagina", None)
+    pagina = Paginator(usuarios, 15).get_page(request.GET.get("pagina"))
+    for usuario in pagina.object_list:
+        usuario.pode_alterar_situacao = pode_alterar_situacao_usuario(request.user, usuario)
     return render(request, "usuarios/usuario_lista.html", {
-        "pagina": Paginator(usuarios, 15).get_page(request.GET.get("pagina")),
+        "pagina": pagina,
         "busca": busca, "situacao": situacao,
         "parametros_paginacao": parametros.urlencode(),
     })

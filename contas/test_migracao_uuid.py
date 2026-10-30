@@ -159,6 +159,7 @@ def executar_etapa(etapa):
     assert administrador.is_staff and administrador.is_superuser
     assert not User.objects.get(username="inativo-uuid").is_active
     assert professor.email == "uuid@example.com"
+    assert not User.objects.filter(is_administrador_principal=True).exists()
     assert professor.has_perm("contas.view_user") and professor.has_perm("contas.change_user")
     assert professor.groups.get().name == "Professor"
     assert not ContentType.objects.filter(app_label="auth", model="user").exists()

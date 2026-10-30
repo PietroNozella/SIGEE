@@ -147,6 +147,25 @@ def pode_gerenciar_usuarios(user, acao="view"):
     )
 
 
+def pode_alterar_situacao_usuario(administrador, usuario):
+    if (
+        not pode_gerenciar_usuarios(administrador, "change")
+        or usuario.is_staff or usuario.is_superuser
+        or usuario.is_administrador_principal
+        or usuario.pk == administrador.pk
+    ):
+        return False
+
+    grupos = {grupo.name for grupo in usuario.groups.all()}
+    if len(grupos) != 1 or not grupos.issubset(GRUPOS_FUNCIONAIS):
+        return False
+
+    return (
+        grupos != {GRUPO_ADMINISTRADOR}
+        or administrador.is_administrador_principal
+    )
+
+
 def pode_cadastrar_usuario(user):
     return e_administrador_funcional(user) and user.has_perm(
         PERMISSAO_CADASTRAR_USUARIO

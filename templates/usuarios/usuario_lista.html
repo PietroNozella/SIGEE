@@ -27,9 +27,9 @@
                 <tbody>{% for usuario in pagina %}<tr>
                     <td><strong>{{ usuario.get_full_name|default:usuario.username }}</strong><br>{{ usuario.username }}</td>
                     <td>{{ usuario.email|default:"—" }}</td>
-                    <td>{% for grupo in usuario.groups.all %}{{ grupo.name }}{% endfor %}</td>
+                    <td>{% if usuario.is_administrador_principal %}Administrador principal{% else %}{% for grupo in usuario.groups.all %}{{ grupo.name }}{% endfor %}{% endif %}</td>
                     <td>{% if usuario.is_active %}Ativo{% else %}Inativo{% endif %}</td>
-                    <td>{% if usuario.pk == request.user.pk %}Sua conta{% elif pode_alterar_usuarios %}
+                    <td>{% if usuario.pk == request.user.pk %}Sua conta{% elif usuario.is_administrador_principal %}Conta protegida{% elif usuario.pode_alterar_situacao %}
                         <form method="post" action="{% if usuario.is_active %}{% url 'usuarios:usuario_desativar' usuario.pk %}{% else %}{% url 'usuarios:usuario_reativar' usuario.pk %}{% endif %}">
                             {% csrf_token %}<button class="btn btn-secondary-sigee" type="submit" aria-label="{% if usuario.is_active %}Desativar{% else %}Reativar{% endif %} {{ usuario.username }}">{% if usuario.is_active %}Desativar{% else %}Reativar{% endif %}</button>
                         </form>

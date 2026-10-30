@@ -199,9 +199,9 @@ class SoftDeleteUsuarioTests(TestCase):
         outro = get_user_model().objects.create_user(username="outro-admin")
         outro.groups.add(Group.objects.get(name="Administrador"))
         self.assertContains(self.alterar(self.administrador, follow=True), "própria conta")
-        self.alterar(outro)
+        self.assertEqual(self.alterar(outro).status_code, 403)
         outro.refresh_from_db()
-        self.assertFalse(outro.is_active)
+        self.assertTrue(outro.is_active)
         for campo in ("is_staff", "is_superuser"):
             tecnico = get_user_model().objects.create_user(username=campo, **{campo: True})
             self.assertContains(self.alterar(tecnico, follow=True), "Contas técnicas")
@@ -291,6 +291,8 @@ class ConcorrenciaSoftDeleteTests(TransactionTestCase):
     def test_administradores_nao_podem_desativar_um_ao_outro_simultaneamente(self):
         cenario = criar_cenario()
         primeiro = cenario["administrador"]
+        primeiro.is_administrador_principal = True
+        primeiro.save(update_fields=("is_administrador_principal",))
         segundo = get_user_model().objects.create_user(username="segundo-admin")
         segundo.groups.add(Group.objects.get(name="Administrador"))
         barreira = Barrier(2)
