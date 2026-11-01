@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}SIGEE{% endblock %}</title>
     <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261027.3">
+    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261030.3">
     {% block extra_styles %}{% endblock %}
 </head>
 <body>
@@ -20,7 +20,7 @@
             <span class="brand-symbol" aria-hidden="true">
                 <img src="{% static 'inventario/icons/logo.svg' %}" alt="">
             </span>
-            <span>
+            <span class="sidebar-brand-text">
                 <strong>SIGEE</strong>
                 <small>{% if e_professor %}Portal do Professor{% else %}Gestão de Equipamentos{% endif %}</small>
             </span>
@@ -28,137 +28,146 @@
 
         <nav class="sidebar-navigation" aria-label="Módulos do sistema">
             {% if e_professor %}
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" title="Equipamentos" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
-                    Equipamentos
+                    <span class="side-nav-label">Equipamentos</span>
                 </a>
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} is-active{% endif %}" href="{% url 'reservas:reserva_lista' %}"{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} is-active{% endif %}" title="Minhas Reservas" href="{% url 'reservas:reserva_lista' %}"{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
-                    Minhas Reservas
+                    <span class="side-nav-label">Minhas Reservas</span>
                 </a>
-                <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or aba_fluxo == 'em_uso' %} is-active{% endif %}" href="{% url 'movimentacoes:devolucao_lista' %}">
-                    <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">Em uso
+                <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or aba_fluxo == 'em_uso' %} is-active{% endif %}" title="Em uso" href="{% url 'movimentacoes:devolucao_lista' %}"{% if request.resolver_match.url_name == 'devolucao_lista' or aba_fluxo == 'em_uso' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">
+                    <span class="side-nav-label">Em uso</span>
                 </a>
             {% elif e_operador %}
                 {% if perms.inventario.view_equipamento %}
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" title="Equipamentos" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
-                    Equipamentos
+                    <span class="side-nav-label">Equipamentos</span>
                 </a>
                 {% endif %}
                 {% if pode_registrar_retirada %}
-                <a class="side-nav-item{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or aba_fluxo == 'reservas' %} is-active{% endif %}" href="{% url 'movimentacoes:retirada_reserva_lista' %}"{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or aba_fluxo == 'reservas' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or aba_fluxo == 'reservas' %} is-active{% endif %}" title="Reservas" href="{% url 'movimentacoes:retirada_reserva_lista' %}"{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or aba_fluxo == 'reservas' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
-                    Reservas
+                    <span class="side-nav-label">Reservas</span>
                 </a>
                 {% endif %}
                 {% if pode_registrar_devolucao %}
-                <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' or aba_fluxo == 'em_uso' %} is-active{% endif %}" href="{% url 'movimentacoes:devolucao_lista' %}"{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' or aba_fluxo == 'em_uso' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' or aba_fluxo == 'em_uso' %} is-active{% endif %}" title="Em uso" href="{% url 'movimentacoes:devolucao_lista' %}"{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' or aba_fluxo == 'em_uso' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">
-                    Em uso
+                    <span class="side-nav-label">Em uso</span>
                 </a>
                 {% endif %}
             {% else %}
             {% if pode_consultar_painel %}
-            <a class="side-nav-item{% if request.resolver_match.url_name == 'painel' %} is-active{% endif %}" href="{% url 'inventario:painel' %}"{% if request.resolver_match.url_name == 'painel' %} aria-current="page"{% endif %}>
-                <img src="{% static 'inventario/icons/overview.svg' %}" alt="" aria-hidden="true">
-                Visão geral
-            </a>
+            <a class="side-nav-item{% if request.resolver_match.url_name == 'painel' %} is-active{% endif %}" title="Visão geral" href="{% url 'inventario:painel' %}"{% if request.resolver_match.url_name == 'painel' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/overview.svg' %}" alt="" aria-hidden="true">
+                    <span class="side-nav-label">Visão geral</span>
+                </a>
             {% endif %}
             {% if perms.inventario.view_equipamento %}
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' and request.resolver_match.url_name != 'painel' %} is-active{% endif %}" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' and request.resolver_match.url_name != 'painel' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' and request.resolver_match.url_name != 'painel' %} is-active{% endif %}" title="Equipamentos" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' and request.resolver_match.url_name != 'painel' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
-                    Equipamentos
+                    <span class="side-nav-label">Equipamentos</span>
                 </a>
             {% else %}
-                <span class="side-nav-item is-disabled" aria-disabled="true">
+                <span class="side-nav-item is-disabled" title="Equipamentos" aria-disabled="true">
                     <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
-                    Equipamentos
+                    <span class="side-nav-label">Equipamentos</span>
                 </span>
             {% endif %}
             {% if pode_consultar_reservas_administrativas %}
-            <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} is-active{% endif %}" href="{% url 'reservas:reserva_consulta' %}"{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} aria-current="page"{% endif %}>
-                <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
-                Reservas
-            </a>
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} is-active{% endif %}" title="Reservas" href="{% url 'reservas:reserva_consulta' %}"{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
+                    <span class="side-nav-label">Reservas</span>
+                </a>
             {% endif %}
             {% if pode_consultar_historico %}
-            <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or aba_fluxo == 'em_uso' %} is-active{% endif %}" href="{% url 'movimentacoes:devolucao_lista' %}">
-                <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">Em uso
-            </a>
+            <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or aba_fluxo == 'em_uso' %} is-active{% endif %}" title="Em uso" href="{% url 'movimentacoes:devolucao_lista' %}"{% if request.resolver_match.url_name == 'devolucao_lista' or aba_fluxo == 'em_uso' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">
+                    <span class="side-nav-label">Em uso</span>
+                </a>
             {% endif %}
             {% if pode_consultar_manutencoes %}
-            <a class="side-nav-item{% if request.resolver_match.namespace == 'manutencoes' %} is-active{% endif %}" href="{% url 'manutencoes:manutencao_lista' %}"{% if request.resolver_match.namespace == 'manutencoes' %} aria-current="page"{% endif %}>
-                <img src="{% static 'inventario/icons/maintenance.svg' %}" alt="" aria-hidden="true">
-                Manutenções
-            </a>
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'manutencoes' %} is-active{% endif %}" title="Manutenções" href="{% url 'manutencoes:manutencao_lista' %}"{% if request.resolver_match.namespace == 'manutencoes' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/maintenance.svg' %}" alt="" aria-hidden="true">
+                    <span class="side-nav-label">Manutenções</span>
+                </a>
             {% endif %}
 
             <span class="sidebar-section-title">Gestão educacional</span>
             {% if pode_consultar_indicadores_pedagogicos %}
-            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.url_name == 'indicadores' %} is-active{% endif %}" href="{% url 'pedagogico:indicadores' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.url_name == 'indicadores' %} aria-current="page"{% endif %}>
-                <img src="{% static 'inventario/icons/pedagogical.svg' %}" alt="" aria-hidden="true">
-                Uso pedagógico
-            </a>
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.url_name == 'indicadores' %} is-active{% endif %}" title="Uso pedagógico" href="{% url 'pedagogico:indicadores' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.url_name == 'indicadores' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/pedagogical.svg' %}" alt="" aria-hidden="true">
+                    <span class="side-nav-label">Uso pedagógico</span>
+                </a>
             {% endif %}
             {% if pode_consultar_turmas %}
-            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'turmas' %} is-active{% endif %}" href="{% url 'pedagogico:turmas_lista' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'turmas' %} aria-current="page"{% endif %}>
-                <img src="{% static 'inventario/icons/classes.svg' %}" alt="" aria-hidden="true">Turmas
-            </a>
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'turmas' %} is-active{% endif %}" title="Turmas" href="{% url 'pedagogico:turmas_lista' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'turmas' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/classes.svg' %}" alt="" aria-hidden="true">
+                    <span class="side-nav-label">Turmas</span>
+                </a>
             {% endif %}
             {% if pode_consultar_disciplinas %}
-            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'disciplinas' %} is-active{% endif %}" href="{% url 'pedagogico:disciplinas_lista' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'disciplinas' %} aria-current="page"{% endif %}>
-                <img src="{% static 'inventario/icons/subjects.svg' %}" alt="" aria-hidden="true">Disciplinas
-            </a>
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'disciplinas' %} is-active{% endif %}" title="Disciplinas" href="{% url 'pedagogico:disciplinas_lista' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'disciplinas' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/subjects.svg' %}" alt="" aria-hidden="true">
+                    <span class="side-nav-label">Disciplinas</span>
+                </a>
             {% endif %}
             {% if pode_consultar_atividades %}
-            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'atividades' %} is-active{% endif %}" href="{% url 'pedagogico:atividades_lista' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'atividades' %} aria-current="page"{% endif %}>
-                <img src="{% static 'inventario/icons/activities.svg' %}" alt="" aria-hidden="true">Atividades
-            </a>
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'atividades' %} is-active{% endif %}" title="Atividades" href="{% url 'pedagogico:atividades_lista' %}"{% if request.resolver_match.namespace == 'pedagogico' and request.resolver_match.kwargs.cadastro == 'atividades' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/activities.svg' %}" alt="" aria-hidden="true">
+                    <span class="side-nav-label">Atividades</span>
+                </a>
             {% endif %}
 
             <span class="sidebar-section-title">Administração</span>
             {% if pode_consultar_usuarios %}
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'usuarios' %} is-active{% endif %}" href="{% url 'usuarios:usuario_lista' %}"{% if request.resolver_match.namespace == 'usuarios' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'usuarios' %} is-active{% endif %}" title="Usuários" href="{% url 'usuarios:usuario_lista' %}"{% if request.resolver_match.namespace == 'usuarios' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/users.svg' %}" alt="" aria-hidden="true">
-                    Usuários
+                    <span class="side-nav-label">Usuários</span>
                 </a>
             {% elif pode_cadastrar_usuario %}
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'usuarios' %} is-active{% endif %}" href="{% url 'usuarios:usuario_novo' %}"{% if request.resolver_match.namespace == 'usuarios' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'usuarios' %} is-active{% endif %}" title="Usuários" href="{% url 'usuarios:usuario_novo' %}"{% if request.resolver_match.namespace == 'usuarios' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/users.svg' %}" alt="" aria-hidden="true">
-                    Usuários
+                    <span class="side-nav-label">Usuários</span>
                 </a>
             {% else %}
-                <span class="side-nav-item is-disabled" aria-disabled="true">
+                <span class="side-nav-item is-disabled" title="Usuários" aria-disabled="true">
                     <img src="{% static 'inventario/icons/users.svg' %}" alt="" aria-hidden="true">
-                    Usuários
+                    <span class="side-nav-label">Usuários</span>
                 </span>
             {% endif %}
             {% if pode_consultar_auditoria %}
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'auditoria' %} is-active{% endif %}" href="{% url 'auditoria:registro_lista' %}"{% if request.resolver_match.namespace == 'auditoria' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'auditoria' %} is-active{% endif %}" title="Auditoria" href="{% url 'auditoria:registro_lista' %}"{% if request.resolver_match.namespace == 'auditoria' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/audit.svg' %}" alt="" aria-hidden="true">
-                    Auditoria
+                    <span class="side-nav-label">Auditoria</span>
                 </a>
             {% endif %}
             {% endif %}
             {% if pode_consultar_historico %}
-            <a class="side-nav-item{% if request.resolver_match.url_name == 'historico_lista' or aba_fluxo == 'historico' %} is-active{% endif %}" href="{% url 'movimentacoes:historico_lista' %}"{% if request.resolver_match.url_name == 'historico_lista' or aba_fluxo == 'historico' %} aria-current="page"{% endif %}>
-                <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
-                Histórico
-            </a>
+            <a class="side-nav-item{% if request.resolver_match.url_name == 'historico_lista' or aba_fluxo == 'historico' %} is-active{% endif %}" title="Histórico" href="{% url 'movimentacoes:historico_lista' %}"{% if request.resolver_match.url_name == 'historico_lista' or aba_fluxo == 'historico' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/movements.svg' %}" alt="" aria-hidden="true">
+                    <span class="side-nav-label">Histórico</span>
+                </a>
             {% endif %}
         </nav>
 
-        <div class="sidebar-footer">
-            <form class="logout-form" method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button class="side-nav-item logout-button" type="submit" data-logout-trigger aria-haspopup="dialog" aria-controls="logout-confirm-dialog">
-                    <img src="{% static 'inventario/icons/logout.svg' %}" alt="" aria-hidden="true">
-                    Sair
-                </button>
-            </form>
-        </div>
     </aside>
+
+    <nav class="user-menu-panel" id="user-menu-panel" aria-label="Menu do usuário" popover>
+        <span class="user-menu-heading">Documentos legais</span>
+        <a href="{% url 'legal:termos_de_uso' %}" target="_blank" rel="noopener">Termos de Uso</a>
+        <a href="{% url 'legal:politica_privacidade' %}" target="_blank" rel="noopener">Política de Privacidade</a>
+        <form class="logout-form" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="user-menu-logout" type="submit" data-logout-trigger aria-haspopup="dialog" aria-controls="logout-confirm-dialog">
+                <img src="{% static 'inventario/icons/logout.svg' %}" alt="" aria-hidden="true">
+                Sair
+            </button>
+        </form>
+    </nav>
 
     <dialog class="modal-exclusao logout-confirm-dialog" id="logout-confirm-dialog" aria-labelledby="logout-confirm-title" aria-describedby="logout-confirm-description" data-logout-dialog>
         <div class="modal-exclusao-conteudo">
@@ -177,29 +186,20 @@
         </footer>
     </dialog>
 
-    <button class="sidebar-overlay" type="button" data-sidebar-close aria-label="Fechar menu"></button>
+    <button class="sidebar-overlay" type="button" data-sidebar-close aria-label="Fechar menu" tabindex="-1"></button>
 
     <header class="app-topbar">
         <button class="mobile-menu-button" type="button" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false">
-            <span aria-hidden="true">☰</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             <span class="visually-hidden">Abrir menu</span>
         </button>
-        <div class="topbar-content">
-            <details class="user-menu">
-                <summary class="user-summary" aria-label="Abrir menu do usuário">
-                    <span class="user-summary-text">
-                        <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
-                        <small>{% if e_professor %}Professor{% else %}{{ request.user.username }}{% endif %}</small>
-                    </span>
-                    <span class="user-avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
-                </summary>
-                <nav class="user-menu-panel" aria-label="Menu do usuário">
-                    <span class="user-menu-heading">Documentos legais</span>
-                    <a href="{% url 'legal:termos_de_uso' %}" target="_blank" rel="noopener">Termos de Uso</a>
-                    <a href="{% url 'legal:politica_privacidade' %}" target="_blank" rel="noopener">Política de Privacidade</a>
-                </nav>
-            </details>
-        </div>
+        <button class="user-summary" type="button" popovertarget="user-menu-panel" aria-controls="user-menu-panel" aria-expanded="false" aria-label="Abrir menu do usuário" title="Menu do usuário" data-user-menu-trigger>
+            <span class="user-summary-text">
+                <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                <small>{% if e_professor %}Professor{% else %}{{ request.user.username }}{% endif %}</small>
+            </span>
+            <span class="user-avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
+        </button>
     </header>
 
     <main class="app-main" id="conteudo-principal" tabindex="-1">
@@ -215,7 +215,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="{% static 'inventario/js/sigee.js' %}?v=20261029.1"></script>
+    <script src="{% static 'inventario/js/sigee.js' %}?v=20261030.3"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
