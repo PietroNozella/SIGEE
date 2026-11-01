@@ -18,14 +18,14 @@ A auditoria cobre atualmente:
 - inativação de equipamento com histórico preservado;
 - cadastro controlado de contas funcionais;
 - criação, cancelamento e expiração automática de reservas próprias pelo Professor;
-- retirada com ou sem reserva por Operador;
+- retirada vinculada à reserva por Operador e rejeição de tentativas inválidas;
 - devolução básica vinculada à retirada por Operador;
 - criação, edição, inativação e reativação dos cadastros compartilhados de Turma, Disciplina e Atividade Pedagógica;
 - exportação de dados de uma conta para atendimento ao titular;
 - anonimização de conta;
 - limpeza confirmada de auditorias, aceites e sessões expiradas.
 
-As funcionalidades futuras devem registrar seus próprios eventos quando forem implementadas. Manutenção e utilização pedagógica já registram eventos nos respectivos serviços transacionais.
+Manutenção, contexto pedagógico, recuperação de senha, aceite e gestão da situação das contas também registram eventos nos serviços e views correspondentes. O catálogo de códigos está em `auditoria/eventos.py`.
 
 ## Registro persistente
 
@@ -61,13 +61,19 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `RESERVA_CRIADA` | O Professor cria uma reserva própria. | Sucesso |
 | `RESERVA_CANCELADA` | O Professor cancela uma reserva própria. | Sucesso |
 | `RESERVA_EXPIRADA` | O sistema expira uma reserva ativa sem retirada após 30 minutos do início. | Sucesso |
-| `RETIRADA_REGISTRADA` | O Operador registra uma retirada com ou sem reserva ou o formulário é rejeitado. | Sucesso ou falha |
+| `RETIRADA_REGISTRADA` | O Operador registra a entrega da reserva ou o formulário é rejeitado. | Sucesso ou falha |
 | `DEVOLUCAO_REGISTRADA` | O Operador registra uma devolução vinculada à retirada ou a tentativa é rejeitada. | Sucesso ou falha |
 | `CADASTRO_PEDAGOGICO_CRIADO` | Criação de Turma, Disciplina ou Atividade Pedagógica aceita ou rejeitada. | Sucesso ou falha |
 | `CADASTRO_PEDAGOGICO_EDITADO` | Edição do cadastro compartilhado aceita ou rejeitada. | Sucesso ou falha |
 | `CADASTRO_PEDAGOGICO_SITUACAO_ALTERADA` | Inativação ou reativação altera o estado, ou falha na persistência. | Sucesso ou falha |
-| `UTILIZACAO_PEDAGOGICA_CRIADA` | Contexto pedagógico de retirada com ou sem reserva criado ou rejeitado. | Sucesso ou falha |
+| `UTILIZACAO_PEDAGOGICA_CRIADA` | Contexto criado na entrega, em registro legado ou em tentativa rejeitada. | Sucesso ou falha |
 | `UTILIZACAO_PEDAGOGICA_EDITADA` | Contexto pedagógico do lote corrigido ou rejeitado. | Sucesso ou falha |
+| `RECUPERACAO_SENHA_SOLICITADA` | Solicitação de recuperação aceita com resposta pública neutra. | Sucesso |
+| `SENHA_REDEFINIDA` | Senha alterada por token válido. | Sucesso |
+| `DOCUMENTOS_LEGAIS_ACEITOS` | Versões vigentes dos documentos confirmadas. | Sucesso |
+| `MANUTENCAO_ABERTA` | Abertura manual ou automática aceita ou rejeitada. | Sucesso ou falha |
+| `MANUTENCAO_INICIADA` | Início de intervenção aceito ou rejeitado. | Sucesso ou falha |
+| `MANUTENCAO_CONCLUIDA` | Conclusão de intervenção aceita ou rejeitada. | Sucesso ou falha |
 | `DADOS_TITULAR_EXPORTADOS` | Um conjunto de dados é preparado para atendimento ao titular. | Sucesso |
 | `USUARIO_ANONIMIZADO` | Uma conta comum é desativada e tem identificadores diretos substituídos. | Sucesso |
 | `USUARIO_DESATIVADO` | Um Administrador desativa uma conta funcional preservando seus dados e histórico. | Sucesso ou falha |
@@ -86,11 +92,11 @@ sem autoridade retornam 403 e seguem o registro existente de `ACESSO_NEGADO`.
 
 Na retirada e na devolução, o evento de sucesso referencia a nova movimentação e é salvo na mesma transação que ela e a atualização do equipamento. Uma falha nessa gravação desfaz as três alterações. Tentativas inválidas geram separadamente um evento de falha sem copiar destinatário ou observação; acessos negados seguem o middleware existente. Na devolução rejeitada pela view, o evento de falha referencia a retirada consultada.
 
-Na retirada com reserva, cada unidade gera seu evento de sucesso. Uma tentativa rejeitada pela view referencia a reserva. Se o prazo já venceu, a expiração legítima e sua auditoria são preservadas, sem retirar equipamentos. A consulta do histórico não gera um novo evento específico de auditoria.
+Na entrega da reserva, cada unidade gera seu evento de retirada e a criação da utilização pedagógica na mesma transação. Uma tentativa rejeitada pela view referencia a reserva. Se o prazo já venceu, a expiração legítima e sua auditoria são preservadas, sem retirar equipamentos. A consulta do histórico não gera um novo evento específico de auditoria.
 
-No contexto pedagógico, cada associação alterada gera sucesso na mesma transação do lote. Reenvio sem mudança não gera novo evento. Uma falha de validação ou integridade desfaz a gravação e referencia a Reserva no fluxo com reserva ou a Movimentação de retirada no fluxo sem reserva, sem copiar observações ou nomes dos cadastros.
+No contexto pedagógico de retiradas, cada associação alterada gera sucesso na mesma transação do lote. Reenvio sem mudança nas utilizações não gera novo evento por associação. A edição do planejamento de reserva sem retirada registra o evento na própria reserva. Uma falha de validação ou integridade desfaz a gravação e referencia a Reserva no fluxo com reserva ou a Movimentação de retirada no fluxo sem reserva, sem copiar observações ou nomes dos cadastros.
 
-Nos cadastros pedagógicos, auditoria de sucesso e alteração usam a mesma transação. Rejeições de criação não referenciam um identificador inexistente; edição e mudança de situação rejeitadas referenciam o cadastro. Nomes e descrições não são copiados. Repetir uma inativação ou reativação que já corresponde ao estado atual não gera outro evento de mudança. Cenários de validação e rollback estão em `pedagogico/tests.py`, com resultados nas [evidências da entrega](cadastros-pedagogicos.md).
+Nos cadastros pedagógicos, auditoria de sucesso e alteração usam a mesma transação. Rejeições de criação não referenciam um identificador inexistente; edição e mudança de situação rejeitadas referenciam o cadastro. Nomes e descrições não são copiados. Repetir uma inativação ou reativação que já corresponde ao estado atual não gera outro evento de mudança. Cenários de validação e rollback estão em `pedagogico/tests.py`.
 
 ## Controle de acesso e consulta
 
@@ -116,7 +122,7 @@ Não são persistidos no registro de auditoria:
 - conteúdo integral dos arquivos CSV;
 - endereço IP ou identificação do navegador.
 
-## Evidências automatizadas
+## Testes automatizados
 
 Os testes dos arquivos `auditoria/tests.py` e `auditoria/test_consulta.py` verificam:
 
@@ -130,12 +136,13 @@ Os testes dos arquivos `auditoria/tests.py` e `auditoria/test_consulta.py` verif
 - rejeição de perfis não autorizados e do Superuser técnico;
 - consulta, filtros, intervalo de datas e paginação para o Administrador.
 
-O resultado integrado mais recente está registrado em [Evidências de autenticação e autorização](evidencias-seguranca.md). Para reproduzi-lo:
+Para executar os testes de auditoria com banco SQLite e e-mail em memória:
 
 ```powershell
-$env:DATABASE_URL=''
-.\.venv\Scripts\python.exe manage.py test
+python manage.py test auditoria --settings=config.settings_testes
 ```
+
+O [README](../../README.md#testes) descreve a suíte completa. Os testes de cada módulo também verificam os eventos das respectivas operações.
 
 ## Rastreabilidade
 
@@ -161,6 +168,6 @@ O módulo atual implementa auditoria básica. Permanecem fora do recorte atual:
 - registro de IP, dispositivo ou localização;
 - mecanismos criptográficos de encadeamento ou assinatura dos eventos;
 - agendamento automático de retenção e descarte;
-- auditoria de módulos que ainda não foram implementados.
+- garantia de imutabilidade contra acesso direto privilegiado ao banco.
 
 O descarte existe como comando manual com simulação, confirmação e datas de corte explícitas. Nenhum prazo é aplicado automaticamente enquanto a política institucional não for aprovada.

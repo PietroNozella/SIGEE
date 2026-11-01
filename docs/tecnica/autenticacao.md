@@ -1,13 +1,13 @@
 # Autenticação, recuperação de senha e autorização
 
-Este documento descreve os incrementos implementados do `RF-01` e do `RS-07`. O fluxo usa `contas.User`, derivado de `AbstractUser`, com chave primária UUID, mantendo os formulários, as views, os tokens, as sessões, os grupos e as permissões nativas do Django.
+Este documento descreve os controles do `RF01` e do `RS-07`. O fluxo usa `contas.User`, derivado de `AbstractUser`, com chave primária UUID, mantendo os formulários, as views, os tokens, as sessões, os grupos e as permissões nativas do Django.
 
 ## Fluxo implementado
 
 1. Um acesso anônimo a uma página do inventário redireciona para o login e informa a página original no parâmetro `next`.
 2. O usuário informa nome de usuário e senha.
 3. O Django valida as credenciais e, quando válidas, inicia a sessão.
-4. O usuário retorna à página indicada por `next` ou, na ausência desse parâmetro, à listagem de equipamentos.
+4. O usuário retorna à página interna válida indicada por `next`. Sem esse parâmetro, o Administrador autorizado acessa o painel; os demais seguem para a listagem de equipamentos. O aceite vigente dos documentos legais é exigido antes das áreas internas.
 5. O logout aceita somente `POST`, encerra a sessão e redireciona para o login.
 6. Após cinco tentativas inválidas para o mesmo nome de usuário, o acesso fica bloqueado por quinze minutos, inclusive se a senha correta for informada durante esse intervalo.
 
@@ -22,12 +22,12 @@ A mensagem para credenciais inválidas é neutra e não informa se o nome de usu
 5. A nova senha passa pelos mesmos validadores configurados para o cadastro.
 6. Ao concluir, o usuário retorna ao login e acessa a conta com a nova credencial.
 
-Em desenvolvimento, o backend de e-mail exibe a mensagem no console. No ambiente publicado, o envio usa Gmail SMTP na porta `587` com TLS. O endereço remetente e a senha de app ficam somente nas variáveis protegidas da hospedagem; nenhuma credencial é versionada. A solicitação e a conclusão são auditadas sem armazenar o endereço informado, a senha ou o token.
+Por padrão, o backend de e-mail exibe a mensagem no console com `DEBUG=True` e utiliza SMTP com `DEBUG=False`. Host, porta, TLS, remetente e credenciais são configuráveis por variáveis de ambiente; os padrões de porta e TLS são `587` e `True`. O host padrão é `localhost`, e `.env.example` apresenta a configuração para Gmail SMTP. As credenciais reais ficam somente no ambiente, sem versionamento. A solicitação e a conclusão são auditadas sem armazenar o endereço informado, a senha ou o token.
 
 ## Autorização implementada
 
 - `Administrador`: consulta e administra o inventário, visualiza seu resumo e cadastra contas comuns.
-- `Operador` e `Professor`: consultam a listagem e usam seus filtros.
+- `Operador` e `Professor`: consultam equipamentos e executam os fluxos autorizados na [matriz de acesso](matriz-de-acesso.md).
 - Usuários autenticados sem a permissão exigida recebem `403`; usuários anônimos são redirecionados ao login com `next`.
 - Botões e links são exibidos conforme as permissões, mas a decisão final sempre ocorre na view.
 - O cadastro de usuários exige uma conta não Superuser pertencente somente ao grupo `Administrador` e com `contas.add_user`.
@@ -61,7 +61,7 @@ devolvidos pelo Operador mesmo após a desativação do destinatário.
 Mudanças geram `USUARIO_DESATIVADO` ou `USUARIO_REATIVADO`, identificando o
 Administrador responsável e a conta afetada. Repetir a mesma situação não duplica
 eventos de sucesso. A anonimização continua sendo um procedimento separado.
-As regras ampliam o controle de contas da RN-18 e a autorização do RF-01;
+As regras ampliam o controle de contas da RN-18 e a autorização do RF01;
 os cenários estão em `usuarios/test_soft_delete.py`.
 
 ## Bootstrap dos perfis
@@ -123,31 +123,6 @@ de desativação em `usuarios/test_soft_delete.py`. A aplicação e a reversão 
 migration são verificadas em `contas/test_administrador_principal.py`, preservando
 contas, grupos, auditoria e o índice de e-mail único.
 
-### Verificação local em 30/10/2026
-
-Na branch `feat/administrador-principal`, a suíte completa executou **467 testes:
-451 aprovados e 16 ignorados no SQLite**, sem falhas, em 111,010 segundos. Os casos
-ignorados exigem recursos de concorrência do PostgreSQL. Os 19 testes novos cobrem
-a autoridade sobre a conta alvo, sessões e auditoria, proteção no Django Admin,
-cadastro sem promoção, configuração e substituição do principal, restrições do
-banco e preservação dos dados na aplicação e reversão da migration.
-
-```powershell
-.\.venv\Scripts\python.exe manage.py test --settings=config.settings_testes --noinput
-.\.venv\Scripts\python.exe manage.py check --settings=config.settings_testes
-.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run --settings=config.settings_testes
-git diff --check
-```
-
-As verificações passaram. A migration foi exercitada somente em bancos isolados
-de testes; nenhuma conta real foi promovida. Concorrência em PostgreSQL e
-validação no ambiente publicado não foram executadas neste incremento.
-
-Após manter o padrão persistente `FALSE` para compatibilidade com a versão
-anterior, a suíte de contas e usuários executou 61 testes: 59 aprovados e dois
-ignorados no SQLite. O teste de migration também confere o cadastro pela versão
-anterior depois de adicionar a nova coluna.
-
 ## Mecanismos de segurança
 
 | Mecanismo | O que protege | O que não substitui |
@@ -159,18 +134,12 @@ anterior depois de adicionar a nova coluna.
 | HTTPS | Criptografa a comunicação entre navegador e servidor no ambiente publicado, protegendo credenciais e cookies durante o transporte. | Não substitui hash de senha, CSRF ou autorização no servidor. |
 | Bloqueio de tentativas | O `django-axes` limita tentativas repetidas por nome de usuário. O SIGEE não persiste o endereço IP nesse controle e mascara a senha registrada pelo middleware. | Não substitui MFA, senha forte, monitoramento ou proteção do provedor contra ataques distribuídos. |
 
-## Limite dos incrementos
+## Limites
 
-Os incrementos de autenticação cobrem as rotas atuais e a criação de contas. A auditoria usa a mesma matriz de grupos e permissões. A aplicação não possui MFA nem limitação específica para solicitações repetidas de recuperação de senha; esses controles permanecem fora do recorte atual.
+Os controles de autenticação abrangem as rotas restritas e a criação de contas. A auditoria usa a mesma matriz de grupos e permissões. A aplicação não possui MFA nem limitação específica para solicitações repetidas de recuperação de senha; esses controles permanecem fora do recorte atual.
 
-## Síntese para o TCC
+## Referências de implementação e testes
 
-O incremento de segurança do SIGEE utiliza o sistema nativo de autenticação do Django. O usuário informa nome de usuário e senha; credenciais válidas iniciam uma sessão e credenciais inválidas produzem uma mensagem neutra. O acesso anônimo às páginas do inventário é redirecionado ao login, preservando a URL original, enquanto usuários autenticados sem a permissão exigida recebem resposta `403`.
+As views de autenticação e recuperação estão em `usuarios/views.py`; a autorização funcional e a autoridade sobre contas estão em `usuarios/permissoes.py` e `usuarios/services.py`. `contas/models.py` define UUID e restrições do Administrador principal.
 
-A autorização é representada pelos grupos `Administrador`, `Operador` e `Professor`, associados às permissões do Django conforme a [matriz de acesso](matriz-de-acesso.md). As verificações permanecem no servidor, inclusive para acessos diretos e requisições `POST`. A interface oculta ações não autorizadas apenas como orientação visual.
-
-As senhas são processadas pelos formulários e hashers do Django; não há criptografia própria nem armazenamento da senha em texto puro. A recuperação usa o gerador de tokens do framework, resposta pública neutra, prazo de uma hora e invalidação após a troca. A proteção CSRF é aplicada aos formulários `POST`, o cookie de sessão associa as requisições posteriores ao usuário autenticado e tentativas repetidas são bloqueadas temporariamente. No ambiente publicado, a comunicação é oferecida sobre HTTPS e a hospedagem apresenta HSTS.
-
-## Evidência automatizada
-
-Os testes verificam o formulário nativo, o hash da senha, a sessão, a mensagem neutra, `next`, o bloqueio temporário sem IP, a configuração idempotente dos grupos, a matriz de acesso, o cadastro controlado e o fluxo de recuperação com token válido, expirado e já utilizado. Os comandos, cenários e resultados observados estão registrados em [Evidências de autenticação e autorização](evidencias-seguranca.md).
+Os testes de autenticação e recuperação ficam em `inventario/tests.py` e `usuarios/tests.py`; a autorização do inventário está em `inventario/test_autorizacao.py`. Desativação, conta principal e migrations possuem cenários em `usuarios/test_soft_delete.py`, `usuarios/test_administrador_principal.py`, `contas/test_administrador_principal.py` e `contas/test_migracao_uuid.py`. O [README](../../README.md#testes) descreve a execução isolada.

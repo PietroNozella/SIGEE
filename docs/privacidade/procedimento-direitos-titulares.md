@@ -6,7 +6,7 @@ O canal inicial do SIGEE é o endereço configurado em `SIGEE_CONTATO_PRIVACIDAD
 
 1. **Receber e protocolar:** registrar data, solicitante, direito invocado e canal de resposta, sem copiar dados desnecessários.
 2. **Verificar identidade:** usar informação suficiente para evitar entrega ou alteração indevida; nunca solicitar senha.
-3. **Localizar dados:** consultar conta, grupos, reservas, movimentações, auditoria e aceites.
+3. **Localizar dados:** consultar conta, grupos, reservas e planejamento, movimentações, utilizações pedagógicas, responsabilidades de manutenção, auditoria e aceites.
 4. **Analisar cabimento:** identificar dados corrigíveis, exportáveis, elimináveis, sujeitos a anonimização ou que precisem ser preservados.
 5. **Executar com dupla verificação:** um responsável prepara e outro valida ações destrutivas ou irreversíveis.
 6. **Responder:** informar o resultado, dados preservados, motivo e canal de contestação.
@@ -19,7 +19,7 @@ O canal inicial do SIGEE é o endereço configurado em `SIGEE_CONTATO_PRIVACIDAD
 | confirmação e acesso | executar `exportar_dados_usuario` e revisar o JSON antes da entrega segura |
 | correção | corrigir a conta pelo Django Admin ou fluxo institucional autorizado e registrar a ação |
 | informação sobre compartilhamentos | consultar a matriz em `governanca-dados-pessoais.md` e os contratos vigentes |
-| bloqueio ou restrição | marcar a conta como inativa, remover grupos e invalidar sessões |
+| bloqueio ou restrição | usar a desativação funcional autorizada, que inativa a conta e invalida sessões, preservando grupos, credencial e histórico; aplicar restrições de conta principal e de reservas pendentes |
 | eliminação ou anonimização | verificar retenções e executar `anonimizar_usuario` quando cabível |
 | portabilidade | fornecer JSON estruturado quando tecnicamente aplicável |
 | revogação de consentimento | identificar a finalidade específica; o aceite geral dos documentos não é consentimento |
@@ -35,6 +35,8 @@ python manage.py anonimizar_usuario <username> --confirmar
 ```
 
 O resultado da exportação contém dados pessoais. Ele deve ser encaminhado por canal seguro, não deve ser versionado e precisa ser descartado após a entrega e o prazo de protocolo aplicável.
+
+A desativação reversível não remove os identificadores da conta. A anonimização é um procedimento separado: exige confirmação, desativa o acesso, substitui identificadores diretos, inutiliza a senha e remove grupos, permissões individuais e sessões. O comando recusa contas técnicas e o Administrador principal; é necessário designar um substituto antes de anonimizar a conta principal. Os vínculos históricos permanecem.
 
 ## Registro mínimo do atendimento
 

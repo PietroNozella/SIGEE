@@ -1,16 +1,18 @@
 # Termos de Uso, privacidade e aceite
 
-Este documento descreve a implementação do `RS-12` no SIGEE e relaciona os dados tratados, as finalidades, os controles adotados e as evidências verificáveis no repositório. O Termo de Uso e a Política de Privacidade são apresentados como documentos do produto. A identificação definitiva da controladora e dos demais agentes depende da implantação concreta.
+Este documento descreve a implementação do `RS-12` no SIGEE e relaciona os dados tratados, as finalidades, os controles adotados e os testes definidos no repositório. O Termo de Uso e a Política de Privacidade são apresentados como documentos do produto. A identificação definitiva da controladora e dos demais agentes depende da implantação concreta.
 
 ## Responsabilidades
 
-A definição de controlador e operador depende da atuação concreta de cada agente, e não apenas do nome do software. No modelo previsto para o SIGEE, a instituição que adota o sistema, define as finalidades e decide como os dados serão utilizados exerce o papel de controladora. Fornecedores que tratem dados em seu nome devem ter suas responsabilidades definidas antes da implantação institucional.
+A definição de controlador e operador depende da atuação concreta de cada agente, e não apenas do nome do software. No contexto do SIGEE, a instituição que adota o sistema, define as finalidades e decide como os dados são utilizados exerce o papel de controladora. Fornecedores que tratem dados em seu nome devem ter suas responsabilidades definidas antes da implantação institucional.
 
 O SIGEE não presume uma base legal única para todos os tratamentos. A instituição controladora deve identificar e documentar a hipótese aplicável a cada finalidade antes de utilizar dados reais.
 
 ## Dados e finalidades representados no sistema
 
-O inventário completo, incluindo conta, sessão, proteção contra abuso, recuperação de senha, reservas, movimentações, auditoria, aceite, campos livres, infraestrutura e fornecedores, está em [Governança e inventário de dados pessoais](governanca-dados-pessoais.md). Campos livres não devem ser usados para registrar dados pessoais excessivos ou sensíveis sem necessidade e autorização institucional.
+O inventário completo, incluindo conta, sessão, proteção contra abuso, recuperação de senha, reservas e planejamento pedagógico, movimentações, manutenção, utilizações pedagógicas, auditoria, aceite, campos livres, infraestrutura e fornecedores, está em [Governança e inventário de dados pessoais](governanca-dados-pessoais.md). A Política apresentada na aplicação descreve esses dados e finalidades. Campos livres não devem ser usados para registrar dados pessoais excessivos ou sensíveis sem necessidade e autorização institucional.
+
+Os Termos de Uso permanecem na versão 2.0, de 21/09/2026. A Política de Privacidade está na versão 2.1, de 01/11/2026, com a descrição de manutenção, contexto pedagógico e envio por SMTP configurável. As versões e datas são definidas em `config/settings.py`; após a publicação desta revisão, contas com aceite da Política anterior precisam confirmar a versão vigente, preservando os registros anteriores.
 
 ## Fluxo implementado
 
@@ -27,7 +29,7 @@ O inventário completo, incluindo conta, sessão, proteção contra abuso, recup
 
 O registro implementado comprova o aceite dos Termos de Uso e a ciência da Política de Privacidade. Ele não deve ser descrito como uma autorização genérica para qualquer tratamento de dados pessoais.
 
-Quando a instituição adotar o consentimento como hipótese legal para uma finalidade específica, deverá obter uma manifestação livre, informada, inequívoca e vinculada àquela finalidade, além de oferecer mecanismo de revogação. Esse eventual consentimento específico não é substituído pela confirmação geral implementada no SIGEE.
+Quando a instituição adotar o consentimento como hipótese legal para uma finalidade específica, precisa obter uma manifestação livre, informada, inequívoca e vinculada àquela finalidade, além de oferecer mecanismo de revogação. Esse eventual consentimento específico não é substituído pela confirmação geral implementada no SIGEE.
 
 ## Medidas implementadas
 
@@ -47,7 +49,7 @@ Quando a instituição adotar o consentimento como hipótese legal para uma fina
 
 Essas medidas reduzem riscos, mas não substituem a configuração segura da infraestrutura e as decisões institucionais. As rotinas propostas estão em [Retenção e descarte](plano-retencao-descarte.md), [Direitos dos titulares](procedimento-direitos-titulares.md) e [Resposta a incidentes](plano-resposta-incidentes.md).
 
-## Evidências automatizadas
+## Testes automatizados
 
 Os testes de `legal/tests.py` e `usuarios/test_privacidade.py` verificam:
 
@@ -70,8 +72,7 @@ Os testes de `legal/tests.py` e `usuarios/test_privacidade.py` verificam:
 Para reproduzir a suíte integrada com SQLite isolado:
 
 ```powershell
-$env:DATABASE_URL=''
-.\.venv\Scripts\python.exe manage.py test
+python manage.py test legal usuarios.test_privacidade --settings=config.settings_testes
 ```
 
-O resultado mais recente é mantido em [Evidências de autenticação e autorização](evidencias-seguranca.md).
+A configuração fixa banco SQLite e e-mail em memória. O [README](../../README.md#testes) descreve a suíte completa. Os testes técnicos não comprovam decisões institucionais ou validade jurídica do aceite.

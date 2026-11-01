@@ -1,10 +1,10 @@
 # Arquitetura do sistema
 
-Este documento registra a arquitetura para o SIGEE. O diagrama representa a solução prevista para a entrega final
+Este documento descreve a arquitetura implementada no SIGEE e sua configuração de implantação.
 
-## Diagrama final da arquitetura
+## Diagrama da arquitetura
 
-![Diagrama final da arquitetura e implantação do SIGEE](diagramas/diagrama-arquitetura.png)
+![Arquitetura e implantação do SIGEE](../diagramas/diagrama-arquitetura.png)
 
 ## Visão geral
 
@@ -17,14 +17,14 @@ A solução é organizada em camadas para separar responsabilidades sem introduz
 | Apresentação | Navegador, Django Templates, HTML5, CSS3, Bootstrap 5 servido localmente e JavaScript pontual para a interface e a responsividade. |
 | Aplicação | Python 3.12 e Django 5.2 LTS para roteamento, autenticação, autorização, validações e regras de negócio. |
 | Persistência | Django ORM para consultar e gravar dados no PostgreSQL, com Django Migrations para controlar a evolução do esquema. |
-| Integração externa | BrasilAPI para consultar feriados nacionais durante a reserva e Gmail SMTP para recuperação de senha. |
+| Integração externa | BrasilAPI para consultar feriados nacionais durante a reserva e SMTP configurável para recuperação de senha; `.env.example` apresenta Gmail como provedor. |
 | Infraestrutura | Aplicação Django na Vercel e PostgreSQL hospedado no Supabase. |
 
 ## Atores e controle de acesso
 
 O SIGEE possui três perfis funcionais: **Administrador**, **Operador** e **Professor**. A autenticação identifica o usuário, enquanto a autorização determina as operações permitidas para seu perfil.
 
-O controle de acesso previsto utiliza os recursos nativos `Django Authentication`, `Groups` e `Permissions`, seguindo o modelo de controle de acesso baseado em papéis, ou RBAC. As permissões devem ser verificadas no servidor, independentemente das opções apresentadas na interface.
+O controle de acesso utiliza os recursos nativos `Django Authentication`, `Groups` e `Permissions`, seguindo o modelo de controle de acesso baseado em papéis, ou RBAC. As permissões são verificadas no servidor, independentemente das opções apresentadas na interface.
 
 ## Camada de apresentação
 
@@ -44,15 +44,15 @@ O backend concentra os serviços e as regras relacionadas às principais áreas 
 
 No domínio de reservas, `Categoria` classifica os equipamentos, `TipoEquipamento` representa o tipo/modelo escolhido pelo Professor, `Local` identifica o ponto de retirada e `Equipamento` representa cada unidade física patrimonial. A entidade `Reserva` registra uma solicitação em lote para um único tipo/modelo e local; a tabela associativa `ReservaEquipamento` registra as unidades efetivamente alocadas nesse local, permitindo consultar disponibilidade e impedir conflitos por patrimônio.
 
-As validações de domínio devem permanecer no servidor para que as regras sejam aplicadas mesmo quando uma requisição não se originar da navegação comum da interface.
+As validações de domínio são executadas no servidor, inclusive quando a requisição não se origina da navegação comum da interface.
 
-O app `pedagogico` implementa Turma, Disciplina e Atividade Pedagógica como cadastros compartilhados independentes e `UtilizacaoPedagogica` como vínculo protegido à movimentação de retirada. Um registro representa uma unidade física; um formulário aplica o contexto ao lote inteiro. Os fluxos com e sem reserva compartilham validação, transação e auditoria. Minhas Utilizações oferece consulta própria ao Professor, sem acesso ao histórico geral. Não há dependências ou campos novos no incremento sem reserva. As evidências estão em [Cadastros pedagógicos](cadastros-pedagogicos.md) e [Utilização sem reserva](utilizacao-pedagogica-sem-reserva.md).
+O app `pedagogico` mantém os cadastros compartilhados de Turma, Disciplina e Atividade Pedagógica. A reserva exige esse planejamento; a entrega cria uma `UtilizacaoPedagogica` por unidade retirada. O Professor corrige o contexto próprio até a devolução integral e consulta seus registros. A compatibilidade com retiradas antigas sem reserva preserva devolução e histórico, sem permitir novas retiradas diretas. Os indicadores contam usos realizados, não agendamentos. O [fluxo](fluxo-reservas-uso-historico.md) descreve as etapas.
 
-O app `manutencoes` implementa RF-07 e RN-14, integrado à `main` pelo PR #21, no mesmo monólito e sem novas dependências. A intervenção tem estados próprios, responsáveis e datas, equipamento protegido e devolução de origem opcional. Serviços transacionais mantêm a situação do equipamento coerente com a intervenção e integram a abertura automática à devolução. Seus testes de concorrência passaram em PostgreSQL isolado em 13/10/2026, conforme a validação do incremento pedagógico sem reserva; a validação publicada permanece pendente.
+O app `manutencoes` mantém intervenções com estado, responsáveis, datas, equipamento protegido e devolução de origem opcional. Os serviços transacionais integram abertura automática à devolução com problema e mantêm a situação do equipamento coerente com a intervenção. O Administrador também abre manutenção manual e conclui o atendimento.
 
 ## Camada de persistência
 
-O Django ORM faz a comunicação entre os modelos da aplicação e o banco de dados. O ambiente publicado utilizará PostgreSQL hospedado no Supabase; o Supabase será usado como infraestrutura do banco, sem substituir a autenticação e a autorização do Django.
+O Django ORM faz a comunicação entre os modelos da aplicação e o banco de dados. A configuração de implantação usa PostgreSQL hospedado no Supabase como infraestrutura do banco. A autenticação e a autorização permanecem no Django.
 
 As migrations registram a criação e a evolução do esquema. Elas fazem parte do processo de desenvolvimento e implantação, e não da comunicação permanente da aplicação durante seu uso. Na ausência de `DATABASE_URL`, a configuração atual permite SQLite somente para o desenvolvimento local.
 
@@ -60,7 +60,7 @@ As migrations registram a criação e a evolução do esquema. Elas fazem parte 
 
 Ao abrir o calendário da reserva, o frontend solicita ao backend os feriados nacionais do ano exibido para destacá-los com legenda; fins de semana e datas passadas são desativados localmente. Durante a consulta prévia do período, o backend volta a consultar por HTTPS a API de Feriados Nacionais da BrasilAPI e apresenta o resultado no diálogo de confirmação antes da persistência. O feriado tem caráter informativo, e falhas, indisponibilidade ou tempo limite da integração não impedem a conclusão da reserva.
 
-A consulta será feita pelo backend, evitando que regras e detalhes da integração dependam diretamente do navegador.
+A consulta é feita pelo backend. O [contrato da BrasilAPI](integracao-brasilapi.md) define validação, timeout e contingência.
 
 ## Segurança transversal
 
@@ -75,7 +75,7 @@ Os controles de segurança afetam todas as camadas da solução e incluem:
 - validação das entradas no servidor;
 - registro básico de acessos e ações relevantes para auditoria.
 
-Credenciais, chaves e dados sensíveis não devem ser armazenados no código-fonte nem enviados aos templates ou ao JavaScript do cliente. O inventário dos fluxos e fornecedores está em [Governança e inventário de dados pessoais](governanca-dados-pessoais.md).
+Credenciais, chaves e dados sensíveis não devem ser armazenados no código-fonte nem enviados aos templates ou ao JavaScript do cliente. O inventário dos fluxos e fornecedores está em [Governança e inventário de dados pessoais](../privacidade/governanca-dados-pessoais.md).
 
 ## Fluxo principal de uma requisição
 
@@ -92,11 +92,15 @@ O fluxo principal pode ser representado por **Usuário → Navegador → Django 
 
 ## Desenvolvimento, testes e implantação
 
-O código é versionado com Git e armazenado no GitHub. As alterações são integradas por Pull Requests e verificadas com o framework de testes do Django. O fluxo previsto é **Git → GitHub → Pull Request → Testes → Implantação**.
+O código é versionado com Git no GitHub. O framework de testes do Django verifica os cenários definidos nos apps. A configuração `config.settings_testes` fixa SQLite em memória e e-mail em memória para os testes locais; concorrência por bloqueio de linha exige PostgreSQL isolado. Os comandos estão no [README](../../README.md#testes).
 
-Os cadastros pedagógicos foram implementados diretamente na `main`, sem nova branch ou PR. A revisão técnica pelos commits e pelas evidências permanece pendente.
+`vercel.json` configura a região `gru1`. A implantação exige variáveis de ambiente e migrations compatíveis com o código; o arquivo não executa migrations. A configuração de `DATABASE_URL` aceita `sslmode`; a orientação de implantação utiliza `sslmode=require`. O procedimento de [proteção do banco](../implantacao/seguranca-banco-supabase.md) detalha grants, RLS e atualização de bancos existentes.
 
-A implantação da aplicação na Vercel permanece condicionada à validação da compatibilidade com Django, conexão segura com o PostgreSQL e execução das migrations. O ambiente publicado deverá se comunicar com o PostgreSQL do Supabase por uma conexão protegida por TLS.
+## Diagramas do domínio
+
+- [DER](../diagramas/DER.svg): tabelas, campos e relacionamentos do domínio e do controle de acesso.
+- [Classes do domínio](../diagramas/diagrama-de-classes.png): modelos e principais relacionamentos; operações transacionais ficam nos serviços dos apps.
+- [Processo](../diagramas/bpmn.png): reserva, entrega, devolução e manutenção.
 
 ## Decisões técnicas principais
 
@@ -104,6 +108,6 @@ A implantação da aplicação na Vercel permanece condicionada à validação d
 |---|---|---|
 | Monólito Django com templates | Mantém a solução simples, integrada e compatível com o escopo acadêmico. | Não há frontend separado nem API própria desacoplada. |
 | Recursos nativos do Django para autenticação e autorização | Evitam duplicação de mecanismos de identidade e facilitam a aplicação de permissões no servidor. | A configuração de grupos e permissões precisa ser mantida pela própria aplicação. |
-| Supabase somente para hospedar o PostgreSQL | Fornece infraestrutura gerenciada para o banco sem alterar o modelo de autenticação definido. | Supabase Auth não é utilizado. A autorização funcional permanece no Django; RLS e grants restringem o acesso das roles da Data API às tabelas internas, conforme a [proteção do banco](seguranca-banco-supabase.md). |
+| Supabase somente para hospedar o PostgreSQL | Fornece infraestrutura gerenciada para o banco sem alterar o modelo de autenticação definido. | Supabase Auth não é utilizado. A autorização funcional permanece no Django; RLS e grants restringem o acesso das roles da Data API às tabelas internas, conforme a [proteção do banco](../implantacao/seguranca-banco-supabase.md). |
 | BrasilAPI como integração não bloqueante | Acrescenta informação sobre feriados sem comprometer o fluxo principal de reserva. | A aplicação precisa tratar falhas e tempo limite e continuar funcionando sem a resposta externa. |
 | Vercel como implantação | Mantém a infraestrutura enxuta para o escopo do SIGEE. | Logs, região, suboperadores e migrations precisam ser acompanhados no processo de implantação. |
