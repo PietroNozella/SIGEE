@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Exists, OuterRef, Q
+from django.db.models import Case, CharField, Count, Exists, F, OuterRef, Q, Value, When
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -18,10 +18,10 @@ from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from movimentacoes.models import Movimentacao
 from manutencoes.models import Manutencao
-from reservas.models import ReservaEquipamento
+from reservas.models import Reserva, ReservaEquipamento
 from usuarios.permissoes import (
     e_operador_funcional, e_professor_funcional, pode_consultar_painel,
-    pode_gerenciar_manutencao,
+    pode_gerenciar_manutencao, pode_consultar_reservas_administrativas,
 )
 
 from .forms import EquipamentoForm, ImportacaoEquipamentosCSVForm
@@ -35,10 +35,20 @@ def painel(request):
     if not pode_consultar_painel(request.user):
         raise PermissionDenied
 
+    agora = timezone.now()
+    periodos = (("7", "Últimos 7 dias"), ("30", "Últimos 30 dias"), ("90", "Últimos 90 dias"))
+    periodo = request.GET.get("periodo", "30")
+    avisos = []
+    if periodo not in dict(periodos):
+        periodo = "30"
+        avisos.append("Período inválido. Exibindo os últimos 30 dias; selecione um período e aplique os filtros.")
+    dias_periodo = int(periodo)
     categorias = list(Categoria.objects.order_by("nome"))
     categoria = next(
         (item for item in categorias if str(item.pk) == request.GET.get("categoria")), None,
     )
+    if request.GET.get("categoria") and categoria is None:
+        avisos.append("Categoria inválida. Exibindo todas as categorias; selecione uma categoria e aplique os filtros.")
     equipamentos = Equipamento.objects.all()
     movimentacoes = Movimentacao.objects.all()
     manutencoes = Manutencao.objects.all()
@@ -59,11 +69,10 @@ def painel(request):
         {"nome": "Em uso", "chave": "em_uso"},
         {"nome": "Em manutenção", "chave": "manutencao"},
     ]
-    for item in distribuicao:
-        item["total"] = indicadores[item["chave"]]
-        item["percentual"] = (
-            item["total"] * 100 / indicadores["ativos"] if indicadores["ativos"] else 0
-        )
+    percentuais = {
+        chave: indicadores[chave] * 100 / indicadores["ativos"] if indicadores["ativos"] else None
+        for chave in ("disponiveis", "em_uso", "manutencao")
+    }
     por_categoria = list(
         equipamentos.filter(ativo=True)
         .values("tipo__categoria_id", "tipo__categoria__nome")
@@ -89,12 +98,14 @@ def painel(request):
     # Limites em horário local; a agregação usa o mesmo fuso e conta registros,
     # pois cada RETIRADA representa uma unidade física, inclusive em lotes.
     fuso = timezone.get_default_timezone()
-    hoje = timezone.localdate(timezone=fuso)
-    inicio_periodo = hoje - timedelta(days=29)
+    hoje = timezone.localtime(agora, fuso).date()
+    inicio_periodo = hoje - timedelta(days=dias_periodo - 1)
     inicio = timezone.make_aware(datetime.combine(inicio_periodo, time.min), fuso)
     fim = timezone.make_aware(datetime.combine(hoje + timedelta(days=1), time.min), fuso)
+    retiradas = movimentacoes.filter(tipo=Movimentacao.Tipo.RETIRADA)
+    retiradas_periodo = retiradas.filter(data_hora__gte=inicio, data_hora__lt=fim)
     contagens = dict(
-        movimentacoes.filter(tipo=Movimentacao.Tipo.RETIRADA, data_hora__gte=inicio, data_hora__lt=fim)
+        retiradas_periodo
         .annotate(dia=TruncDate("data_hora", tzinfo=fuso))
         .values("dia").annotate(total=Count("pk")).order_by("dia")
         .values_list("dia", "total")
@@ -102,30 +113,93 @@ def painel(request):
     retiradas_diarias = [
         {"dia": inicio_periodo + timedelta(days=indice),
          "total": contagens.get(inicio_periodo + timedelta(days=indice), 0)}
-        for indice in range(30)
+        for indice in range(dias_periodo)
     ]
     maior_dia = max(contagens.values(), default=0)
     escala_retiradas = max(2, maior_dia + maior_dia % 2)
     for item in retiradas_diarias:
         item["percentual"] = item["total"] * 100 / escala_retiradas
 
-    pode_ver_manutencoes = pode_gerenciar_manutencao(request.user)
-    abertas = (
-        manutencoes.filter(estado__in=[Manutencao.Estado.PENDENTE, Manutencao.Estado.EM_ANDAMENTO])
-        .select_related("equipamento__tipo").order_by("data_abertura", "pk")[:5]
-        if pode_ver_manutencoes else Manutencao.objects.none()
+    total_retiradas = sum(contagens.values())
+    inicio_anterior = timezone.make_aware(
+        datetime.combine(inicio_periodo - timedelta(days=dias_periodo), time.min), fuso,
     )
-    recentes = movimentacoes.select_related(
+    total_anterior = retiradas.filter(data_hora__gte=inicio_anterior, data_hora__lt=inicio).count()
+    variacao = (total_retiradas - total_anterior) * 100 / total_anterior if total_anterior else None
+    resumo_uso = retiradas_periodo.aggregate(unidades=Count("equipamento_id", distinct=True))
+    tipos_mais_retirados = list(
+        retiradas_periodo.values("equipamento__tipo_id", "equipamento__tipo__nome")
+        .annotate(total=Count("pk"), unidades=Count("equipamento_id", distinct=True))
+        .order_by("-total", "equipamento__tipo__nome", "equipamento__tipo_id")[:5]
+    )
+    maior_tipo = tipos_mais_retirados[0]["total"] if tipos_mais_retirados else 0
+    for item in tipos_mais_retirados:
+        item["percentual"] = item["total"] * 100 / maior_tipo
+        item["participacao"] = item["total"] * 100 / total_retiradas
+
+    pode_ver_reservas = pode_consultar_reservas_administrativas(request.user)
+    etapas_reservas = []
+    total_reservas = 0
+    atrasadas = Movimentacao.objects.none()
+    total_atrasadas = 0
+    if pode_ver_reservas:
+        reservas = Reserva.objects.filter(inicio__gte=inicio, inicio__lt=fim)
+        if categoria:
+            reservas = reservas.filter(tipo_equipamento__categoria=categoria)
+        # Aplica a tolerância já definida pelo domínio sem alterar reservas durante a consulta.
+        contagens_reservas = dict(
+            reservas.com_etapa().annotate(etapa_painel=Case(
+                When(etapa="AGUARDANDO", inicio__lte=agora - Reserva.TOLERANCIA_RETIRADA,
+                     then=Value("EXPIRADA")),
+                default=F("etapa"), output_field=CharField(),
+            )).order_by().values("etapa_painel").annotate(total=Count("pk"))
+            .values_list("etapa_painel", "total")
+        )
+        total_reservas = sum(contagens_reservas.values())
+        for chave, nome in (("AGUARDANDO", "Aguardando retirada"), ("EM_USO", "Em uso"),
+                            ("ENCERRADA", "Devolvidas"), ("CANCELADA", "Canceladas"),
+                            ("EXPIRADA", "Expiradas sem retirada")):
+            total = contagens_reservas.get(chave, 0)
+            etapas_reservas.append({"chave": chave, "nome": nome, "total": total,
+                                   "percentual": total * 100 / total_reservas if total_reservas else 0})
+        pendentes = retiradas.filter(
+            devolucoes__isnull=True, reserva__fim__lt=agora,
+        )
+        total_atrasadas = pendentes.count()
+        atrasadas = list(pendentes.select_related("equipamento__tipo", "reserva")
+                         .order_by("reserva__fim", "pk")[:5])
+
+    pode_ver_manutencoes = pode_gerenciar_manutencao(request.user)
+    abertas = Manutencao.objects.none()
+    total_manutencoes = 0
+    if pode_ver_manutencoes:
+        pendentes = manutencoes.filter(estado__in=[Manutencao.Estado.PENDENTE, Manutencao.Estado.EM_ANDAMENTO])
+        total_manutencoes = pendentes.count()
+        abertas = list(pendentes.select_related("equipamento__tipo").order_by("data_abertura", "pk")[:5])
+        for item in abertas:
+            item.dias_em_aberto = (hoje - timezone.localtime(item.data_abertura, fuso).date()).days
+    recentes = movimentacoes.filter(data_hora__gte=inicio, data_hora__lt=fim).select_related(
         "equipamento__tipo", "operador", "destinatario",
     ).order_by("-data_hora", "-pk")[:10]
     return render(request, "inventario/painel.html", {
         "indicadores": indicadores, "distribuicao": distribuicao,
+        "percentuais": percentuais, "atualizado_em": agora,
+        "periodos_painel": periodos, "periodo_selecionado": periodo,
+        "dias_periodo": dias_periodo, "avisos_filtros": avisos,
         "movimentacoes_recentes": recentes,
         "categorias_painel": categorias, "categoria_selecionada": categoria,
         "situacao_por_categoria": por_categoria, "maior_categoria": maior_categoria,
         "retiradas_diarias": retiradas_diarias, "inicio_periodo": inicio_periodo,
         "fim_periodo": hoje, "fuso_painel": str(fuso),
-        "total_retiradas": sum(contagens.values()), "maior_dia": maior_dia,
+        "total_retiradas": total_retiradas, "maior_dia": maior_dia,
+        "total_anterior": total_anterior, "variacao_retiradas": variacao,
+        "variacao_absoluta": abs(variacao) if variacao is not None else None,
+        "inicio_anterior": inicio_anterior.date(), "fim_anterior": inicio_periodo - timedelta(days=1),
+        "unidades_utilizadas": resumo_uso["unidades"], "tipos_mais_retirados": tipos_mais_retirados,
+        "etapas_reservas": etapas_reservas, "total_reservas": total_reservas,
+        "pode_ver_reservas_painel": pode_ver_reservas,
+        "devolucoes_atrasadas": atrasadas, "total_atrasadas": total_atrasadas,
+        "total_manutencoes_abertas": total_manutencoes,
         "escala_retiradas": escala_retiradas, "meia_escala_retiradas": escala_retiradas // 2,
         "manutencoes_abertas": abertas, "pode_ver_manutencoes_painel": pode_ver_manutencoes,
     })

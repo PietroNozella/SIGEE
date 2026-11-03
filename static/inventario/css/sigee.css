@@ -85,6 +85,16 @@ summary:focus-visible,
     width: var(--sigee-sidebar-width);
 }
 
+.app-sidebar,
+.sidebar-navigation {
+    scrollbar-width: none;
+}
+
+.app-sidebar::-webkit-scrollbar,
+.sidebar-navigation::-webkit-scrollbar {
+    display: none;
+}
+
 .sidebar-brand {
     display: flex;
     width: var(--sigee-sidebar-width);
@@ -150,7 +160,6 @@ summary:focus-visible,
     gap: 4px;
     overflow: hidden auto;
     padding: 16px 12px;
-    scrollbar-width: thin;
 }
 
 .side-nav-item {

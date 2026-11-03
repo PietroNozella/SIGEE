@@ -53,7 +53,7 @@ class PainelTests(TestCase):
         self.assertEqual(resposta.context["indicadores"], {
             "ativos": 0, "disponiveis": 0, "em_uso": 0, "manutencao": 0, "inativos": 0,
         })
-        self.assertTrue(all(item["percentual"] == 0 for item in resposta.context["distribuicao"]))
+        self.assertTrue(all(valor is None for valor in resposta.context["percentuais"].values()))
         self.assertContains(resposta, "Nenhum equipamento ativo")
         self.assertContains(resposta, "Nenhuma movimentação registrada")
 
@@ -66,9 +66,10 @@ class PainelTests(TestCase):
         self.assertEqual(resposta.context["indicadores"], {
             "ativos": 4, "disponiveis": 2, "em_uso": 1, "manutencao": 1, "inativos": 3,
         })
-        distribuicao = resposta.context["distribuicao"]
-        self.assertEqual([item["total"] for item in distribuicao], [2, 1, 1])
-        self.assertEqual([item["percentual"] for item in distribuicao], [50, 25, 25])
+        self.assertEqual(resposta.context["percentuais"], {
+            "disponiveis": 50, "em_uso": 25, "manutencao": 25,
+        })
+        self.assertNotContains(resposta, "Situação dos equipamentos</h2>")
         self.assertContains(resposta, 'style="width: 50.00%"')
 
     def test_apenas_inativos_nao_produzem_grafico_com_equipamentos_ativos(self):
@@ -305,6 +306,8 @@ class PainelTests(TestCase):
         self.assertNotContains(resposta, "CONCLUIDO")
         self.assertContains(resposta, "Pendente")
         self.assertContains(resposta, "Em andamento")
+        self.assertContains(resposta, "Exibindo as 5 mais antigas de 7 manutenções em aberto.")
+        self.assertContains(resposta, reverse("manutencoes:manutencao_lista"))
 
     def test_sem_permissao_de_manutencao_nao_consulta_nem_expoe_registros(self):
         registro = self.manutencao(self.equipamento("RESTRITO"), timezone.now())
@@ -358,12 +361,12 @@ class PainelTests(TestCase):
             return [item["sql"] for item in consultas
                     if any(f'FROM "{tabela}"' in item["sql"] for tabela in tabelas)]
 
-        self.assertEqual(len(consultas_de_dados()), 6)
+        quantidade_inicial = len(consultas_de_dados())
         for indice in range(12):
             equipamento = self.equipamento(f"CONSULTAS-{indice}")
             self.retirada(equipamento)
             self.manutencao(equipamento, timezone.now())
-        self.assertEqual(len(consultas_de_dados()), 6)
+        self.assertEqual(len(consultas_de_dados()), quantidade_inicial)
 
     def test_barras_diarias_e_detalhes_preservam_dados_sem_javascript(self):
         self.retirada(self.equipamento("SEM-JS"))
@@ -376,3 +379,157 @@ class PainelTests(TestCase):
         self.assertContains(resposta, "professor-painel")
         self.assertContains(resposta, "Consultar tabela dos 30 dias")
         self.assertContains(resposta, "Como as retiradas são contadas")
+
+    @patch("inventario.views.timezone.now")
+    def test_periodos_comparam_janelas_locais_sem_sobreposicao(self, agora):
+        agora.return_value = datetime(2026, 11, 2, 15, tzinfo=datetime_timezone.utc)
+        fuso = timezone.get_default_timezone()
+        unidade = self.equipamento("PERIODO", ativo=False)
+        inicio = timezone.make_aware(datetime(2026, 10, 27), fuso)
+        inicio_anterior = inicio - timedelta(days=7)
+        self.retirada(unidade, inicio_anterior - timedelta(microseconds=1))
+        self.retirada(unidade, inicio_anterior)
+        self.retirada(unidade, inicio - timedelta(microseconds=1))
+        for deslocamento in (0, 1, 2):
+            self.retirada(unidade, inicio + timedelta(days=deslocamento))
+        resposta = self.client.get(self.url, {"periodo": "7"})
+        self.assertEqual(resposta.context["total_retiradas"], 3)
+        self.assertEqual(resposta.context["total_anterior"], 2)
+        self.assertEqual(resposta.context["variacao_retiradas"], 50)
+        self.assertEqual(resposta.context["unidades_utilizadas"], 1)
+        self.assertEqual(len(resposta.context["retiradas_diarias"]), 7)
+        self.assertEqual(len(resposta.context["movimentacoes_recentes"]), 3)
+        self.assertContains(resposta, "50,0% a mais")
+        self.assertContains(resposta, 'periodo=7')
+        resposta = self.client.get(self.url, {"periodo": "90"})
+        self.assertEqual(len(resposta.context["retiradas_diarias"]), 90)
+        self.assertEqual(resposta.context["total_retiradas"], 6)
+        self.assertIsNone(resposta.context["variacao_retiradas"])
+        self.assertContains(resposta, "Sem retiradas no período anterior")
+
+    def test_periodo_invalido_avisa_sem_quebrar_painel(self):
+        for periodo in ("", "-1", "9999", "<script>"):
+            with self.subTest(periodo=periodo):
+                resposta = self.client.get(self.url, {"periodo": periodo})
+                self.assertEqual(resposta.status_code, 200)
+                self.assertEqual(resposta.context["dias_periodo"], 30)
+                self.assertContains(resposta, "Período inválido")
+                self.assertNotContains(resposta, "<script>")
+
+    def test_ranking_separa_tipos_conta_reuso_e_limita_a_cinco(self):
+        agora = timezone.now()
+        for indice in range(6):
+            tipo = TipoEquipamento.objects.create(categoria=self.tipo.categoria, nome=f"Tipo {indice}")
+            unidade = Equipamento.objects.create(
+                tipo=tipo, local=self.local, numero_patrimonio=f"RANK-{indice}", ativo=False,
+            )
+            for _ in range(indice + 1):
+                self.retirada(unidade)
+        self.retirada(self.equipamento("ANTIGA"), agora - timedelta(days=40))
+        resposta = self.client.get(self.url)
+        ranking = resposta.context["tipos_mais_retirados"]
+        self.assertEqual([item["total"] for item in ranking], [6, 5, 4, 3, 2])
+        self.assertTrue(all(item["unidades"] == 1 for item in ranking))
+        self.assertEqual(ranking[0]["percentual"], 100)
+        self.assertAlmostEqual(ranking[0]["participacao"], 6 / 21 * 100)
+        self.assertEqual(resposta.context["unidades_utilizadas"], 6)
+        self.assertEqual(resposta.context["total_retiradas"], 21)
+
+    def reserva(self, inicio=None, **campos):
+        inicio = inicio or timezone.now() - timedelta(hours=2)
+        return Reserva.objects.create(
+            professor=self.professor, tipo_equipamento=self.tipo, local=self.local,
+            inicio=inicio, fim=inicio + timedelta(hours=1), **campos,
+        )
+
+    @patch("inventario.views.timezone.now")
+    def test_etapas_reservas_usam_tolerancia_e_devolucoes_sem_gravar(self, agora):
+        agora.return_value = datetime(2026, 11, 2, 15, tzinfo=datetime_timezone.utc)
+        instante = agora.return_value
+        self.reserva(inicio=instante - timedelta(minutes=29))
+        expirada = self.reserva(inicio=instante - Reserva.TOLERANCIA_RETIRADA)
+        self.reserva(status=Reserva.Status.CANCELADA)
+        self.reserva(status=Reserva.Status.EXPIRADA)
+        em_uso = self.reserva(quantidade=2)
+        encerrada = self.reserva()
+        for indice, reserva in enumerate((em_uso, em_uso, encerrada)):
+            retirada = self.retirada(self.equipamento(f"ETAPA-{indice}"), reserva=reserva)
+            if indice:
+                Movimentacao.objects.create(
+                    equipamento=retirada.equipamento, tipo=Movimentacao.Tipo.DEVOLUCAO,
+                    operador=self.operador, destinatario=self.professor, retirada_origem=retirada,
+                )
+        self.reserva(inicio=instante - timedelta(days=35))
+        with CaptureQueriesContext(connection) as consultas:
+            resposta = self.client.get(self.url)
+        etapas = {item["chave"]: item["total"] for item in resposta.context["etapas_reservas"]}
+        self.assertEqual(etapas, {"AGUARDANDO": 1, "EM_USO": 1, "ENCERRADA": 1, "CANCELADA": 1, "EXPIRADA": 2})
+        self.assertEqual(resposta.context["total_reservas"], 6)
+        self.assertAlmostEqual(sum(item["percentual"] for item in resposta.context["etapas_reservas"]), 100)
+        expirada.refresh_from_db()
+        self.assertEqual(expirada.status, Reserva.Status.ATIVA)
+        self.assertFalse(any(item["sql"].startswith(("UPDATE", "INSERT", "DELETE")) for item in consultas))
+
+    @patch("inventario.views.timezone.now")
+    def test_pendencias_atuais_independem_do_periodo_e_excluem_devolvidas(self, agora):
+        agora.return_value = datetime(2026, 11, 2, 15, tzinfo=datetime_timezone.utc)
+        instante = agora.return_value
+        antigas = []
+        for indice in range(7):
+            reserva = self.reserva(inicio=instante - timedelta(days=40 + indice))
+            antigas.append(self.retirada(self.equipamento(f"ATRASO-{indice}"), reserva.inicio, reserva=reserva))
+        devolvida = antigas.pop(0)
+        Movimentacao.objects.create(
+            equipamento=devolvida.equipamento, tipo=Movimentacao.Tipo.DEVOLUCAO,
+            operador=self.operador, destinatario=self.professor, retirada_origem=devolvida,
+        )
+        self.retirada(self.equipamento("SEM-PRAZO"))
+        self.retirada(self.equipamento("NO-PRAZO"), reserva=self.reserva(inicio=instante))
+        self.retirada(self.equipamento("LIMITE-PRAZO"), reserva=self.reserva(inicio=instante - timedelta(hours=1)))
+        manutencao = self.manutencao(self.equipamento("MAN-ANTIGA"), instante - timedelta(days=45))
+        resposta = self.client.get(self.url, {"periodo": "7"})
+        self.assertEqual(resposta.context["total_atrasadas"], 6)
+        self.assertEqual([item.pk for item in resposta.context["devolucoes_atrasadas"]],
+                         [item.pk for item in reversed(antigas)][:5])
+        self.assertEqual([item.pk for item in resposta.context["manutencoes_abertas"]], [manutencao.pk])
+        self.assertEqual(resposta.context["manutencoes_abertas"][0].dias_em_aberto, 45)
+
+    def test_categoria_filtra_ranking_reservas_e_prazos_sem_duplicar_lotes(self):
+        outra = Categoria.objects.create(nome="Outro recorte")
+        outro_tipo = TipoEquipamento.objects.create(categoria=outra, nome="Outro tipo")
+        selecionada = self.reserva(quantidade=2)
+        excluida = self.reserva()
+        excluida.tipo_equipamento = outro_tipo
+        excluida.save(update_fields=["tipo_equipamento"])
+        for indice, reserva in enumerate((selecionada, selecionada, excluida)):
+            unidade = Equipamento.objects.create(numero_patrimonio=f"FILTRO-{indice}", tipo=reserva.tipo_equipamento, local=self.local)
+            self.retirada(unidade, reserva=reserva)
+        resposta = self.client.get(self.url, {"categoria": self.tipo.categoria_id, "periodo": "7"})
+        self.assertEqual(resposta.context["total_reservas"], 1)
+        self.assertEqual(resposta.context["total_atrasadas"], 2)
+        self.assertEqual(resposta.context["total_retiradas"], 2)
+        self.assertEqual(len(resposta.context["tipos_mais_retirados"]), 1)
+        self.assertContains(resposta, f'categoria={self.tipo.categoria_id}&amp;periodo=7')
+
+    def test_sem_permissao_reservas_nao_consulta_nem_expoe_prazos(self):
+        self.retirada(self.equipamento("PRAZO-RESTRITO"), reserva=self.reserva())
+        Group.objects.get(name="Administrador").permissions.remove(Permission.objects.get(codename="view_reserva"))
+        with CaptureQueriesContext(connection) as consultas:
+            resposta = self.client.get(self.url)
+        self.assertEqual(resposta.context["etapas_reservas"], [])
+        self.assertEqual(list(resposta.context["devolucoes_atrasadas"]), [])
+        self.assertFalse(any('"reservas_reserva"' in item["sql"] for item in consultas))
+        self.assertContains(resposta, "Consulta de reservas restrita")
+        self.assertNotContains(resposta, "Fim previsto:")
+
+    def test_cores_nos_indicadores_refletem_estado_e_ausencia_de_acervo(self):
+        resposta = self.client.get(self.url)
+        self.assertContains(resposta, 'class="kpi-value metric-neutral">0</strong>', count=4)
+        self.equipamento("DISPONIVEL")
+        resposta = self.client.get(self.url)
+        self.assertContains(resposta, 'class="kpi-value metric-success">1</strong>')
+        self.assertContains(resposta, 'class="kpi-value metric-success">0</strong>')
+        Equipamento.objects.update(situacao=Equipamento.Situacao.MANUTENCAO)
+        resposta = self.client.get(self.url)
+        self.assertContains(resposta, 'class="kpi-value metric-danger">0</strong>')
+        self.assertContains(resposta, 'class="kpi-value metric-danger">1</strong>')
