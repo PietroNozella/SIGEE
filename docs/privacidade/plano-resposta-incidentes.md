@@ -39,14 +39,14 @@ Os registros de incidentes com dados pessoais devem observar o prazo regulatóri
 - canal de privacidade: valor configurado em `SIGEE_CONTATO_PRIVACIDADE`;
 - Vercel: suporte e painel do projeto;
 - Supabase: suporte, logs e painel do banco;
-- Google/Gmail: segurança da conta SMTP;
+- provedor de e-mail configurado: segurança da conta SMTP; Gmail é o exemplo apresentado em `.env.example`;
 - GitHub: segurança do repositório e revogação de credenciais.
 
 Os contatos específicos, responsáveis e caminhos de escalonamento não devem ficar vazios na versão usada em produção.
 
 ## Exercício acadêmico
 
-Antes da entrega final, realizar uma simulação de comprometimento de credencial administrativa:
+O roteiro abaixo orienta uma simulação de comprometimento de credencial administrativa. Trata-se de um procedimento de exercício, sem registro de execução nesta documentação:
 
 1. detectar login ou alteração suspeita;
 2. invalidar a conta e as sessões;

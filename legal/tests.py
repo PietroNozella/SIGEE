@@ -140,7 +140,7 @@ class DocumentosLegaisTests(TestCase):
         aceite = AceiteDocumentosLegais.objects.get()
         self.assertEqual(aceite.usuario, self.usuario)
         self.assertEqual(aceite.versao_termos, "2.0")
-        self.assertEqual(aceite.versao_privacidade, "2.0")
+        self.assertEqual(aceite.versao_privacidade, "2.1")
         self.assertIsNotNone(aceite.aceito_em)
         self.assertTrue(usuario_possui_aceite_vigente(self.usuario))
 
@@ -201,7 +201,7 @@ class DocumentosLegaisTests(TestCase):
                 reverse("legal:aceite_documentos"),
                 self.dados_aceite(
                     versao_termos="2.0",
-                    versao_privacidade="2.0",
+                    versao_privacidade="2.1",
                 ),
             )
 
@@ -224,7 +224,7 @@ class DocumentosLegaisTests(TestCase):
                 AceiteDocumentosLegais.objects.create(
                     usuario=self.usuario,
                     versao_termos="2.0",
-                    versao_privacidade="2.0",
+                    versao_privacidade="2.1",
                 )
 
     def test_aceite_gera_evento_de_auditoria(self):
@@ -273,8 +273,8 @@ class TransparenciaPublicaTests(TestCase):
         politica = self.client.get(reverse("legal:politica_privacidade"))
         termos = self.client.get(reverse("legal:termos_de_uso"))
 
-        self.assertContains(politica, "Versão 2.0")
-        self.assertContains(politica, "21/09/2026")
+        self.assertContains(politica, "Versão 2.1")
+        self.assertContains(politica, "01/11/2026")
         self.assertContains(politica, "Vercel")
         self.assertContains(politica, "Supabase")
         self.assertContains(politica, "Direitos dos titulares")

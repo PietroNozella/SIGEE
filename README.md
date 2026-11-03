@@ -4,34 +4,31 @@
 
 ### Sistema Integrado de Gestão de Equipamentos Escolares
 
-Centralize o inventário tecnológico da instituição com controle de acesso, rastreabilidade e segurança.
+Inventário, reservas e utilização de equipamentos escolares em um único ambiente.
 
-![Status](https://img.shields.io/badge/status-em%20desenvolvimento-F59E0B?style=for-the-badge)
-[![Deploy](https://img.shields.io/badge/deploy-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://sigee-psi.vercel.app/login/)
+**[Acessar a aplicação](https://sigee-psi.vercel.app/login/)**
 
-**[Acessar o SIGEE →](https://sigee-psi.vercel.app/login/)**
-
-#### Aplicação
+**Aplicação**
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-5.2-092E20?style=for-the-badge&logo=django&logoColor=white)
+
+**Interface**
+
 ![Django Templates](https://img.shields.io/badge/Django%20Templates-092E20?style=for-the-badge&logo=django&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-
-#### Interface
-
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap%205-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
 
-#### Dados e infraestrutura
+**Dados e infraestrutura**
 
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 
-#### Desenvolvimento e design
+**Desenvolvimento e design**
 
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
@@ -39,84 +36,125 @@ Centralize o inventário tecnológico da instituição com controle de acesso, r
 
 </div>
 
-## Sobre o SIGEE
+[Visão geral](#visão-geral) · [Funcionalidades](#funcionalidades) · [Perfis](#perfis-de-acesso) · [Arquitetura](#tecnologias-e-arquitetura) · [Execução local](#execução-local) · [Testes](#testes) · [Documentação](#documentação)
 
-O SIGEE é uma plataforma web para organizar e acompanhar equipamentos tecnológicos de instituições de ensino. A aplicação reúne inventário, usuários, permissões e registros de auditoria em um único ambiente, reduzindo controles dispersos e facilitando a consulta das informações.
+## Visão geral
 
-## Problema e contexto
+O SIGEE é uma aplicação web para gerenciar equipamentos tecnológicos de instituições de ensino, desde o cadastro patrimonial até a reserva, entrega, devolução e manutenção. O sistema relaciona o uso dos equipamentos a turmas, disciplinas e atividades pedagógicas e reúne consultas operacionais, indicadores e auditoria.
 
-Em instituições de ensino, o registro descentralizado de reservas, localização, manutenção e utilização de equipamentos dificulta a consulta da disponibilidade e a rastreabilidade dos itens.
+O fluxo de empréstimo é organizado em **Reservas**, **Em uso** e **Histórico**. O Professor agenda os equipamentos e informa o contexto pedagógico; o Operador confirma a entrega e recebe as devoluções; o Administrador mantém os cadastros e acompanha o acervo. Toda nova retirada exige uma reserva válida.
 
-O SIGEE centraliza o inventário, as reservas e os registros relacionados, reduzindo conflitos de uso e facilitando o acompanhamento dos equipamentos.
+## Funcionalidades
+
+| Área | Recursos |
+|---|---|
+| **Inventário** | Cadastro por unidade física, patrimônio único, tipo/modelo, categoria e local; importação CSV com gravação integral do lote; filtros, edição e exclusão ou inativação conforme o histórico. |
+| **Reservas** | Agendamento próprio em lote por tipo/modelo e local, alocação de patrimônios, contexto pedagógico obrigatório, disponibilidade, prevenção de conflitos, cancelamento e expiração por tolerância de retirada. |
+| **Entrega e devolução** | Entrega integral das unidades reservadas, atualização de situação, devolução total ou parcial e registro de problemas por patrimônio, com transações e rastreabilidade por unidade. |
+| **Manutenção** | Abertura automática na devolução com problema ou manual pelo Administrador; acompanhamento e conclusão como reparado ou sem possibilidade de reparo, com preservação do histórico. |
+| **Contexto pedagógico** | Cadastros de turmas, disciplinas e atividades; planejamento na reserva, criação das utilizações na entrega e correção pelo Professor até a devolução integral. |
+| **Consultas e indicadores** | Itens em uso, histórico de reservas e movimentações, painel do inventário e indicadores por turma, disciplina e atividade, com acesso conforme o perfil. |
+| **Identidade e auditoria** | Cadastro controlado de contas, recuperação de senha, desativação reversível, Administrador principal, autorização no servidor e registro das ações relevantes. |
+| **Privacidade e integração** | Termos e Política de Privacidade com aceite versionado; comandos assistidos de exportação, anonimização e descarte; consulta informativa de feriados pela BrasilAPI. |
+
+Feriados nacionais são informativos e não impedem uma reserva. A indisponibilidade da BrasilAPI também permite continuar o fluxo; as validações locais de período, quantidade e disponibilidade permanecem aplicáveis.
+
+Os registros antigos de retirada sem reserva permanecem disponíveis para devolução e consulta. As regras de compatibilidade estão no [fluxo de reservas, uso e histórico](docs/tecnica/fluxo-reservas-uso-historico.md).
 
 ## Perfis de acesso
 
-O SIGEE não possui cadastro público. As contas são criadas por usuários autorizados e recebem um perfil compatível com suas responsabilidades.
+O sistema não possui cadastro público. As contas funcionais pertencem a um único perfil, e as permissões são verificadas no servidor.
 
-| Perfil | Acesso disponível atualmente |
+| Perfil | Responsabilidades |
 |---|---|
-| **Administrador** | Gerencia o inventário, importa equipamentos, cadastra usuários, mantém turmas, disciplinas e atividades pedagógicas, acompanha manutenções, consulta o resumo, a auditoria e o histórico de movimentações. |
-| **Operador** | Consulta equipamentos e reservas, registra retirada em lote com ou sem reserva, confirma devolução integral ou parcial, encaminha unidades com problema para manutenção e consulta o histórico de movimentações. |
-| **Professor** | Consulta equipamentos e disponibilidade, cria e cancela reservas próprias em lote e consulta Minhas Utilizações para associar contexto pedagógico às retiradas com ou sem reserva, até a devolução integral. |
+| **Administrador** | Gerencia equipamentos, usuários e cadastros pedagógicos; acompanha reservas, itens em uso, histórico e manutenção; consulta painel, indicadores e auditoria. |
+| **Operador** | Confere e entrega os equipamentos reservados; registra devoluções totais ou parciais e problemas por unidade; consulta itens em uso e histórico. |
+| **Professor** | Consulta disponibilidade, cria e cancela reservas próprias quando permitido, informa e corrige o contexto pedagógico e acompanha seus itens em uso e registros históricos. |
 
-Consulte os detalhes de autorização na [matriz de acesso](docs/matriz-de-acesso.md).
+O **Administrador principal** pertence ao mesmo perfil Administrador e possui autoridade exclusiva para desativar ou reativar administradores comuns. O Superuser do Django é uma conta técnica de configuração e manutenção, separada dos perfis funcionais.
 
-A navegação do Operador reúne **Equipamentos**, **Reservas**, **Em uso** e **Histórico**. Em Reservas, o botão Registrar retirada abre a entrega sem reserva; em Em uso, são conferidos os lotes pendentes de devolução.
+A [matriz de acesso](docs/tecnica/matriz-de-acesso.md) detalha as ações, permissões e restrições de propriedade.
 
-## Arquitetura
+## Tecnologias e arquitetura
 
-O SIGEE utiliza uma arquitetura web monolítica com Django e renderização no servidor. Autenticação, autorização, regras de negócio, persistência e interface permanecem integradas na mesma aplicação, reduzindo a complexidade operacional e mantendo o código simples de evoluir.
+O SIGEE utiliza um monólito Django com páginas renderizadas no servidor. Os apps separam as responsabilidades do domínio, enquanto o ORM, os serviços transacionais e os controles de acesso mantêm as regras na aplicação.
 
-| Camada | Tecnologias e decisões |
+O envio por SMTP depende da configuração do ambiente; em desenvolvimento, o backend padrão de e-mail exibe as mensagens no console.
+
+| Camada | Implementação |
 |---|---|
-| **Interface** | Django Templates, HTML5, CSS3, Bootstrap 5 e JavaScript pontual. |
-| **Aplicação** | Python 3.12, Django 5.2 LTS, Django ORM, Authentication e Groups/Permissions. |
-| **Persistência** | SQLite no desenvolvimento local e PostgreSQL configurado por `DATABASE_URL`, com Supabase na infraestrutura do projeto. |
-| **Implantação** | Aplicação publicada na Vercel com HTTPS. |
-| **Segurança** | Sessões, proteção CSRF, bloqueio temporário de tentativas, validação no servidor, hash de senhas, cookies seguros em produção e auditoria. |
-| **Integração externa** | BrasilAPI para consulta informativa e não bloqueante de feriados nacionais durante a reserva. |
+| **Aplicação** | Python 3.12, Django 5.2, Django ORM e autenticação nativa por sessões, grupos e permissões. |
+| **Interface** | Django Templates, HTML, CSS, Bootstrap 5 e JavaScript. Bootstrap, fontes e ícones são servidos pelo projeto. |
+| **Dados** | SQLite para desenvolvimento local; PostgreSQL configurado por `DATABASE_URL`, com Supabase como infraestrutura do banco na implantação. |
+| **Integrações** | BrasilAPI para feriados nacionais e SMTP configurável para recuperação de senha. |
+| **Implantação** | Vercel, com região `gru1` definida em `vercel.json`. Migrations e variáveis de ambiente integram a preparação do ambiente. |
+| **Segurança** | Validação no servidor, CSRF, hash de senhas, bloqueio temporário de tentativas com django-axes, cookies seguros com `DEBUG=False` e auditoria. |
+
+Os apps `inventario`, `reservas`, `movimentacoes`, `manutencoes` e `pedagogico` concentram os fluxos de equipamentos. `contas`, `usuarios`, `auditoria` e `legal` oferecem os controles de identidade, acesso, registro e aceite.
+
+Consulte a [arquitetura do sistema](docs/tecnica/arquitetura-do-sistema.md) para conhecer as decisões técnicas e os relacionamentos entre os módulos.
 
 ## Execução local
+
+Os comandos abaixo utilizam **PowerShell no Windows** e preparam uma instalação nova.
 
 ### Pré-requisitos
 
 - Python 3.12;
 - Git;
-- PostgreSQL opcional — sem `DATABASE_URL`, o projeto utiliza SQLite.
+- PostgreSQL, caso opte por esse banco; a execução local também utiliza SQLite.
 
 ### Instalação
 
-Na raiz do repositório, crie e ative o ambiente virtual, instale as dependências e prepare o arquivo de configuração:
+Clone o repositório e prepare o ambiente:
 
 ```powershell
+git clone https://github.com/PietroNozella/SIGEE.git
+Set-Location SIGEE
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-Edite o arquivo `.env`, defina uma chave local em `DJANGO_SECRET_KEY` e escolha o banco de dados:
+### Configuração do ambiente
 
-- para usar SQLite, deixe `DATABASE_URL=` sem valor;
-- para usar PostgreSQL, informe uma URL de conexão válida.
+Gere uma chave local e copie o resultado para `DJANGO_SECRET_KEY` no arquivo `.env`:
 
-### Variáveis de ambiente
+```powershell
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
 
-| Variável | Obrigatória | Descrição |
-|---|:---:|---|
-| `DJANGO_SECRET_KEY` | Sim | Chave usada pelos mecanismos criptográficos do Django. |
-| `DJANGO_DEBUG` | Não | Ativa o modo de depuração; use `False` em produção. |
-| `DJANGO_ALLOWED_HOSTS` | Não | Lista de hosts permitidos, separados por vírgula. |
-| `DATABASE_URL` | Não | Conexão PostgreSQL; no Supabase, inclua `sslmode=require`. Sem valor, utiliza SQLite local. |
-| `SIGEE_CONTATO_PRIVACIDADE` | Não | E-mail exibido nos documentos de privacidade. |
-| `DJANGO_SESSION_COOKIE_AGE` | Não | Duração máxima da sessão em segundos; padrão de 14 dias. |
-| `DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE` | Não | Encerra a sessão ao fechar o navegador quando definido como `True`. |
-| `DJANGO_AXES_FAILURE_LIMIT` | Não | Quantidade de falhas antes do bloqueio; padrão `5`. |
-| `DJANGO_AXES_COOLOFF_MINUTES` | Não | Duração do bloqueio temporário; padrão `15` minutos. |
+Para iniciar com SQLite, ajuste os valores abaixo. O arquivo `.env.example` contém uma URL ilustrativa de PostgreSQL; deixe `DATABASE_URL` vazia para utilizar o banco local.
+
+```dotenv
+DJANGO_SECRET_KEY=substitua-pela-chave-gerada
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+DATABASE_URL=
+```
+
+Para usar PostgreSQL, preencha `DATABASE_URL` com uma conexão válida. Na configuração orientada para Supabase, inclua `sslmode=require`. O arquivo `.env` é ignorado pelo Git.
+
+<details>
+<summary><strong>Configurações adicionais</strong></summary>
+
+| Variável | Finalidade | Padrão |
+|---|---|---|
+| `SIGEE_CONTATO_PRIVACIDADE` | Canal exibido nos documentos de privacidade. | `suporte.sigee@gmail.com` |
+| `DJANGO_SESSION_COOKIE_AGE` | Duração máxima da sessão, em segundos. | `1209600` (14 dias) |
+| `DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE` | Expiração da sessão ao fechar o navegador. | `False` |
+| `DJANGO_AXES_FAILURE_LIMIT` | Falhas de autenticação antes do bloqueio. | `5` |
+| `DJANGO_AXES_COOLOFF_MINUTES` | Duração do bloqueio, em minutos. | `15` |
+| `DJANGO_PASSWORD_RESET_TIMEOUT` | Validade do token de recuperação, em segundos. | `3600` (1 hora) |
+
+Com `DEBUG=True`, o backend padrão de e-mail exibe as mensagens no console. Para configurar envio SMTP, consulte as variáveis `DJANGO_EMAIL_*` e `DJANGO_DEFAULT_FROM_EMAIL` em [.env.example](.env.example); o modelo apresenta Gmail como exemplo de provedor. Host, remetente e credenciais dependem do ambiente.
+
+</details>
 
 ### Preparação e inicialização
 
-Prepare o banco, configure os perfis funcionais e crie a primeira conta técnica:
+Aplique as migrations, configure os perfis e crie a conta técnica inicial:
 
 ```powershell
 python manage.py migrate
@@ -125,111 +163,55 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-O superusuário deve criar uma conta comum pelo Django Admin e atribuir somente o grupo `Administrador`. Essa conta funcional poderá cadastrar os demais usuários pela rota `/usuarios/novo/`.
+`configurar_perfis` é idempotente e aplica as permissões definidas no código. Execute-o depois das migrations.
 
-Prepare também uma conta Administrador para reserva de acesso, com senha e e-mail
-de recuperação, e designe-a como principal:
+### Primeiro acesso
+
+1. Acesse o [Django Admin local](http://127.0.0.1:8000/admin/) com a conta técnica criada por `createsuperuser`.
+2. Crie uma conta funcional ativa, com senha e e-mail de recuperação, pertencente somente ao grupo `Administrador`, sem `is_staff` e sem `is_superuser`.
+3. Acesse o [SIGEE local](http://127.0.0.1:8000/login/) com essa conta. Após o aceite dos documentos vigentes, o Administrador acessa o painel e cadastra as demais contas.
+4. Prepare uma conta Administrador destinada à reserva de acesso e designe-a como principal. Em outro terminal, com o ambiente virtual ativado, execute:
 
 ```powershell
 python manage.py configurar_administrador_principal nome_da_conta_reserva
 ```
 
-Somente o principal pode desativar e reativar administradores comuns. Ambos mantêm
-a gestão de Professores e Operadores. A conta principal permanece ativa e protegida;
-para transferir a função, use o mesmo comando com outra conta e `--substituir`.
-As migrations não promovem usuários existentes automaticamente. Consulte o
-[procedimento de configuração e recuperação](docs/autenticacao.md#administrador-principal-de-reserva).
+A conta principal é protegida contra desativação pelo fluxo funcional. Sua configuração, substituição e recuperação estão descritas em [Autenticação e contas](docs/tecnica/autenticacao.md#administrador-principal-de-reserva).
 
-Execute `configurar_perfis` depois das migrations. O comando é idempotente e mantém as permissões dos perfis alinhadas à configuração do projeto.
-
-As contas usam UUID como chave primária na tabela `auth_user`. Para atualizar um
-banco que ainda usa IDs numéricos, guarde um backup e mantenha a aplicação em
-manutenção até publicar a versão nova. Execute, nessa ordem:
-
-```powershell
-python manage.py migrate contas 0001 --settings=config.settings_preparacao_uuid
-python manage.py migrate
-python manage.py configurar_perfis
-```
-
-A configuração de preparação é exclusiva para o primeiro comando. A conversão
-preserva as contas e seus vínculos, encerra as sessões e invalida links antigos
-de recuperação de senha. A reversão exige restaurar o backup e o código anterior.
+Para atualizar uma instalação existente, siga o [procedimento de atualização de bancos](docs/implantacao/seguranca-banco-supabase.md#atualização-de-bancos-existentes), que inclui a transição para UUID e o planejamento pedagógico na reserva.
 
 ## Testes
 
-A suíte automatizada cobre autenticação, bloqueio de tentativas, autorização, inventário, importação CSV, usuários, documentos legais, auditoria, reservas, disponibilidade, conflitos, cancelamento, manutenção, devolução com problema, direitos dos titulares e contingência da BrasilAPI.
+A suíte inclui cenários de regras de negócio, autenticação, autorização, importação, reservas, movimentações, manutenção, contexto pedagógico, indicadores, auditoria, privacidade e contingência da BrasilAPI.
 
-Para validar o projeto com SQLite:
+Execute as verificações locais com a configuração de testes:
 
 ```powershell
 python manage.py check --settings=config.settings_testes
 python manage.py test --settings=config.settings_testes
 ```
 
-Essa configuração usa SQLite em memória, independentemente do `DATABASE_URL`
-presente no `.env`. No PowerShell, atribuir uma string vazia à variável de
-ambiente pode removê-la e permitir que a conexão remota do `.env` seja carregada
-novamente. Para testar concorrência em PostgreSQL, use uma instância isolada e
-uma configuração específica; `settings_testes` destina-se aos testes locais em
-SQLite.
+Essa configuração fixa **SQLite em memória** e **e-mail em memória**, independentemente de `DATABASE_URL` no `.env`. Ela mantém o runner isolado do banco publicado e não envia e-mails.
 
-## Funcionalidades disponíveis nesta entrega
+Para executar somente um módulo:
 
-A versão atual inclui manutenção, utilização pedagógica com e sem reserva,
-painel e indicadores pedagógicos. As evidências de cada recorte distinguem testes
-isolados e verificações dos fluxos no ambiente publicado.
+```powershell
+python manage.py test reservas --settings=config.settings_testes
+```
 
-- [x] cadastro, importação, consulta, edição e inativação de equipamentos;
-- [x] reservas próprias por Professor, com quantidade e controle de disponibilidade;
-- [x] prevenção de conflitos e bloqueio de períodos inválidos;
-- [x] cancelamento das próprias reservas;
-- [x] retirada sem reserva em lote por Operador, com quantidade, conferência dos patrimônios e atualização atômica para em uso;
-- [x] retirada integral das unidades alocadas à reserva, do início até antes dos 30 minutos de tolerância;
-- [x] devolução básica em lote ou parcial por qualquer Operador autorizado, com seleção dos patrimônios, vínculo individual à retirada, auditoria e proteção contra duplicidade;
-- [x] histórico de retiradas e devoluções para Administrador e Operador, com filtros, paginação e vínculos de origem;
-- [x] devolução com problema por patrimônio, com abertura automática de manutenção e gravação atômica do lote;
-- [x] abertura manual, acompanhamento e conclusão de manutenção pelo Administrador, com resultado reparado ou sem reparo, indisponibilidade, auditoria e histórico;
-- [x] criação, consulta, edição, inativação e reativação de turmas, disciplinas e atividades pedagógicas pelo Administrador, com permissões e auditoria;
-- [x] associação pedagógica das utilizações com e sem reserva pelo Professor, aplicada ao lote após a retirada, com edição até a devolução integral e preservação no histórico;
-- [x] Minhas Utilizações reúne as retiradas próprias com e sem reserva, inclusive encerradas;
-- [x] indicadores pedagógicos por turma, disciplina e atividade, com utilizações, retiradas e equipamentos distintos;
-- [x] painel do Administrador com totais, gráfico por situação e dez movimentações recentes;
-- [x] consulta informativa de feriados nacionais pela BrasilAPI.
-- [x] transparência de privacidade, inventário de dados e aceite versionado;
-- [x] comandos assistidos para exportação, anonimização e descarte controlado.
+Os cenários que exigem bloqueio de linha são ignorados no SQLite. A preparação da conexão local e os comandos para executá-los estão em [Testes com PostgreSQL isolado](docs/implantacao/seguranca-banco-supabase.md#testes-com-postgresql-isolado). As instruções acima não representam medição de cobertura, desempenho ou validação do ambiente publicado. Os [critérios dos RNFs](docs/requisitos/requisitos-nao-funcionais.md#verificação-dos-rnf04-a-rnf06) definem a conferência de interface, os tempos de consulta e a cobertura por fluxo.
 
-## Roadmap
+## Documentação
 
-- [ ] conclusão da validação dos fluxos no ambiente publicado;
-- [ ] revisão cruzada do incremento pedagógico sem reserva;
-- [x] indicadores de utilização pedagógica.
+Consulte as referências por assunto para aprofundar as regras, decisões técnicas e procedimentos do sistema.
 
-![BrasilAPI](https://img.shields.io/badge/integração%20ativa-BrasilAPI-009C3B?style=for-the-badge)
+| Assunto | Referências |
+|---|---|
+| Requisitos | [Funcionais](docs/requisitos/requisitos-funcionais.md), [não funcionais e segurança](docs/requisitos/requisitos-nao-funcionais.md), [regras de negócio](docs/requisitos/regras-de-negocio.md) |
+| Arquitetura e acesso | [Arquitetura](docs/tecnica/arquitetura-do-sistema.md), [matriz de acesso](docs/tecnica/matriz-de-acesso.md) |
+| Fluxos e integrações | [Reservas, uso e histórico](docs/tecnica/fluxo-reservas-uso-historico.md), [BrasilAPI](docs/tecnica/integracao-brasilapi.md) |
+| Autenticação e auditoria | [Autenticação e contas](docs/tecnica/autenticacao.md), [auditoria](docs/tecnica/auditoria.md) |
+| Implantação | [Proteção do Supabase e atualização de bancos existentes](docs/implantacao/seguranca-banco-supabase.md) |
+| Privacidade | [Termos e aceite](docs/privacidade/privacidade-e-termos.md), [governança](docs/privacidade/governanca-dados-pessoais.md), [retenção e descarte](docs/privacidade/plano-retencao-descarte.md), [direitos dos titulares](docs/privacidade/procedimento-direitos-titulares.md), [incidentes](docs/privacidade/plano-resposta-incidentes.md) |
 
-## Documentação técnica
-
-- [Arquitetura do sistema](docs/arquitetura-do-sistema.md)
-- [Matriz de acesso](docs/matriz-de-acesso.md)
-- [Evidências de criação, conflitos e cancelamento de reservas](docs/evidencias-reservas.md)
-- [Evidências de retiradas e devoluções](docs/evidencias-movimentacoes.md)
-- [Evidências de devolução com problema e manutenção](docs/evidencias-manutencoes.md)
-- [Evidências de utilização pedagógica e indicadores](docs/evidencias-pedagogico-indicadores.md)
-- [Evidências de cadastros de equipamentos e usuários](docs/evidencias-cadastros.md)
-- [Evidências do painel do inventário](docs/evidencias-painel.md)
-- [Interface e acessibilidade básica: primeiro recorte](docs/evidencias-interface.md)
-- [Medições de contraste e compatibilidade em Chrome e Edge](docs/evidencias-contraste-compatibilidade.md)
-- [Desempenho das consultas e correção da expiração de reservas](docs/evidencias-desempenho.md)
-- [Configurações, TLS e consulta real de feriados](docs/evidencias-configuracoes-feriados.md)
-- [Cadastros pedagógicos e evidências da entrega](docs/cadastros-pedagogicos.md)
-- [Utilização pedagógica com reserva e evidências](docs/utilizacao-pedagogica-reserva.md)
-- [Utilização pedagógica sem reserva e evidências](docs/utilizacao-pedagogica-sem-reserva.md)
-- [Autenticação e autorização](docs/autenticacao.md)
-- [Auditoria de acessos e ações](docs/auditoria.md)
-- [Segurança](docs/evidencias-seguranca.md)
-- [Proteção das tabelas Django no Supabase](docs/seguranca-banco-supabase.md)
-- [Privacidade e termos](docs/privacidade-e-termos.md)
-- [Governança e inventário de dados pessoais](docs/governanca-dados-pessoais.md)
-- [Plano de retenção e descarte](docs/plano-retencao-descarte.md)
-- [Procedimento para direitos dos titulares](docs/procedimento-direitos-titulares.md)
-- [Plano de resposta a incidentes](docs/plano-resposta-incidentes.md)
+Os [diagramas](docs/diagramas/) complementam a documentação da arquitetura, dos dados e dos processos do sistema.

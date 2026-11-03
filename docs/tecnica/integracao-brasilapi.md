@@ -1,6 +1,4 @@
-# Projeto lógico da consulta de feriados — BrasilAPI
-
-> **Status: integração, interface do Professor e testes automatizados implementados.**
+# Integração com a BrasilAPI
 
 O cliente HTTP, a validação da resposta externa, a consulta anual usada pelo calendário, a consulta prévia integrada à disponibilidade e a apresentação dos avisos no diálogo de confirmação estão implementados e cobertos por testes automatizados.
 
@@ -63,7 +61,7 @@ Exemplo reduzido do formato observado:
 ## Processamento lógico
 
 1. Ao abrir ou trocar o ano do calendário, receber o ano solicitado e consultar o endpoint com tempo limite explícito.
-2. Devolver ao calendário somente a data e o nome dos feriados. A interface os destaca com legenda, mantém feriados selecionáveis e desativa datas passadas e fins de semana.
+2. Devolver ao calendário somente a data e o nome dos feriados. A interface os destaca com legenda e permite selecionar feriados em dias úteis que atendam às regras temporais. Datas passadas, sábados e domingos permanecem desativados, independentemente da ocorrência de feriado.
 3. Durante a consulta prévia de disponibilidade, receber o tipo/modelo, o local, a data e os horários inicial e final validados. A quantidade é resolvida pelas unidades físicas do tipo e local escolhidos, independentemente da consulta de feriados.
 4. Identificar todos os anos abrangidos pelo período, sem repetir anos, e consultar o endpoint para cada ano necessário.
 5. Validar cada resposta, converter `date` e selecionar os feriados compreendidos entre o início e o fim, inclusive.
@@ -92,7 +90,7 @@ O endpoint de consulta prévia devolve:
 - indicação de consulta completa ou indisponível;
 - quantidade de unidades disponíveis para o período.
 
-Nenhuma resposta da BrasilAPI será usada para decidir disponibilidade do equipamento, detectar conflito de reservas ou impedir a persistência.
+Nenhuma resposta da BrasilAPI é usada para decidir disponibilidade do equipamento, detectar conflito de reservas ou impedir a persistência.
 
 ## Cenários de teste implementados
 
@@ -106,4 +104,6 @@ Nenhuma resposta da BrasilAPI será usada para decidir disponibilidade do equipa
 - JSON ou item inválido;
 - falha da API sem bloqueio da reserva.
 
-Fonte técnica consultada: [documentação da BrasilAPI](https://brasilapi.com.br/docs) e endpoint público de feriados nacionais para o ano de 2026, verificado em 10 de setembro de 2026.
+## Referências
+
+O cliente está em `reservas/brasilapi.py`; as views de consulta estão em `reservas/views.py`. `reservas/tests.py` contém os cenários de resposta válida, falhas e contingência. A execução isolada segue o [README](../../README.md#testes). O contrato externo é descrito na [documentação da BrasilAPI](https://brasilapi.com.br/docs).

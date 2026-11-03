@@ -19,7 +19,8 @@
     <section>
         <h2>1. Dados tratados</h2>
         <p>O SIGEE utiliza nome, sobrenome, e-mail, nome de usuário, perfil de acesso, estado da conta, datas técnicas e senha protegida por hash. A senha em texto puro não é armazenada.</p>
-        <p>Reservas relacionam o Professor ao tipo e às unidades de equipamento, local, período, quantidade e estado da solicitação. Movimentações podem relacionar Operador, destinatário, equipamento, data, hora e observação.</p>
+        <p>Reservas relacionam o Professor ao tipo e às unidades de equipamento, local, período, quantidade, estado da solicitação e planejamento pedagógico, com turma, disciplina, atividade e observação opcional. Movimentações podem relacionar Operador, destinatário, equipamento, data, hora e observação.</p>
+        <p>As utilizações pedagógicas relacionam o Professor, a retirada, a turma, a disciplina, a atividade, a observação e a data de registro. As manutenções registram o equipamento, a devolução de origem quando aplicável, os responsáveis pela abertura, início e conclusão, as datas, o estado, o resultado e as descrições da intervenção.</p>
         <p>A auditoria registra conta, ação, resultado, data, hora, entidade e identificador afetado. A proteção contra tentativas abusivas registra temporariamente nome de usuário, horário, caminho acessado e metadados técnicos do navegador, com senha mascarada e sem armazenar o endereço IP na aplicação.</p>
         <p>O aceite dos documentos guarda a conta, as versões e a data e hora. Cookies técnicos mantêm a sessão e a proteção CSRF. O envio de recuperação de senha utiliza o endereço de e-mail, o nome exibido e um link temporário.</p>
         <p>Campos de descrição e observação não devem receber dados pessoais excessivos ou dados sensíveis. O escopo atual não prevê contas ou dados pessoais de alunos, crianças ou adolescentes.</p>
@@ -31,6 +32,8 @@
             <li>autenticar usuários e manter a sessão;</li>
             <li>aplicar permissões conforme o perfil funcional;</li>
             <li>criar reservas e viabilizar a gestão e a rastreabilidade de equipamentos;</li>
+            <li>planejar o contexto pedagógico das reservas, registrar os usos realizados e consolidar indicadores por turma, disciplina e atividade;</li>
+            <li>acompanhar manutenções e preservar a rastreabilidade das intervenções e de seus responsáveis;</li>
             <li>registrar eventos de segurança e ações relevantes;</li>
             <li>comprovar o aceite das versões vigentes dos documentos legais;</li>
             <li>prestar suporte, prevenir incidentes e manter a segurança do serviço.</li>
@@ -43,7 +46,7 @@
         <ul>
             <li><strong>Vercel:</strong> hospedagem da aplicação e processamento de requisições e metadados técnicos;</li>
             <li><strong>Supabase:</strong> hospedagem do banco PostgreSQL e dos dados persistidos pela aplicação;</li>
-            <li><strong>Gmail SMTP:</strong> envio do e-mail de recuperação com destinatário, nome exibido e link temporário;</li>
+            <li><strong>Serviço de e-mail configurado:</strong> quando habilitado, o envio por SMTP utiliza destinatário, nome exibido e link temporário de recuperação. O provedor depende da configuração do ambiente; Gmail é um exemplo de configuração, e o fornecedor efetivamente adotado deve ser confirmado pela instituição;</li>
             <li><strong>BrasilAPI:</strong> recebe somente o ano consultado e um identificador técnico do cliente para retornar feriados nacionais.</li>
         </ul>
         <p>Bootstrap e fontes são servidos pelo próprio SIGEE, sem requisição do navegador a provedores de CDN. A localização do tratamento, eventual transferência internacional e as salvaguardas de cada fornecedor devem ser confirmadas pela controladora antes do uso institucional.</p>
