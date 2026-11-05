@@ -165,27 +165,25 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 
 ## RF08 - Exibir painel resumido do inventário
 
-<b>Descrição:</b> O sistema deve apresentar ao Administrador uma visão resumida do inventário, com totais de equipamentos ativos, disponíveis, em uso, em manutenção e inativos; distribuição dos ativos por situação e categoria; retiradas diárias dos últimos 30 dias; até cinco manutenções abertas mais antigas, quando autorizado a consultá-las; e as dez movimentações mais recentes. O painel deve permitir filtrar os dados por categoria.
+<b>Descrição:</b> O sistema deve apresentar ao Administrador um resumo do uso e da situação do acervo, com indicadores, gráficos, reservas e pendências. O painel deve permitir filtros por categoria e pelos últimos 7, 30 ou 90 dias, com 30 dias como padrão.
 
 <b>Ator:</b> Administrador.
 
 <b>Pré-condições:</b> O Administrador deve estar autenticado e autorizado a visualizar o painel.
 
-<b>Fluxo principal: </b>O Administrador acessa o painel e pode selecionar uma categoria. O sistema apresenta os totais e as distribuições do acervo, as retiradas diárias dos últimos 30 dias incluindo o dia atual, as dez movimentações mais recentes e, quando há permissão de consulta, até cinco manutenções pendentes ou em andamento, ordenadas da mais antiga para a mais recente. A categoria selecionada é aplicada aos totais, às distribuições, às retiradas, às manutenções e às movimentações.
+<b>Fluxo principal:</b> O Administrador acessa o painel e aplica os filtros. O sistema apresenta a situação do acervo, as retiradas diárias, os equipamentos distintos utilizados, a comparação com o período anterior, até cinco tipos mais retirados, as etapas das reservas e até dez movimentações recentes. Conforme as permissões, também apresenta manutenções abertas e devoluções vencidas, com até cinco registros por lista.
 
-<b>Regras de negócio:</b> Os valores exibidos devem corresponder aos registros persistidos. Os equipamentos inativos compõem seu total específico e não integram as distribuições dos ativos por situação e categoria. A série diária conta registros de retirada, um por unidade física, no fuso horário da aplicação. Movimentações históricas de equipamentos inativos permanecem nas consultas do painel. O acesso à lista de manutenções exige a permissão correspondente.
+<b>Regras de negócio:</b> O período inclui o dia atual e considera o fuso horário da aplicação. Cada retirada conta uma unidade física; equipamentos distintos contam uma única vez no período. A comparação utiliza o intervalo anterior de mesma duração. A situação do acervo considera os ativos, com inativos em total separado; os históricos dos inativos são preservados. A situação atual e as pendências independem do período selecionado. Reservas são consideradas pelo início no período. A categoria se aplica a todos os conjuntos, respeitadas as permissões de consulta.
 
-<b>Pós-condições:</b> O Administrador visualiza o resumo atualizado do inventário e das movimentações.
+<b>Pós-condições:</b> O Administrador visualiza um resumo coerente com os registros e os filtros aplicados, sem alterar os dados consultados.
 
 <b>Critérios de aceite:</b>
 
-- <b>CA-01:</b> Dados equipamentos cadastrados em diferentes situações, quando o Administrador abrir o painel, então os totais exibidos devem corresponder aos registros do inventário.
-- <b>CA-02:</b> Dadas mais de dez movimentações, quando o painel for exibido, então devem aparecer as dez mais recentes.
-- <b>CA-03:</b> Dados equipamentos ativos e inativos, quando o gráfico for apresentado, então sua distribuição deve considerar apenas os ativos.
-- <b>CA-04:</b> Dado um usuário sem perfil de Administrador, quando ele tentar acessar o painel, então o sistema deve impedir o acesso.
-- <b>CA-05:</b> Dada uma categoria selecionada, quando o painel for consultado, então todos os seus totais, distribuições, retiradas, manutenções e movimentações devem considerar somente equipamentos dessa categoria.
-- <b>CA-06:</b> Dadas retiradas registradas nos últimos 30 dias, quando a série diária for apresentada, então cada unidade retirada deve contar no respectivo dia local, incluindo o dia atual e apresentando zero nos dias sem retirada.
-- <b>CA-07:</b> Dadas mais de cinco manutenções abertas e um Administrador autorizado a consultá-las, quando o painel for exibido, então devem aparecer somente as cinco mais antigas nos estados pendente ou em andamento.
+- <b>CA-01:</b> Dados registros de inventário, reservas e movimentações, quando o painel for consultado, então os indicadores devem corresponder aos dados armazenados, sem incluir inativos na distribuição dos ativos.
+- <b>CA-02:</b> Dados filtros de categoria e período, quando aplicados, então as análises devem respeitar o recorte; sem período informado, devem considerar 30 dias.
+- <b>CA-03:</b> Dadas retiradas no período, quando as contagens forem apresentadas, então cada retirada física deve contar no respectivo dia, com zero nos dias sem registros e sem duplicar equipamentos no total de unidades distintas.
+- <b>CA-04:</b> Dadas pendências atuais, quando o período for alterado, então as manutenções abertas e as devoluções vencidas devem continuar visíveis na categoria selecionada, conforme as permissões.
+- <b>CA-05:</b> Dado um usuário sem perfil de Administrador, quando tentar acessar o painel, então o sistema deve impedir o acesso. As seções de reservas e manutenções devem respeitar suas permissões específicas.
 
 ## RF09 - Consultar feriados nacionais durante a reserva
 
