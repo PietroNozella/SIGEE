@@ -1,4 +1,5 @@
 from datetime import timedelta
+from html.parser import HTMLParser
 from importlib import import_module
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -214,15 +215,28 @@ class FluxoReservaTests(TestCase):
             self.assertNotIn("form-select", form.fields[campo].widget.attrs.get("class", ""))
 
     def test_detalhe_destaca_somente_a_aba_da_etapa_em_cada_perfil(self):
-        import re
+        class LinksAtivosParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.links_ativos = []
+
+            def handle_starttag(self, tag, attrs):
+                atributos = dict(attrs)
+                classes = atributos.get("class", "").split()
+                if tag == "a" and {"side-nav-item", "is-active"}.issubset(classes):
+                    self.links_ativos.append(atributos["href"])
+
         url = reverse("reservas:reserva_detalhe", args=[self.reserva.pk])
         def conferir(aba):
             for perfil in ("professor", "operador", "administrador"):
                 self.client.force_login(self.cenario[perfil])
                 resposta = self.client.get(url)
                 esperado = reverse(aba) if aba else reverse({"professor": "reservas:reserva_lista", "operador": "movimentacoes:retirada_reserva_lista", "administrador": "reservas:reserva_consulta"}[perfil])
-                ativos = re.findall(r'<a class="side-nav-item[^\"]*is-active[^\"]*" href="([^\"]+)"', resposta.content.decode())
-                self.assertEqual(ativos, [esperado])
+                self.assertEqual(resposta.status_code, 200)
+                parser = LinksAtivosParser()
+                parser.feed(resposta.content.decode())
+                parser.close()
+                self.assertEqual(parser.links_ativos, [esperado])
         conferir(None)
         retiradas = self.entregar()
         conferir("movimentacoes:devolucao_lista")
