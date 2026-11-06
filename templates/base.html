@@ -41,27 +41,7 @@
                     <span class="side-nav-label">Em uso</span>
                 </a>
             {% elif e_operador %}
-                {% if pode_consultar_manutencoes %}
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'manutencoes' %} is-active{% endif %}" href="{% url 'manutencoes:manutencao_lista' %}" title="Manutenções"{% if request.resolver_match.namespace == 'manutencoes' %} aria-current="page"{% endif %}><img src="{% static 'inventario/icons/maintenance.svg' %}" alt="" aria-hidden="true"><span class="side-nav-label">Manutenções</span></a>
-                {% endif %}
-                {% if perms.inventario.view_equipamento %}
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" title="Equipamentos" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>
-                    <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
-                    <span class="side-nav-label">Equipamentos</span>
-                </a>
-                {% endif %}
-                {% if pode_registrar_retirada %}
-                <a class="side-nav-item{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or aba_fluxo == 'reservas' %} is-active{% endif %}" title="Reservas" href="{% url 'movimentacoes:retirada_reserva_lista' %}"{% if request.resolver_match.url_name == 'retirada_reserva_lista' or request.resolver_match.url_name == 'retirada_reserva_registrar' or aba_fluxo == 'reservas' %} aria-current="page"{% endif %}>
-                    <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
-                    <span class="side-nav-label">Reservas</span>
-                </a>
-                {% endif %}
-                {% if pode_registrar_devolucao %}
-                <a class="side-nav-item{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' or aba_fluxo == 'em_uso' %} is-active{% endif %}" title="Em uso" href="{% url 'movimentacoes:devolucao_lista' %}"{% if request.resolver_match.url_name == 'devolucao_lista' or request.resolver_match.url_name == 'devolucao_registrar' or aba_fluxo == 'em_uso' %} aria-current="page"{% endif %}>
-                    <img src="{% static 'inventario/icons/in-use.svg' %}" alt="" aria-hidden="true">
-                    <span class="side-nav-label">Em uso</span>
-                </a>
-                {% endif %}
+                {% include "inventario/_menu_operador.html" %}
             {% else %}
             {% if pode_consultar_painel %}
             <a class="side-nav-item{% if request.resolver_match.url_name == 'painel' %} is-active{% endif %}" title="Visão geral" href="{% url 'inventario:painel' %}"{% if request.resolver_match.url_name == 'painel' %} aria-current="page"{% endif %}>
@@ -160,6 +140,7 @@
     </aside>
 
     <nav class="user-menu-panel" id="user-menu-panel" aria-label="Menu do usuário" popover>
+        {% if e_operador %}<span class="user-menu-heading">Minha conta</span><a href="{% url 'usuarios:meus_dados' %}">Meus dados</a>{% endif %}
         <span class="user-menu-heading">Documentos legais</span>
         <a href="{% url 'legal:termos_de_uso' %}" target="_blank" rel="noopener">Termos de Uso</a>
         <a href="{% url 'legal:politica_privacidade' %}" target="_blank" rel="noopener">Política de Privacidade</a>

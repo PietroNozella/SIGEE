@@ -2572,3 +2572,5 @@ summary:focus-visible,
         transition-duration: 0.01ms !important;
     }
 }
+
+.status-inativo { background: var(--sigee-surface-soft); color: var(--sigee-on-surface); white-space: normal; }

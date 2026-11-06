@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Meus dados | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'inventario/css/operador.css' %}">{% endblock %}
+{% block content %}
+<div class="page-content form-page">
+    <header class="page-header"><div><h1>Meus dados</h1><p>Consulte as informações da sua conta no SIGEE.</p></div></header>
+    <section class="form-card" aria-labelledby="account-heading">
+        <div class="form-card-header"><h2 id="account-heading">Informações da conta</h2><p>Seu cadastro é administrado pela instituição.</p></div>
+        <dl class="equipment-form-grid operator-account-data">
+            <div><dt>Nome completo</dt><dd>{{ request.user.get_full_name|default:"Não informado" }}</dd></div>
+            <div><dt>Nome de usuário</dt><dd>{{ request.user.username }}</dd></div>
+            <div><dt>E-mail</dt><dd>{{ request.user.email|default:"Não informado" }}</dd></div>
+            <div><dt>Perfil de acesso</dt><dd>Operador</dd></div>
+        </dl>
+        <div class="operator-account-help"><h2>Precisa corrigir seus dados ou excluir a conta?</h2><p>Entre em contato com um administrador da instituição para solicitar a correção dos seus dados ou a exclusão da sua conta.</p><p>A solicitação será analisada considerando os registros vinculados à sua conta e a preservação do histórico das operações.</p></div>
+        <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'inventario:inicio_operador' %}">Voltar ao início</a></div>
+    </section>
+</div>
+{% endblock %}

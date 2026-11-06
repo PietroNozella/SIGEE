@@ -114,6 +114,10 @@ def pode_consultar_painel(user):
     )
 
 
+def pode_consultar_inicio_operador(user):
+    return e_operador_funcional(user) and user.has_perms(("inventario.view_equipamento", "movimentacoes.view_movimentacao"))
+
+
 def pode_consultar_reservas_administrativas(user):
     return (
         user.is_active and e_administrador_funcional(user)

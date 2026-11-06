@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Início | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'inventario/css/painel.css' %}?v=20261103.1"><link rel="stylesheet" href="{% static 'inventario/css/operador.css' %}">{% endblock %}
+{% block content %}
+<div class="page-content dashboard-page operator-home">
+    <header class="page-header"><div><h1>Início</h1><p>Confira os equipamentos e organize o atendimento de hoje.</p></div><time class="operator-today" datetime="{{ hoje|date:'Y-m-d' }}">{{ hoje|date:"l, d \d\e F" }}</time></header>
+    <section class="kpi-grid dashboard-kpis operator-kpis" aria-label="Situação atual dos equipamentos">
+        <article class="kpi-card"><span class="kpi-label">Disponíveis agora</span><strong class="kpi-value {% if indicadores.disponiveis %}metric-success{% elif indicadores.ativos %}metric-danger{% else %}metric-neutral{% endif %}">{{ indicadores.disponiveis }}</strong><span class="dashboard-kpi-note">{% if indicadores.ativos %}{{ percentuais.disponiveis|floatformat:1 }}% dos {{ indicadores.ativos }} ativos{% else %}Nenhum equipamento ativo{% endif %}</span></article>
+        <article class="kpi-card"><span class="kpi-label">Em uso agora</span><strong class="kpi-value {% if indicadores.em_uso %}metric-info{% else %}metric-neutral{% endif %}">{{ indicadores.em_uso }}</strong><span class="dashboard-kpi-note">{% if indicadores.ativos %}{{ percentuais.em_uso|floatformat:1 }}% dos {{ indicadores.ativos }} ativos{% else %}Nenhum equipamento ativo{% endif %}</span></article>
+        <article class="kpi-card"><span class="kpi-label">Em manutenção agora</span><strong class="kpi-value {% if indicadores.manutencao %}metric-danger{% elif indicadores.ativos %}metric-success{% else %}metric-neutral{% endif %}">{{ indicadores.manutencao }}</strong><span class="dashboard-kpi-note">{% if indicadores.ativos %}{{ percentuais.manutencao|floatformat:1 }}% do acervo ativo indisponível{% else %}Nenhum equipamento ativo{% endif %}</span></article>
+    </section>
+    <div class="operator-dashboard-columns">
+        <div class="operator-dashboard-column">
+            {% include "inventario/_situacao_por_categoria.html" %}
+            <section class="inventory-card operator-work-section" aria-labelledby="pending-heading">
+            <div class="operator-section-heading"><div><h2 id="pending-heading">Pendências de entrega</h2><p>Faltas de equipamentos e entregas para complementar</p></div><span class="operator-count" aria-label="{{ total_pendencias }} reserva{{ total_pendencias|pluralize:"s" }} pendente{{ total_pendencias|pluralize:"s" }}">{{ total_pendencias }}</span></div>
+            <ul class="operator-work-list">{% for reserva in pendencias %}<li><div class="operator-work-content"><h3>Reserva #{{ reserva.pk }} · {{ reserva.professor.get_full_name|default:reserva.professor.username }}</h3><p>{{ reserva.tipo_equipamento.nome }} · {{ reserva.local.nome }}</p><span class="table-metadata">{{ reserva.quantidade_entregue }} de {{ reserva.quantidade }} entregue(s) · Período até {{ reserva.fim|date:"d/m H:i" }}</span></div><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_registrar' reserva.pk %}">Conferir pendência</a></li>{% empty %}<li class="operator-empty"><h3>Nenhuma pendência de entrega</h3><p>Reservas afetadas por manutenção e entregas parciais aparecerão aqui.</p></li>{% endfor %}</ul>
+            {% if total_pendencias > 5 %}<p class="operator-list-note">Exibindo as 5 primeiras de {{ total_pendencias }} pendências. <a href="{% url 'movimentacoes:retirada_reserva_lista' %}">Consultar todas as reservas</a></p>{% endif %}
+        </section>
+        </div>
+        <div class="operator-dashboard-column">
+            <section class="inventory-card operator-work-section" aria-labelledby="today-heading">
+            <div class="operator-section-heading"><div><h2 id="today-heading">Entregas de hoje</h2><p>{{ total_reservas_hoje }} reserva{{ total_reservas_hoje|pluralize:"s" }} para atender</p></div><a href="{% url 'movimentacoes:retirada_reserva_lista' %}">Ver reservas</a></div>
+            <ul class="operator-work-list">{% for reserva in reservas_hoje %}<li><div class="operator-work-time"><strong>{{ reserva.inicio|date:"H:i" }}</strong><span>até {{ reserva.fim|date:"H:i" }}</span></div><div class="operator-work-content"><h3>{{ reserva.professor.get_full_name|default:reserva.professor.username }}</h3><p>{{ reserva.quantidade }} × {{ reserva.tipo_equipamento.nome }} · {{ reserva.local.nome }}</p><span class="table-metadata">Reserva #{{ reserva.pk }}{% if reserva.tem_retirada %} · {{ reserva.quantidade_entregue }} entregue{{ reserva.quantidade_entregue|pluralize:"s" }}{% endif %}</span></div><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_registrar' reserva.pk %}" aria-label="Conferir reserva {{ reserva.pk }}">Conferir</a></li>{% empty %}<li class="operator-empty"><h3>Nenhuma entrega prevista para hoje</h3><p>As próximas reservas continuam disponíveis na consulta de reservas.</p></li>{% endfor %}</ul>
+            {% if total_reservas_hoje > 5 %}<p class="operator-list-note">Exibindo as 5 primeiras de {{ total_reservas_hoje }} reservas.</p>{% endif %}
+        </section>
+            <section class="inventory-card operator-work-section" aria-labelledby="returns-heading">
+            <div class="operator-section-heading"><div><h2 id="returns-heading">Devoluções</h2><p>Previstas para hoje ou vencidas</p></div><a href="{% url 'movimentacoes:devolucao_lista' %}">Ver em uso</a></div>
+            {% if unidades_vencidas %}<p class="operator-return-warning">{{ unidades_vencidas }} equipamento{{ unidades_vencidas|pluralize:"s" }} com devolução vencida</p>{% endif %}
+            <ul class="operator-work-list operator-return-list">{% for devolucao in devolucoes %}<li><div class="operator-work-content"><h3>{% if devolucao.destinatario__first_name %}{{ devolucao.destinatario__first_name }} {{ devolucao.destinatario__last_name }}{% else %}{{ devolucao.destinatario__username }}{% endif %}</h3><p>{{ devolucao.unidades }} equipamento{{ devolucao.unidades|pluralize:"s" }} · Reserva #{{ devolucao.reserva_id }}</p><span class="table-metadata">{% if devolucao.reserva__fim < agora %}Vencida em{% else %}Prevista para{% endif %} {{ devolucao.reserva__fim|date:"d/m H:i" }}</span></div><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_registrar' devolucao.retirada_id %}">Receber</a></li>{% empty %}<li class="operator-empty"><h3>Nenhuma devolução prevista ou vencida</h3><p>Consulte Em uso para acompanhar todos os empréstimos em aberto.</p></li>{% endfor %}</ul>
+            {% if total_devolucoes > 5 %}<p class="operator-list-note">Exibindo as 5 primeiras de {{ total_devolucoes }} reservas.</p>{% endif %}
+            {% if pode_abrir_manutencao %}<div class="operator-maintenance-shortcut"><h3>Encontrou um problema?</h3><p>Registre a ocorrência para encaminhar o equipamento à manutenção.</p><a class="btn btn-secondary-sigee" href="{% url 'manutencoes:manutencao_abrir' %}">Informar problema</a></div>{% endif %}
+        </section>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}<script src="{% static 'inventario/js/painel.js' %}?v=20261103.1" defer></script>{% endblock %}

@@ -56,25 +56,7 @@
         </section>
     </div>
     <div id="inventory-overview" class="dashboard-analysis">
-        <section class="inventory-card dashboard-categories" aria-labelledby="category-heading">
-            <header class="dashboard-section-header"><div><h2 id="category-heading">Situação por categoria</h2><p>Agora: {{ indicadores.ativos }} ativos · {{ indicadores.em_uso }} em uso · {{ indicadores.inativos }} inativos fora das barras.</p></div></header>
-            {% if situacao_por_categoria %}
-            <div class="category-toolbar"><div class="chart-key" aria-label="Legenda">{% for item in distribuicao %}<span><i class="distribution-dot distribution-{{ item.chave }}" aria-hidden="true"></i>{{ item.nome }}</span>{% endfor %}</div><div data-category-controls hidden><label for="category-order">Ordenar por</label><select id="category-order" class="form-select"><option value="indisponiveis">Em uso + manutenção</option><option value="total">Total de ativos</option><option value="nome">Nome da categoria</option></select></div></div>
-            <ul class="category-chart" id="category-chart" aria-label="Quantidades de equipamentos ativos por categoria">
-                {% for categoria in situacao_por_categoria %}
-                <li data-name="{{ categoria.nome }}" data-total="{{ categoria.total }}" data-unavailable="{{ categoria.indisponiveis }}">
-                    <a class="category-link" href="?categoria={{ categoria.id }}&amp;periodo={{ periodo_selecionado }}" aria-label="Filtrar todos os painéis por {{ categoria.nome }}" aria-describedby="category-counts-{{ categoria.id }}">
-                        <span class="category-heading"><strong>{{ categoria.nome }}</strong><span>{{ categoria.total }} ativos</span></span>
-                        <span class="category-track" aria-hidden="true">{% for segmento in categoria.segmentos %}<span class="distribution-fill distribution-{{ segmento.chave }}" style="width: {{ segmento.percentual|floatformat:'2u' }}%"></span>{% endfor %}</span>
-                        <span class="category-counts" id="category-counts-{{ categoria.id }}"><span>Disponíveis <strong>{{ categoria.disponiveis }}</strong></span><span>Em uso <strong>{{ categoria.em_uso }}</strong></span><span>Em manutenção <strong>{{ categoria.manutencao }}</strong></span></span>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-            <p class="dashboard-chart-note">Somente equipamentos ativos; inativos excluídos. Escala comum: até {{ maior_categoria }} unidades. Selecione uma categoria para filtrar o painel.</p>
-            {% else %}<div class="empty-state"><h3>Nenhum equipamento ativo por categoria</h3><p>As barras aparecerão quando houver equipamentos ativos neste recorte.</p></div>{% endif %}
-<p class="dashboard-chart-note dashboard-current-note">Retrato atual, independente do período. A situação atual não indica disponibilidade para uma reserva futura.</p>
-        </section>
+        {% include "inventario/_situacao_por_categoria.html" %}
 
         <section class="inventory-card dashboard-reservations" aria-labelledby="reservations-heading">
             <header class="dashboard-section-header"><div><h2 id="reservations-heading">Demanda por reservas</h2><p>Etapa atual das reservas com início no período selecionado.</p></div></header>

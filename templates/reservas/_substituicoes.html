@@ -1,6 +1,6 @@
-{% if reserva.substituicoes.all %}
+{% if substituicoes %}
 <section class="reservation-replacements" aria-label="Substituições por manutenção">
     <h2>Substituições por manutenção</h2>
-    <ul>{% for troca in reserva.substituicoes.all %}<li>{{ troca.equipamento_anterior.numero_patrimonio }} → <strong>{{ troca.equipamento_substituto.numero_patrimonio }}</strong> · Manutenção #{{ troca.manutencao_id }} · {{ troca.data_registro|date:"d/m/Y H:i" }}</li>{% endfor %}</ul>
+    <ul>{% for troca in substituicoes %}<li>{{ troca.equipamento_anterior.numero_patrimonio }} → <strong>{{ troca.equipamento_substituto.numero_patrimonio }}</strong> · Manutenção #{{ troca.manutencao_id }} · {{ troca.data_registro|date:"d/m/Y H:i" }}</li>{% endfor %}</ul>
 </section>
 {% endif %}
