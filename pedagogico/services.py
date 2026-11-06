@@ -4,6 +4,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Case, CharField, Count, Exists, Max, Min, OuterRef, Q, Value, When
 from django.db.models.functions import Cast, Concat
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
@@ -166,7 +167,8 @@ def _salvar_contexto(*, professor, retiradas, origem, turma, disciplina, ativida
             devolvidas = Movimentacao.objects.filter(
                 tipo=Movimentacao.Tipo.DEVOLUCAO, retirada_origem__in=retiradas,
             ).count()
-            if devolvidas == len(retiradas):
+            saldo_entrega = isinstance(origem, Reserva) and origem.status == Reserva.Status.ATIVA and origem.fim > timezone.now() and len(retiradas) < origem.quantidade
+            if devolvidas == len(retiradas) and not saldo_entrega:
                 raise ValidationError("A devolução integral encerrou o registro e a edição do contexto pedagógico.")
             if existentes and len(existentes) != len(retiradas):
                 raise ValidationError("O contexto do lote está inconsistente. Solicite a conferência dos registros.")

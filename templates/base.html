@@ -41,6 +41,9 @@
                     <span class="side-nav-label">Em uso</span>
                 </a>
             {% elif e_operador %}
+                {% if pode_consultar_manutencoes %}
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'manutencoes' %} is-active{% endif %}" href="{% url 'manutencoes:manutencao_lista' %}" title="Manutenções"{% if request.resolver_match.namespace == 'manutencoes' %} aria-current="page"{% endif %}><img src="{% static 'inventario/icons/maintenance.svg' %}" alt="" aria-hidden="true"><span class="side-nav-label">Manutenções</span></a>
+                {% endif %}
                 {% if perms.inventario.view_equipamento %}
                 <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' %} is-active{% endif %}" title="Equipamentos" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">

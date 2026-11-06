@@ -36,6 +36,7 @@ def _exigir_professor_funcional(user):
 @login_required
 @require_GET
 def reserva_detalhe(request, reserva_id):
+    from .services import resumo_entrega
     reservas = reservas_visiveis(request.user)
     expirar_reservas_vencidas()
     reserva = get_object_or_404(reservas.com_etapa(), pk=reserva_id)
@@ -53,6 +54,8 @@ def reserva_detalhe(request, reserva_id):
         rotulo = "Em uso" if reserva.etapa == "EM_USO" else "Histórico"
     return render(request, "reservas/reserva_detalhe.html", {
         "reserva": reserva, "registros": registros,
+        "resumo": resumo_entrega(reserva),
+        "substituicoes": reserva.substituicoes.select_related("equipamento_anterior", "equipamento_substituto"),
         "unidades": reserva.itens.select_related("equipamento__tipo"),
         "url_voltar": reverse(rota), "rotulo_voltar": rotulo,
         "aba_fluxo": "reservas" if reserva.etapa == "AGUARDANDO" else ("em_uso" if reserva.etapa == "EM_USO" else "historico"),

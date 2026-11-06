@@ -227,12 +227,15 @@ def equipamento_lista(request):
         indicadores = {
             "total": total_equipamentos,
             "disponiveis": equipamentos.filter(
+                ativo=True,
                 situacao=Equipamento.Situacao.DISPONIVEL
             ).count(),
             "em_uso": equipamentos.filter(
+                ativo=True,
                 situacao=Equipamento.Situacao.EM_USO
             ).count(),
             "manutencao": equipamentos.filter(
+                ativo=True,
                 situacao=Equipamento.Situacao.MANUTENCAO
             ).count(),
         }
@@ -253,6 +256,8 @@ def equipamento_lista(request):
         equipamentos = equipamentos.filter(local_id=local)
     if situacao in Equipamento.Situacao.values:
         equipamentos = equipamentos.filter(situacao=situacao)
+        if situacao == Equipamento.Situacao.DISPONIVEL:
+            equipamentos = equipamentos.filter(ativo=True)
 
     if e_professor:
         equipamentos = equipamentos.filter(

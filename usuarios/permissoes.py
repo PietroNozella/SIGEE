@@ -48,6 +48,8 @@ PERMISSOES_POR_GRUPO = {
     ),
     GRUPO_OPERADOR: (
         "inventario.view_equipamento",
+        "manutencoes.view_manutencao",
+        "manutencoes.add_manutencao",
         PERMISSAO_REGISTRAR_RETIRADA,
         "movimentacoes.view_movimentacao",
     ),
@@ -182,7 +184,8 @@ def pode_gerenciar_cadastro_pedagogico(user, modelo, acao="view"):
 
 def pode_gerenciar_manutencao(user, acao="view"):
     return (
-        user.is_active and e_administrador_funcional(user)
+        user.is_active
+        and (e_administrador_funcional(user) or (acao in ("view", "add") and e_operador_funcional(user)))
         and user.has_perm(f"manutencoes.{acao}_manutencao")
     )
 

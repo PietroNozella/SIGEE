@@ -10,6 +10,7 @@ from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from manutencoes.models import Manutencao
+from reservas.models import SubstituicaoReserva
 
 
 def _data_hora(valor):
@@ -77,6 +78,7 @@ class Command(BaseCommand):
                     "equipamento": item.equipamento.numero_patrimonio,
                     "tipo": item.tipo,
                     "data_hora": _data_hora(item.data_hora),
+                    "professor_informado_entrega_parcial": item.professor_informado,
                 }
                 for item in usuario.movimentacoes_operadas.select_related("equipamento")
             ],
@@ -86,9 +88,21 @@ class Command(BaseCommand):
                     "equipamento": item.equipamento.numero_patrimonio,
                     "tipo": item.tipo,
                     "data_hora": _data_hora(item.data_hora),
+                    "professor_informado_entrega_parcial": item.professor_informado,
                 }
                 for item in usuario.movimentacoes_recebidas.select_related(
                     "equipamento"
+                )
+            ],
+            "substituicoes_de_reserva": [
+                {
+                    "id": item.pk, "reserva_id": item.reserva_id,
+                    "patrimonio_anterior": item.equipamento_anterior.numero_patrimonio,
+                    "patrimonio_substituto": item.equipamento_substituto.numero_patrimonio,
+                    "manutencao_id": item.manutencao_id, "data_registro": _data_hora(item.data_registro),
+                }
+                for item in SubstituicaoReserva.objects.filter(Q(registrado_por=usuario) | Q(reserva__professor=usuario)).select_related(
+                    "equipamento_anterior", "equipamento_substituto",
                 )
             ],
             "manutencoes": [

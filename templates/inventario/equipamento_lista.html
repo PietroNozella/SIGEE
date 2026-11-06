@@ -162,9 +162,7 @@
                                     <td>{{ equipamento.tipo.categoria.nome }}</td>
                                     <td>{{ equipamento.local.nome }}</td>
                                     <td>
-                                        <span class="status-badge status-{{ equipamento.situacao|lower }}">
-                                            {{ equipamento.get_situacao_display }}
-                                        </span>
+                                        {% include "inventario/_situacao.html" %}
                                     </td>
                                     {% if perms.inventario.change_equipamento or perms.inventario.delete_equipamento %}
                                         <td>

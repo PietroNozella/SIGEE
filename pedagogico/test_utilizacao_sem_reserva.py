@@ -286,6 +286,11 @@ class UtilizacaoSemReservaTests(TestCase):
         for usuario in (self.cenario["operador"], self.cenario["administrador"]):
             self.client.force_login(usuario)
             resposta = self.client.get(reverse("movimentacoes:historico_lista"), {"retirada": self.retiradas[0].pk})
+            if usuario == self.cenario["operador"]:
+                self.assertContains(resposta, self.escolhas["turma"].nome, count=6)
+                self.assertNotContains(resposta, self.escolhas["atividade"].nome)
+                self.assertNotContains(resposta, "&lt;script&gt;")
+                continue
             self.assertContains(resposta, self.escolhas["atividade"].nome, count=6)
             self.assertContains(resposta, "&lt;script&gt;", count=6)
             self.assertNotContains(resposta, "<script>alert('x')</script>")

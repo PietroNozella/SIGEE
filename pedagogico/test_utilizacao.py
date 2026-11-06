@@ -257,6 +257,10 @@ class UtilizacaoReservaTests(TestCase):
         for usuario in (self.cenario["operador"], self.cenario["administrador"]):
             self.client.force_login(usuario)
             resposta = self.client.get(reverse("reservas:reserva_detalhe", args=[self.reserva.pk]))
+            if usuario == self.cenario["operador"]:
+                self.assertNotContains(resposta, "Atividade RF-10")
+                self.assertNotContains(resposta, "&lt;script&gt;")
+                continue
             self.assertContains(resposta, "Atividade RF-10")
             self.assertNotContains(resposta, "<script>alert('x')</script>")
             self.assertContains(resposta, "&lt;script&gt;")
