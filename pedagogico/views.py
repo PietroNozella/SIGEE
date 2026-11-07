@@ -50,10 +50,12 @@ def indicadores(request):
         equipamentos=Count("equipamento_id", distinct=True),
     )
     grupos = []
-    for campo, titulo in (
-        ("turma", "Turmas"), ("disciplina", "Disciplinas"),
-        ("atividade", "Atividades pedagógicas"),
-    ):
+    dimensoes = (("turma", "Turmas"), ("disciplina", "Disciplinas"), ("atividade", "Atividades pedagógicas"))
+    dimensao = request.GET.get("dimensao", "turma")
+    if dimensao not in dict(dimensoes):
+        dimensao = "turma"
+    ranking = []
+    for campo, titulo in dimensoes:
         registros = utilizacoes.values(
             cadastro_id=F(f"utilizacao_pedagogica__{campo}_id"),
             nome=F(f"utilizacao_pedagogica__{campo}__nome"),
@@ -63,15 +65,24 @@ def indicadores(request):
             retiradas=Count("pk"),
             equipamentos=Count("equipamento_id", distinct=True),
         ).order_by("-utilizacoes", "nome", "cadastro_id")
+        if campo == dimensao:
+            ranking = list(registros[:5])
+            maior = ranking[0]["utilizacoes"] if ranking else 0
+            for registro in ranking:
+                registro["percentual"] = registro["utilizacoes"] * 100 / maior if maior else 0
         parametro = f"pagina_{campo}"
         pagina = Paginator(registros, 10).get_page(request.GET.get(parametro))
         parametros = request.GET.copy()
         parametros.pop(parametro, None)
+        parametros["dimensao"] = campo
         grupos.append({
             "campo": campo, "titulo": titulo, "pagina": pagina,
             "parametro": parametro, "parametros": parametros.urlencode(),
         })
-    return render(request, "pedagogico/indicadores.html", {"totais": totais, "grupos": grupos})
+    return render(request, "pedagogico/indicadores.html", {
+        "totais": totais, "grupos": grupos, "ranking": ranking,
+        "dimensoes": dimensoes, "dimensao": dimensao, "titulo_dimensao": dict(dimensoes)[dimensao],
+    })
 
 
 def _exigir_permissao(usuario, modelo, acao):

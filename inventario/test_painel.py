@@ -306,7 +306,7 @@ class PainelTests(TestCase):
         self.assertNotContains(resposta, "CONCLUIDO")
         self.assertContains(resposta, "Pendente")
         self.assertContains(resposta, "Em andamento")
-        self.assertContains(resposta, "Exibindo as 5 mais antigas de 7 manutenções em aberto.")
+        self.assertContains(resposta, "Exibindo as 5 mais antigas.")
         self.assertContains(resposta, reverse("manutencoes:manutencao_lista"))
 
     def test_sem_permissao_de_manutencao_nao_consulta_nem_expoe_registros(self):

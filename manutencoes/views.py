@@ -10,6 +10,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
+from inventario.models import Categoria
 from usuarios.permissoes import pode_gerenciar_manutencao
 
 from .forms import AberturaManutencaoForm, ConclusaoManutencaoForm
@@ -35,13 +36,19 @@ def manutencao_lista(request):
     _exigir_permissao(request.user)
     busca = request.GET.get("busca", "").strip()
     estado = request.GET.get("estado", "")
+    categoria_id = request.GET.get("categoria", "")
+    categoria = Categoria.objects.filter(pk=categoria_id).first() if categoria_id.isdecimal() and len(categoria_id) <= 19 else None
     registros = Manutencao.objects.select_related("equipamento__tipo", "aberto_por")
+    if categoria:
+        registros = registros.filter(equipamento__tipo__categoria=categoria)
     if busca:
         registros = registros.filter(
             Q(equipamento__numero_patrimonio__icontains=busca)
             | Q(equipamento__tipo__nome__icontains=busca)
         )
-    if estado in Manutencao.Estado.values:
+    if estado == "ABERTAS":
+        registros = registros.filter(estado__in=[Manutencao.Estado.PENDENTE, Manutencao.Estado.EM_ANDAMENTO])
+    elif estado in Manutencao.Estado.values:
         registros = registros.filter(estado=estado)
     else:
         estado = ""
@@ -49,7 +56,9 @@ def manutencao_lista(request):
     parametros = request.GET.copy()
     parametros.pop("pagina", None)
     return render(request, "manutencoes/manutencao_lista.html", {
-        "pagina": pagina, "busca": busca, "estado": estado, "estados": Manutencao.Estado.choices,
+        "pagina": pagina, "busca": busca, "estado": estado,
+        "estados": [("ABERTAS", "Em aberto"), *Manutencao.Estado.choices],
+        "categorias": Categoria.objects.order_by("nome"), "categoria_selecionada": categoria,
         "parametros_paginacao": parametros.urlencode(),
     })
 

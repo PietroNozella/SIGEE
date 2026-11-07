@@ -84,9 +84,19 @@ class EquipamentoRN01Tests(TestCase):
         self.criar_equipamento("PAT-002", nome="Notebook em uso", situacao=Equipamento.Situacao.EM_USO)
         self.criar_equipamento("PAT-003", nome="Notebook em manutenção", situacao=Equipamento.Situacao.MANUTENCAO)
         resposta = self.client.get(reverse("inventario:equipamento_lista"))
-        self.assertEqual(resposta.context["indicadores"], {"total": 3, "disponiveis": 1, "em_uso": 1, "manutencao": 1})
+        self.assertEqual(resposta.context["indicadores"], {"total": 3, "ativos": 3, "inativos": 0, "disponiveis": 1, "em_uso": 1, "manutencao": 1})
         self.assertContains(resposta, "Em uso")
         self.assertNotContains(resposta, "Reservados")
+
+    def test_resumo_operacional_exclui_inativos_e_independe_da_busca(self):
+        self.criar_equipamento("ATIVO", situacao=Equipamento.Situacao.DISPONIVEL)
+        for situacao in Equipamento.Situacao.values:
+            self.criar_equipamento(f"INATIVO-{situacao}", ativo=False, situacao=situacao)
+        resposta = self.client.get(reverse("inventario:equipamento_lista"), {"busca": "INATIVO"})
+        self.assertEqual(resposta.context["indicadores"], {
+            "total": 4, "ativos": 1, "inativos": 3, "disponiveis": 1, "em_uso": 0, "manutencao": 0,
+        })
+        self.assertEqual(resposta.context["pagina"].paginator.count, 3)
 
     def test_listagem_filtra_por_texto_categoria_local_e_situacao(self):
         outra_categoria = Categoria.objects.get(nome="Projetor")

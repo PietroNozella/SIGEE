@@ -23,7 +23,7 @@
         <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Grupos com devolução pendente; use rolagem horizontal em telas pequenas">
             <table class="table inventory-table mb-0">
                 <caption class="visually-hidden">Retiradas e reservas com unidades ainda não devolvidas</caption>
-                <thead><tr><th scope="col">Retirada ou reserva</th><th scope="col">Destinatário</th><th scope="col">Unidades</th><th scope="col">Data da retirada</th><th scope="col">Ação</th></tr></thead>
+                <thead><tr><th scope="col">Retirada ou reserva</th><th scope="col">Destinatário</th><th scope="col">Unidades</th><th scope="col">Retirada e devolução prevista</th><th scope="col">Ação</th></tr></thead>
                 <tbody>{% for grupo in pagina %}<tr>
                     <td>
                         <strong>{% if grupo.retirada.reserva_id %}Reserva #{{ grupo.retirada.reserva_id }}{% elif grupo.retirada.lote_retirada %}Retirada #{{ grupo.retirada_id }}{% else %}Pendências anteriores{% endif %}</strong>
@@ -33,7 +33,7 @@
                     </td>
                     <td>{{ grupo.retirada.destinatario.get_full_name|default:grupo.retirada.destinatario.username }}<span class="table-metadata">{{ grupo.retirada.destinatario.username }}</span></td>
                     <td><strong>{{ grupo.pendentes }} em aberto</strong><span class="table-metadata">{{ grupo.devolvidas }} devolvidas de {{ grupo.total }}</span></td>
-                    <td>{{ grupo.inicio|date:"d/m/Y H:i" }}{% if not grupo.retirada.reserva_id and not grupo.retirada.lote_retirada %}<span class="table-metadata">Desde a primeira retirada</span>{% endif %}</td>
+                    <td>{{ grupo.inicio|date:"d/m/Y H:i" }}{% if grupo.retirada.reserva_id %}<span class="table-metadata">Devolução: {{ grupo.retirada.reserva.fim|date:"d/m/Y H:i" }}</span><span class="status-badge {% if grupo.prazo_vencido %}status-prazo-vencido{% else %}status-em_uso{% endif %}">{% if grupo.prazo_vencido %}Prazo vencido{% else %}Dentro do prazo{% endif %}</span>{% else %}<span class="table-metadata">Sem prazo registrado</span>{% endif %}{% if not grupo.retirada.reserva_id and not grupo.retirada.lote_retirada %}<span class="table-metadata">Desde a primeira retirada</span>{% endif %}</td>
                     <td>{% if pode_registrar_devolucao %}<a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_registrar' grupo.retirada_id %}">Conferir devolução</a>{% elif grupo.retirada.reserva_id %}<a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' grupo.retirada.reserva_id %}">Consultar uso</a>{% else %}<span>Registro anterior sem reserva</span>{% if e_professor %}<a href="{% url 'pedagogico:utilizacao_retirada' grupo.retirada_id %}">Consultar contexto</a>{% endif %}{% endif %}</td>
                 </tr>{% endfor %}</tbody>
             </table>

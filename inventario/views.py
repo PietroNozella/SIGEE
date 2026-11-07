@@ -117,8 +117,11 @@ def painel(request):
     ]
     maior_dia = max(contagens.values(), default=0)
     escala_retiradas = max(2, maior_dia + maior_dia % 2)
-    for item in retiradas_diarias:
+    for indice, item in enumerate(retiradas_diarias):
         item["percentual"] = item["total"] * 100 / escala_retiradas
+        item["x"] = (indice + 0.5) * 1000 / dias_periodo
+        item["y"] = 200 - item["percentual"] * 2
+    linha_retiradas = " ".join(f"{item['x']:.2f},{item['y']:.2f}" for item in retiradas_diarias)
 
     total_retiradas = sum(contagens.values())
     inicio_anterior = timezone.make_aware(
@@ -190,6 +193,7 @@ def painel(request):
         "categorias_painel": categorias, "categoria_selecionada": categoria,
         "situacao_por_categoria": por_categoria, "maior_categoria": maior_categoria,
         "retiradas_diarias": retiradas_diarias, "inicio_periodo": inicio_periodo,
+        "linha_retiradas": linha_retiradas,
         "fim_periodo": hoje, "fuso_painel": str(fuso),
         "total_retiradas": total_retiradas, "maior_dia": maior_dia,
         "total_anterior": total_anterior, "variacao_retiradas": variacao,
@@ -224,18 +228,14 @@ def equipamento_lista(request):
     total_equipamentos = equipamentos.count()
     indicadores = None
     if request.user.has_perm("inventario.view_resumo_inventario"):
-        indicadores = {
-            "total": total_equipamentos,
-            "disponiveis": equipamentos.filter(
-                situacao=Equipamento.Situacao.DISPONIVEL
-            ).count(),
-            "em_uso": equipamentos.filter(
-                situacao=Equipamento.Situacao.EM_USO
-            ).count(),
-            "manutencao": equipamentos.filter(
-                situacao=Equipamento.Situacao.MANUTENCAO
-            ).count(),
-        }
+        indicadores = equipamentos.aggregate(
+            total=Count("pk"),
+            ativos=Count("pk", filter=Q(ativo=True)),
+            inativos=Count("pk", filter=Q(ativo=False)),
+            disponiveis=Count("pk", filter=Q(ativo=True, situacao=Equipamento.Situacao.DISPONIVEL)),
+            em_uso=Count("pk", filter=Q(ativo=True, situacao=Equipamento.Situacao.EM_USO)),
+            manutencao=Count("pk", filter=Q(ativo=True, situacao=Equipamento.Situacao.MANUTENCAO)),
+        )
 
     busca = request.GET.get("busca", "").strip()
     categoria = request.GET.get("categoria", "").strip()

@@ -10,6 +10,7 @@
         <form class="reservation-filter-toolbar" method="get" role="search">
             <div class="reservation-filter-field"><label for="busca">Patrimônio ou tipo/modelo</label><input class="form-control" id="busca" name="busca" type="search" value="{{ busca }}"></div>
             <div class="reservation-filter-field"><label for="estado">Estado da manutenção</label><select class="form-select" id="estado" name="estado"><option value="">Todos</option>{% for valor, rotulo in estados %}<option value="{{ valor }}"{% if estado == valor %} selected{% endif %}>{{ rotulo }}</option>{% endfor %}</select></div>
+            <div class="reservation-filter-field"><label for="categoria">Categoria</label><select class="form-select" id="categoria" name="categoria"><option value="">Todas as categorias</option>{% for categoria in categorias %}<option value="{{ categoria.pk }}"{% if categoria == categoria_selecionada %} selected{% endif %}>{{ categoria.nome }}</option>{% endfor %}</select></div>
             <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Filtrar</button><a class="btn btn-secondary-sigee" href="{% url 'manutencoes:manutencao_lista' %}">Limpar</a></div>
         </form>
         {% if pagina.object_list %}
@@ -18,7 +19,7 @@
                 <thead><tr><th scope="col">Equipamento</th><th scope="col">Estado</th><th scope="col">Origem</th><th scope="col">Abertura</th><th scope="col">Ações</th></tr></thead>
                 <tbody>{% for manutencao in pagina %}<tr>
                     <td><strong>{{ manutencao.equipamento.numero_patrimonio }}</strong><span class="table-metadata">{{ manutencao.equipamento.tipo.nome }}</span>{% if not manutencao.equipamento.ativo %}<span class="table-metadata">Equipamento inativo</span>{% endif %}</td>
-                    <td>{{ manutencao.get_estado_display }}{% if manutencao.resultado %}<span class="table-metadata">{{ manutencao.get_resultado_display }}</span>{% endif %}</td>
+                    <td><span class="status-badge maintenance-state-{{ manutencao.estado|lower }}">{{ manutencao.get_estado_display }}</span>{% if manutencao.resultado %}<span class="table-metadata">{{ manutencao.get_resultado_display }}</span>{% endif %}</td>
                     <td>{% if manutencao.devolucao_origem_id %}Devolução #{{ manutencao.devolucao_origem_id }}{% else %}Abertura manual{% endif %}</td>
                     <td>{{ manutencao.data_abertura|date:"d/m/Y H:i" }}<span class="table-metadata">{{ manutencao.aberto_por.get_full_name|default:manutencao.aberto_por.username }}</span></td>
                     <td><a class="btn btn-secondary-sigee" href="{% url 'manutencoes:manutencao_detalhe' manutencao.pk %}" aria-label="Acompanhar manutenção {{ manutencao.pk }} do patrimônio {{ manutencao.equipamento.numero_patrimonio }}">Acompanhar</a></td>

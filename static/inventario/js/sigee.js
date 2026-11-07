@@ -177,6 +177,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const deleteDialog = document.querySelector("[data-delete-dialog]");
+    const deleteTitle = document.querySelector("#modal-exclusao-titulo");
+    const deleteAction = document.querySelector("[data-delete-action]");
     const deleteName = document.querySelector("[data-delete-name]");
     const deletePatrimony = document.querySelector("[data-delete-patrimonio]");
     const deleteWarning = document.querySelector("[data-delete-warning]");
@@ -199,10 +201,12 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!deleteForm) return;
 
             const possuiHistorico = trigger.dataset.possuiHistorico === "true";
+            deleteTitle.textContent = possuiHistorico ? "Inativar equipamento" : "Excluir equipamento";
+            deleteAction.textContent = possuiHistorico ? "inativar" : "excluir";
             deleteName.textContent = trigger.dataset.equipamentoNome;
             deletePatrimony.textContent = trigger.dataset.equipamentoPatrimonio;
             deleteWarning.textContent = possuiHistorico
-                ? "Este equipamento possui movimentações e será inativado. O histórico será preservado."
+                ? "Este equipamento possui histórico relacionado e será inativado. O histórico será preservado."
                 : "Esta ação não poderá ser desfeita e removerá o item permanentemente do inventário.";
             deleteConfirmLabel.textContent = possuiHistorico
                 ? "Sim, inativar equipamento"

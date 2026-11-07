@@ -2572,3 +2572,27 @@ summary:focus-visible,
         transition-duration: 0.01ms !important;
     }
 }
+
+.inventory-scope { margin: 0 0 12px; color: var(--sigee-muted); font-size: 12px; }
+.inventory-kpis .kpi-card { display: flex; flex-direction: column; min-width: 0; }
+.inventory-kpis .kpi-note { color: var(--sigee-muted); font-size: 12px; }
+.status-prazo-vencido { color: var(--sigee-error); background: var(--sigee-error-soft); }
+.maintenance-state-pendente { color: var(--sigee-on-surface-variant); background: var(--sigee-surface-soft); }
+.maintenance-state-em_andamento { color: var(--sigee-primary); background: var(--sigee-primary-soft); }
+.maintenance-state-concluida { color: var(--sigee-success); background: var(--sigee-success-soft); }
+.reservation-detail-page .inventory-card { padding: 24px !important; }
+.reservation-detail-page h2 { margin: 28px 0 12px; font-size: 20px; font-weight: 600; }
+.reservation-detail-page .table-responsive { margin-bottom: 20px; }
+.flow-links { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 16px; border-bottom: 1px solid var(--sigee-border); font-size: 13px; }
+.flow-links a { display: inline-flex; align-items: center; min-height: 36px; }
+.audit-technical { margin-top: 6px; font-size: 12px; }
+.audit-technical summary { color: var(--sigee-primary); cursor: pointer; padding: 6px 0; }
+.audit-technical span { display: block; margin-top: 4px; color: var(--sigee-muted); overflow-wrap: anywhere; }
+@media (max-width: 767.98px) {
+    .inventory-page .inventory-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .inventory-page .inventory-kpis .kpi-card { padding: 14px 12px; }
+    .inventory-page .inventory-kpis .kpi-label { font-size: 11px; line-height: 17px; white-space: normal; }
+    .inventory-page .inventory-kpis .kpi-value { margin-top: 6px; margin-bottom: 4px; }
+    .reservation-detail-page .inventory-card { padding: 16px !important; }
+    .reservation-detail-page h2 { font-size: 18px; }
+}

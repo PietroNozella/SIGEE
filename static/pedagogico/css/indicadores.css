@@ -21,3 +21,40 @@
     .pedagogical-kpis { grid-template-columns: 1fr; }
     .pedagogical-section-header { padding: 20px; }
 }
+
+.pedagogical-scope { color: var(--sigee-muted); font-size: 12px; }
+.pedagogical-ranking { margin-bottom: 24px; }
+.pedagogical-ranking .pedagogical-section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.pedagogical-dimension-form { display: grid; grid-template-columns: minmax(150px, 1fr) auto; gap: 8px; }
+.pedagogical-dimension-form label { grid-column: 1 / -1; font-size: 12px; color: var(--sigee-muted); }
+.pedagogical-dimension-form :is(select, button) { min-height: 44px; }
+.pedagogical-ranking-list { margin: 0; padding: 0 24px; list-style: none; }
+.pedagogical-ranking-list li { margin-bottom: 20px; }
+.pedagogical-ranking-list li > div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 8px; }
+.pedagogical-ranking-list strong { font-weight: 500; overflow-wrap: anywhere; }
+.pedagogical-ranking-list li > div > span { flex-shrink: 0; color: var(--sigee-primary); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pedagogical-ranking-list small { color: var(--sigee-muted); }
+.pedagogical-ranking-track { display: block; height: 10px; border-radius: 4px; overflow: hidden; background: var(--sigee-surface-soft); }
+.pedagogical-ranking-track > span { display: block; height: 100%; background: var(--sigee-primary); }
+.pedagogical-ranking-note { margin: 0; padding: 16px 24px; border-top: 1px solid var(--sigee-border); color: var(--sigee-muted); font-size: 12px; }
+.pedagogical-table-section { min-width: 0; }
+.pedagogical-table-section > summary { min-height: 48px; padding: 12px 16px; font-weight: 500; color: var(--sigee-primary); cursor: pointer; border: 1px solid var(--sigee-border); border-radius: 6px; background: var(--sigee-surface); }
+.pedagogical-table-section[open] > summary { margin-bottom: 8px; }
+.pedagogical-scroll-hint { display: none; }
+@media (max-width: 767.98px) {
+    .pedagogical-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .pedagogical-kpis .kpi-card { padding: 14px 12px; }
+    .pedagogical-kpis .kpi-label { font-size: 11px; line-height: 16px; }
+    .pedagogical-kpis .kpi-value { margin: 0; }
+    .pedagogical-kpis .kpi-card:first-child { grid-column: 1 / -1; }
+    .pedagogical-ranking .pedagogical-section-header { display: block; padding: 16px; }
+    .pedagogical-dimension-form { margin-top: 16px; }
+    .pedagogical-ranking-list { padding: 0 16px; }
+    .pedagogical-ranking-note { padding: 16px; }
+    .pedagogical-scroll-hint { display: block; margin: 0; padding: 0 16px 12px; color: var(--sigee-muted); font-size: 12px; }
+    .pedagogical-indicators .inventory-table-wrapper { --name-width: min(42vw, 150px); --metric-width: calc(100vw - 34px - var(--name-width)); scroll-snap-type: x mandatory; }
+    .pedagogical-indicators .inventory-table { width: calc(var(--name-width) + var(--metric-width) + var(--metric-width) + var(--metric-width)); min-width: calc(var(--name-width) + var(--metric-width) + var(--metric-width) + var(--metric-width)); }
+    .pedagogical-indicators .inventory-table :is(th, td):first-child { position: sticky; left: 0; z-index: 1; width: var(--name-width); background: var(--sigee-surface); box-shadow: 1px 0 var(--sigee-border); }
+    .pedagogical-indicators .inventory-table thead th:first-child { background: var(--sigee-background); }
+    .pedagogical-indicators .inventory-table th:nth-child(n+2) { width: var(--metric-width); scroll-snap-align: end; }
+}

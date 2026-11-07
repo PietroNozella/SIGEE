@@ -54,6 +54,18 @@ class ManutencaoTests(TestCase):
             "resultado": "REPARADO", "descricao_solucao": "  Fonte substituída.  ", **alteracoes,
         })
 
+    def test_consulta_abertas_e_categoria_preserva_recorte_do_painel(self):
+        manutencao = self.abrir()
+        self.client.force_login(self.administrador)
+        url = reverse("manutencoes:manutencao_lista")
+        filtros = {"estado": "ABERTAS", "categoria": self.equipamento.tipo.categoria_id}
+        resposta = self.client.get(url, filtros)
+        self.assertEqual([item.pk for item in resposta.context["pagina"]], [manutencao.pk])
+        self.iniciar(manutencao)
+        self.concluir(manutencao)
+        resposta = self.client.get(url, filtros)
+        self.assertEqual(resposta.context["pagina"].paginator.count, 0)
+
     def test_ciclo_manual_preserva_responsaveis_datas_e_auditoria(self):
         manutencao = self.abrir()
         self.assertEqual(manutencao.estado, "PENDENTE")

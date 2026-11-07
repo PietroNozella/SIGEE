@@ -46,3 +46,18 @@ class RegistroAuditoria(models.Model):
         from .eventos import rotulo_acao
 
         return rotulo_acao(self.acao)
+
+    @property
+    def entidade_exibicao(self):
+        return {
+            "inventario.Equipamento": "Equipamento",
+            "reservas.Reserva": "Reserva",
+            "movimentacoes.Movimentacao": "Movimentação",
+            "manutencoes.Manutencao": "Manutenção",
+            "contas.User": "Usuário",
+            "auth.User": "Usuário",
+            "pedagogico.Turma": "Turma",
+            "pedagogico.Disciplina": "Disciplina",
+            "pedagogico.AtividadePedagogica": "Atividade pedagógica",
+            "pedagogico.UtilizacaoPedagogica": "Utilização pedagógica",
+        }.get(self.entidade, "Registro do sistema")
