@@ -167,6 +167,12 @@ python manage.py runserver
 
 `configurar_perfis` é idempotente e aplica as permissões definidas no código. Execute-o depois das migrations.
 
+### Páginas de erro
+
+Os erros 400, 403, 404 e 500 usam telas em português compartilhadas por todo o sistema. Falhas na verificação de segurança de formulários (CSRF) também possuem orientação própria, preservando o bloqueio do envio. A página 500 não depende de banco de dados, processadores de contexto ou arquivos estáticos.
+
+As páginas personalizadas de 400, 404 e 500 são exibidas com `DJANGO_DEBUG=False`, conforme o comportamento nativo do Django. Em desenvolvimento, `DEBUG=True` mantém as páginas de diagnóstico. O teste `config.test_erros` verifica as respostas com depuração desativada, sem alterar a configuração do ambiente local.
+
 ### Primeiro acesso
 
 1. Acesse o [Django Admin local](http://127.0.0.1:8000/admin/) com a conta técnica criada por `createsuperuser`.

@@ -1,17 +1,8 @@
-{% extends "base.html" %}
+{% extends "erros/base.html" %}
 
-{% block title %}Acesso não autorizado | SIGEE{% endblock %}
+{% block title %}Acesso não autorizado{% endblock %}
 
-{% block content %}
-<div class="page-content form-page">
-    <section class="form-card" aria-labelledby="acesso-negado-titulo">
-        <div class="form-card-header">
-            <h1 id="acesso-negado-titulo">Acesso não autorizado</h1>
-            <p>Seu perfil não possui permissão para realizar esta ação.</p>
-        </div>
-        {% if perms.inventario.view_equipamento %}
-            <a class="btn btn-primary-sigee" href="{% url 'inventario:equipamento_lista' %}">Voltar para equipamentos</a>
-        {% endif %}
-    </section>
-</div>
-{% endblock %}
+{% block heading %}Acesso não autorizado{% endblock %}
+{% block description %}Seu perfil não possui permissão para realizar esta ação.{% endblock %}
+{% block guidance %}Se precisar desse acesso, converse com o administrador da sua instituição.{% endblock %}
+{% block code %}403{% endblock %}

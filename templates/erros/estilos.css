@@ -1,0 +1,114 @@
+:root {
+    color-scheme: light;
+    --error-background: #f7f8fc;
+    --error-text: #121b2e;
+    --error-muted: #5f6272;
+    --error-primary: #2040bf;
+    --error-primary-hover: #17349f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    display: flex;
+    min-height: 100vh;
+    min-height: 100svh;
+    flex-direction: column;
+    margin: 0;
+    color: var(--error-text);
+    background: var(--error-background);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+::selection { color: #ffffff; background: var(--error-primary); }
+
+.error-brand {
+    padding: 24px 32px;
+    color: var(--error-primary);
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.error-main {
+    display: grid;
+    flex: 1;
+    place-items: center;
+    padding: 24px;
+}
+
+.error-content {
+    width: 100%;
+    max-width: 600px;
+    padding: 32px 16px;
+    text-align: center;
+    overflow-wrap: break-word;
+}
+
+h1 {
+    margin: 24px 0 16px;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.25;
+    text-wrap: balance;
+}
+
+p { margin: 0; }
+
+.error-guidance { margin-top: 12px; color: var(--error-muted); }
+
+.error-action {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 32px;
+    padding: 10px 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #ffffff;
+    background: var(--error-primary);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+}
+
+.error-action:hover { background: var(--error-primary-hover); }
+.error-action:active { background: var(--error-primary-hover); }
+.error-action:focus-visible { outline: 3px solid var(--error-primary); outline-offset: 3px; }
+
+.error-code {
+    color: var(--error-primary);
+    font-size: clamp(96px, 16vw, 160px);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.error-footer {
+    padding: 24px;
+    color: var(--error-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+@media (max-width: 480px) {
+    .error-brand { padding: 24px; }
+    .error-main { padding: 16px; }
+    .error-content { padding: 24px 8px; }
+    h1 { font-size: 26px; }
+    .error-action { max-width: 100%; }
+}

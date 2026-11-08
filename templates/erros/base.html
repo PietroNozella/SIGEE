@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{% block title %}Não foi possível continuar{% endblock %} | SIGEE</title>
+    {% comment %}Estilos locais mantêm a tela 500 utilizável mesmo sem arquivos estáticos.{% endcomment %}
+    <style>{% include "erros/estilos.css" %}</style>
+</head>
+<body>
+    <header class="error-brand" aria-label="SIGEE">SIGEE</header>
+    <main class="error-main">
+        <section class="error-content" aria-labelledby="error-title" aria-describedby="error-description">
+            <p class="error-code"><span class="visually-hidden">Erro </span>{% block code %}{% endblock %}</p>
+            <h1 id="error-title">{% block heading %}{% endblock %}</h1>
+            <p id="error-description">{% block description %}{% endblock %}</p>
+            <p class="error-guidance">{% block guidance %}{% endblock %}</p>
+            <a class="error-action" href="/" data-error-back>Voltar ao início</a>
+        </section>
+    </main>
+    <footer class="error-footer">Sistema Integrado de Gestão de Equipamentos Escolares</footer>
+    <script>
+        // Sem histórico interno, o link continua levando ao início, mesmo sem JavaScript.
+        const previousPage = document.referrer ? new URL(document.referrer) : null;
+        const backLink = document.querySelector('[data-error-back]');
+        if (previousPage && previousPage.origin === location.origin &&
+            previousPage.pathname + previousPage.search !== location.pathname + location.search &&
+            history.length > 1) {
+            backLink.href = previousPage.href;
+            backLink.textContent = 'Voltar à página anterior';
+            backLink.addEventListener('click', function (event) {
+                if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+                    event.preventDefault();
+                    history.back();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
