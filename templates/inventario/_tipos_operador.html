@@ -11,13 +11,14 @@
             <div class="table-responsive operator-units-scroll" tabindex="0" role="region" aria-label="Unidades de {{ tipo.tipo__nome }}; use rolagem para consultar a lista">
                 <table class="table inventory-table mb-0">
                     <caption class="visually-hidden">Unidades de {{ tipo.tipo__nome }}</caption>
-                    <thead><tr><th scope="col">Patrimônio</th><th scope="col">Local</th><th scope="col">Situação</th></tr></thead>
+                    <thead><tr><th scope="col">Patrimônio</th><th scope="col">Local</th><th scope="col">Situação</th><th scope="col">Ação</th></tr></thead>
                     <tbody>
                         {% for unidade in tipo.unidades %}
                         <tr>
                             <td><strong>{{ unidade.numero_patrimonio }}</strong>{% if not unidade.ativo %}<span class="inactive-label">Inativo</span>{% endif %}</td>
                             <td>{{ unidade.local.nome }}</td>
-                            <td><span class="status-badge status-{{ unidade.situacao|lower }}">{{ unidade.get_situacao_display }}</span></td>
+                            <td>{% include "inventario/_situacao.html" with equipamento=unidade %}</td>
+                            <td>{% if pode_abrir_manutencao and unidade.ativo and unidade.situacao == 'DISPONIVEL' %}<a class="btn btn-secondary-sigee" href="{% url 'manutencoes:manutencao_abrir' %}?equipamento={{ unidade.pk }}" aria-label="Informar problema no patrimônio {{ unidade.numero_patrimonio }}">Informar problema</a>{% elif unidade.situacao == 'MANUTENCAO' %}<a href="{% url 'manutencoes:manutencao_lista' %}?busca={{ unidade.numero_patrimonio|urlencode }}">Consultar manutenção</a>{% else %}—{% endif %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

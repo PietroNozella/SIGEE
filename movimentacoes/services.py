@@ -10,10 +10,10 @@ from django.utils import timezone
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
-from inventario.models import Equipamento
+from inventario.models import Equipamento, TipoEquipamento
 from manutencoes.services import _abrir_manutencao_bloqueada
 from reservas.models import Reserva
-from reservas.services import _expirar_reserva_bloqueada
+from reservas.services import _expirar_reserva_bloqueada, _substituir_unidades_bloqueadas
 from usuarios.permissoes import pode_registrar_devolucao, pode_registrar_retirada, usuarios_funcionais_ativos
 
 from .models import Movimentacao
@@ -41,7 +41,7 @@ def reservas_para_retirada(*, busca="", status=Reserva.Status.ATIVA):
     return reservas.order_by("inicio", "pk")
 
 
-def registrar_retirada_reserva(*, operador, reserva_id, observacao=""):
+def registrar_retirada_reserva(*, operador, reserva_id, observacao="", professor_informado=False):
     if not operador.is_authenticated:
         raise PermissionDenied
     operador_atual = get_user_model().objects.filter(pk=operador.pk).first()
@@ -53,21 +53,27 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao=""):
     with transaction.atomic():
         # O cancelamento e a expiração bloqueiam esta mesma linha antes de agir.
         try:
+            tipo_id = Reserva.objects.values_list("tipo_equipamento_id", flat=True).get(pk=reserva_id)
+            TipoEquipamento.objects.select_for_update().get(pk=tipo_id)
             reserva = Reserva.objects.select_for_update().get(pk=reserva_id)
         except Reserva.DoesNotExist as erro:
             raise ValidationError("A reserva informada não existe.") from erro
         if reserva.status != Reserva.Status.ATIVA:
             raise ValidationError("Esta reserva está cancelada ou expirada e não pode ser retirada.")
-        if Movimentacao.objects.filter(reserva=reserva, tipo=Movimentacao.Tipo.RETIRADA).exists():
-            raise ValidationError("Esta reserva já possui retirada registrada.")
+        entregues = set(Movimentacao.objects.filter(reserva=reserva, tipo=Movimentacao.Tipo.RETIRADA).values_list("equipamento_id", flat=True))
+        if len(entregues) >= reserva.quantidade:
+            raise ValidationError("Esta reserva já possui retirada registrada para todas as unidades.")
         agora = timezone.now()
         if agora < reserva.inicio:
             raise ValidationError("A retirada só pode ser registrada a partir do início da reserva.")
+        if agora >= reserva.fim:
+            raise ValidationError("O período reservado terminou. Não é possível complementar a entrega.")
         if _expirar_reserva_bloqueada(reserva, agora):
             # Como no cancelamento, a expiração legítima persiste com sua auditoria.
             # A tentativa de retirada não grava movimentações nem altera unidades.
             expirou = True
         else:
+            _substituir_unidades_bloqueadas(reserva, operador_atual)
             from pedagogico.models import UtilizacaoPedagogica
             from pedagogico.services import validar_contexto_pedagogico
 
@@ -87,7 +93,12 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao=""):
             equipamentos = list(Equipamento.objects.select_for_update().filter(pk__in=ids).order_by("pk"))
             if len(equipamentos) != len(ids):
                 raise ValidationError("Uma unidade alocada não está mais cadastrada.")
+            para_entrega = []
             for equipamento in equipamentos:
+                if equipamento.pk in entregues:
+                    continue
+                if equipamento.situacao == Equipamento.Situacao.MANUTENCAO and equipamento.manutencoes.exists():
+                    continue
                 if (
                     equipamento.tipo_id != reserva.tipo_equipamento_id
                     or equipamento.local_id != reserva.local_id
@@ -98,12 +109,19 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao=""):
                         f"O patrimônio {equipamento.numero_patrimonio} está indisponível, inativo "
                         "ou não corresponde ao tipo/local da reserva. Nenhuma alteração foi salva."
                     )
+                para_entrega.append(equipamento)
+            if not para_entrega:
+                raise ValidationError("Nenhum equipamento está disponível para entrega. A reserva permanece com pendência de substituição.")
+            parcial = len(para_entrega) + len(entregues) < reserva.quantidade
+            if parcial and not professor_informado:
+                raise ValidationError("Informe o Professor sobre a falta e confirme a comunicação antes da entrega parcial.")
             lote = uuid4()
-            for equipamento in equipamentos:
+            for equipamento in para_entrega:
                 movimentacao = Movimentacao(
                     equipamento=equipamento, operador=operador_atual,
                     destinatario=destinatario, tipo=Movimentacao.Tipo.RETIRADA,
                     reserva=reserva, lote_retirada=lote, observacao=observacao,
+                    professor_informado=bool(professor_informado) if parcial else False,
                 )
                 movimentacao.full_clean()
                 movimentacao.save()
@@ -300,6 +318,8 @@ def registrar_devolucoes(*, operador, retirada_id, retiradas_ids, observacao="",
     if any(not descricao.strip() for descricao in problemas.values()):
         raise ValidationError("Descreva o problema de cada patrimônio encaminhado para manutenção.")
     with transaction.atomic():
+        tipos_ids = Movimentacao.objects.filter(pk__in=ids).values_list("equipamento__tipo_id", flat=True)
+        list(TipoEquipamento.objects.select_for_update().filter(pk__in=tipos_ids).order_by("pk"))
         reserva_id = Movimentacao.objects.filter(pk=retirada_id, tipo=Movimentacao.Tipo.RETIRADA).values_list("reserva_id", flat=True).first()
         if reserva_id is not None:
             # A edição pedagógica e a entrega também bloqueiam reserva antes das retiradas.

@@ -1,0 +1,9 @@
+<dl class="operator-delivery-summary" aria-label="Quantidades da reserva">
+    <div><dt>Solicitados</dt><dd>{{ reserva.quantidade }}</dd></div>
+    <div><dt>Entregues</dt><dd>{{ resumo.entregues }}</dd></div>
+    <div><dt>{% if reserva.status != 'ATIVA' %}Não entregues{% elif resumo.prazo_encerrado %}Não atendidos{% else %}Pendentes de entrega{% endif %}</dt><dd>{{ resumo.saldo }}</dd></div>
+    <div><dt>Pendentes de devolução</dt><dd>{{ resumo.devolucoes_pendentes }}</dd></div>
+</dl>
+{% if resumo.saldo and reserva.status == 'ATIVA' %}{% if resumo.prazo_encerrado or resumo.tem_indisponiveis %}
+<p class="operator-notice" role="status">{% if resumo.prazo_encerrado %}O período reservado terminou. Quantidade não atendida: {{ resumo.nao_atendidas }}. As devoluções dos equipamentos recebidos continuam pendentes até o retorno físico.{% else %}Quantidade ainda não entregue: {{ resumo.saldo }}. Equipamentos em manutenção aguardam substituição. A reserva permanece ativa e pode receber entrega complementar até o fim do período reservado.{% endif %}</p>
+{% endif %}{% endif %}

@@ -74,6 +74,7 @@ class DevolucaoForm(forms.Form):
 
 
 class RetiradaReservaForm(forms.Form):
+    professor_informado = forms.BooleanField(required=False, label="Informei o Professor sobre os equipamentos pendentes de entrega.")
     observacao = forms.CharField(
         label="Observação", required=False,
         widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),

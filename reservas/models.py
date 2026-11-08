@@ -3,7 +3,8 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.db import models
-from django.db.models import Case, CharField, Exists, F, OuterRef, Q, Value, When
+from django.db.models import BooleanField, Case, CharField, Count, Exists, F, IntegerField, OuterRef, Q, Subquery, Value, When
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from usuarios.permissoes import e_professor_funcional
@@ -34,8 +35,13 @@ class ReservaQuerySet(models.QuerySet):
         return self.annotate(
             tem_retirada=Exists(retiradas),
             tem_pendentes=Exists(retiradas.filter(devolucoes__isnull=True)),
-        ).annotate(etapa=Case(
+            quantidade_entregue=Coalesce(Subquery(retiradas.order_by().values("reserva_id").annotate(total=Count("pk")).values("total")), Value(0), output_field=IntegerField()),
+        ).annotate(tem_entrega_pendente=Case(
+            When(status="ATIVA", fim__gt=timezone.now(), quantidade__gt=F("quantidade_entregue"), then=Value(True)),
+            default=Value(False), output_field=BooleanField(),
+        )).annotate(etapa=Case(
             When(tem_pendentes=True, then=Value("EM_USO")),
+            When(tem_retirada=True, tem_entrega_pendente=True, then=Value("AGUARDANDO")),
             When(tem_retirada=True, then=Value("ENCERRADA")),
             When(status="CANCELADA", then=Value("CANCELADA")),
             When(status="EXPIRADA", then=Value("EXPIRADA")),
@@ -43,7 +49,7 @@ class ReservaQuerySet(models.QuerySet):
         ))
 
     def aguardando_retirada(self):
-        return self.com_etapa().filter(etapa="AGUARDANDO")
+        return self.com_etapa().filter(Q(etapa="AGUARDANDO") | Q(tem_entrega_pendente=True))
 
     def em_uso(self):
         return self.com_etapa().filter(etapa="EM_USO")
@@ -199,3 +205,16 @@ class ReservaEquipamento(models.Model):
 
     def __str__(self):
         return f"{self.reserva} — {self.equipamento.numero_patrimonio}"
+
+
+class SubstituicaoReserva(models.Model):
+    reserva = models.ForeignKey(Reserva, on_delete=models.PROTECT, related_name="substituicoes")
+    equipamento_anterior = models.ForeignKey("inventario.Equipamento", on_delete=models.PROTECT, related_name="substituicoes_origem")
+    equipamento_substituto = models.ForeignKey("inventario.Equipamento", on_delete=models.PROTECT, related_name="substituicoes_destino")
+    manutencao = models.ForeignKey("manutencoes.Manutencao", on_delete=models.PROTECT, related_name="substituicoes")
+    registrado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    data_registro = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["data_registro", "pk"]
+        verbose_name = "substituição de reserva"

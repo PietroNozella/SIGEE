@@ -20,6 +20,8 @@ from .permissoes import (
     pode_alterar_situacao_usuario,
     pode_cadastrar_usuario,
     pode_consultar_painel,
+    pode_consultar_inicio_operador,
+    e_operador_funcional,
     pode_gerenciar_usuarios,
     usuarios_funcionais,
 )
@@ -28,9 +30,19 @@ from .services import alterar_situacao_usuario
 
 class EntrarView(LoginView):
     def get_default_redirect_url(self):
+        if pode_consultar_inicio_operador(self.request.user):
+            return reverse("inventario:inicio_operador")
         if pode_consultar_painel(self.request.user):
             return reverse("inventario:painel")
         return super().get_default_redirect_url()
+
+
+@login_required
+@require_GET
+def meus_dados(request):
+    if not e_operador_funcional(request.user):
+        raise PermissionDenied
+    return render(request, "usuarios/meus_dados.html")
 
 
 class SolicitarRecuperacaoSenhaView(PasswordResetView):

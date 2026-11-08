@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block title %}Equipamentos | SIGEE{% endblock %}
+{% block extra_styles %}{% if lista_tipos %}<link rel="stylesheet" href="{% static 'inventario/css/operador.css' %}">{% endif %}{% endblock %}
 
 {% block content %}
 <div class="page-content inventory-page">
@@ -164,9 +165,7 @@
                                     <td>{{ equipamento.tipo.categoria.nome }}</td>
                                     <td>{{ equipamento.local.nome }}</td>
                                     <td>
-                                        <span class="status-badge status-{{ equipamento.situacao|lower }}">
-                                            {{ equipamento.get_situacao_display }}
-                                        </span>
+                                        {% include "inventario/_situacao.html" %}
                                     </td>
                                     {% if perms.inventario.change_equipamento or perms.inventario.delete_equipamento %}
                                         <td>
@@ -304,5 +303,4 @@
 </div>
 {% endblock %}
 {% block extra_scripts %}
-{% if lista_tipos %}<link rel="stylesheet" href="{% static 'inventario/css/operador.css' %}?v=20261003.1">{% endif %}
 {% endblock %}

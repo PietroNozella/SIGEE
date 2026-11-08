@@ -5,6 +5,7 @@ from . import views
 app_name = "inventario"
 
 urlpatterns = [
+    path("inicio/", views.inicio_operador, name="inicio_operador"),
     path("painel/", views.painel, name="painel"),
     path("", views.equipamento_lista, name="equipamento_lista"),
     path("novo/", views.equipamento_novo, name="equipamento_novo"),

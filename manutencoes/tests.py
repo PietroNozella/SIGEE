@@ -160,7 +160,7 @@ class ManutencaoTests(TestCase):
         manutencao = self.abrir()
         for usuario in (self.cenario["operador"], self.cenario["professor"]):
             for servico, dados in (
-                (self.abrir, {}), (iniciar_manutencao, {"manutencao_id": manutencao.pk}),
+                (iniciar_manutencao, {"manutencao_id": manutencao.pk}),
                 (concluir_manutencao, {"manutencao_id": manutencao.pk, "resultado": "REPARADO", "descricao_solucao": "Concluído"}),
             ):
                 with self.subTest(usuario=usuario, servico=servico), self.assertRaises(PermissionDenied):
@@ -223,7 +223,8 @@ class ManutencaoTests(TestCase):
         ).exists())
         self.assertEqual(self.equipamento.__class__.objects.get(pk=self.equipamento.pk).situacao, "MANUTENCAO")
 
-    def test_manutencao_de_unidade_alocada_impede_retirada_reserva(self):
+    def test_manutencao_sem_substituto_impede_entrega_de_unidade_indisponivel(self):
+        self.equipamento.delete()
         reserva, unidades = criar_reserva_alocada(self.cenario, quantidade=1)
         self.abrir(equipamento_id=unidades[0].pk)
         with patch("movimentacoes.services.timezone.now", return_value=reserva.inicio + timedelta(minutes=5)):
@@ -290,7 +291,7 @@ class DevolucaoComProblemaTests(TestCase):
             manutencao.devolucao_origem.delete()
         resposta = self.client.get(reverse("movimentacoes:historico_lista"), {"retirada": self.retiradas[0].pk})
         self.assertContains(resposta, f"Manutenção #{manutencao.pk}")
-        self.assertNotContains(resposta, reverse("manutencoes:manutencao_detalhe", args=[manutencao.pk]))
+        self.assertContains(resposta, reverse("manutencoes:manutencao_detalhe", args=[manutencao.pk]))
 
     def test_tela_encaminha_por_patrimonio_sem_javascript_e_preserva_parcial(self):
         resposta = self.client.post(self.url, {
@@ -435,7 +436,7 @@ class ManutencaoInterfaceTests(TestCase):
         misto.groups.add(Group.objects.get(name="Administrador"), Group.objects.get(name="Professor"))
         for usuario in (tecnico, misto):
             registrar_aceite_vigente(usuario)
-        for usuario in (self.cenario["professor"], self.cenario["operador"], tecnico, misto):
+        for usuario in (self.cenario["professor"], tecnico, misto):
             usuario.user_permissions.add(*Permission.objects.filter(content_type__app_label="manutencoes"))
             self.client.force_login(usuario)
             urls = [self.lista, self.nova, reverse("manutencoes:manutencao_detalhe", args=[manutencao.pk]), reverse("manutencoes:manutencao_concluir", args=[manutencao.pk])]

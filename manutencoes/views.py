@@ -67,7 +67,7 @@ def manutencao_lista(request):
 @require_http_methods(["GET", "POST"])
 def manutencao_abrir(request):
     _exigir_permissao(request.user, "add")
-    form = AberturaManutencaoForm(request.POST if request.method == "POST" else None)
+    form = AberturaManutencaoForm(request.POST if request.method == "POST" else None, initial={"equipamento": request.GET.get("equipamento")})
     if request.method == "POST":
         if form.is_valid():
             try:

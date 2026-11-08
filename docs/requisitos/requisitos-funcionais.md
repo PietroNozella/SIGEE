@@ -97,11 +97,11 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 
 <b>Ator: </b>Operador.
 
-<b>Pré-condições:</b> O Operador deve estar autenticado, ativo e autorizado. A entrega exige reserva ativa, sem retirada anterior, com contexto pedagógico completo e patrimônios alocados ativos e disponíveis. O destinatário é o Professor proprietário ativo, definido pelo servidor. A confirmação ocorre a partir do início e antes de completar 30 minutos de tolerância. Para devolver, deve existir retirada em aberto das unidades selecionadas.
+<b>Pré-condições:</b> O Operador deve estar autenticado, ativo e autorizado. A entrega exige reserva ativa, contexto pedagógico completo e patrimônios aptos ainda não entregues. A primeira entrega respeita a tolerância; a complementação de um saldo por manutenção é permitida até o fim do período reservado. O destinatário é o Professor proprietário ativo, definido pelo servidor. A primeira confirmação ocorre a partir do início e antes de completar 30 minutos de tolerância. Para devolver, deve existir retirada em aberto das unidades selecionadas.
 
-<b>Fluxo principal:</b> O Operador localiza a reserva e confere os patrimônios alocados. O sistema revalida o prazo, o Professor, o contexto e a disponibilidade e confirma a entrega integral, sem troca de unidades. Na mesma transação, grava as retiradas, cria as utilizações pedagógicas por unidade, atualiza os equipamentos para em uso e registra a auditoria. Na devolução, qualquer Operador autorizado confere o lote, seleciona todas ou parte das unidades recebidas e descreve problemas por patrimônio quando necessário. O sistema grava as devoluções, preserva cada retirada de origem e atualiza as situações; unidades com problema geram manutenção na mesma transação.
+<b>Fluxo principal:</b> O Operador localiza a reserva e confere os patrimônios alocados. O sistema revalida o prazo, o Professor, o contexto e a disponibilidade e tenta substituir unidades em manutenção por outras do mesmo tipo/local sem conflito no período. Sem substituto suficiente, permite entregar as unidades aptas após comunicação ao Professor e confirmação dessa comunicação, mantendo o saldo de entrega. Na mesma transação, grava as retiradas, cria as utilizações pedagógicas por unidade, atualiza os equipamentos para em uso e registra a auditoria. Na devolução, qualquer Operador autorizado confere o lote, seleciona todas ou parte das unidades recebidas e descreve problemas por patrimônio quando necessário. O sistema grava as devoluções, preserva cada retirada de origem e atualiza as situações; unidades com problema geram manutenção na mesma transação.
 
-<b>Regras de negócio:</b> Retirada e devolução geram movimentação e atualização de situação (RN-04), exclusivamente por Operador autorizado (RN-08). A entrega exige reserva e é integral, com Professor proprietário e unidades previamente alocadas (RN-09 e RN-13). Cada devolução exige uma retirada em aberto, não pode ser repetida e pode ser registrada por outro Operador (RN-10). Problema descrito na devolução abre manutenção pendente por unidade (RN-14). Nova retirada sem reserva é recusada; os registros legados preservam seus vínculos.
+<b>Regras de negócio:</b> Retirada e devolução geram movimentação e atualização de situação (RN-04), exclusivamente por Operador autorizado (RN-08). A entrega exige reserva e Professor proprietário, admite substituição por manutenção e pode ser parcial ou complementar; somente as unidades efetivamente entregues geram retirada (RN-09 e RN-13). Cada devolução exige uma retirada em aberto, não pode ser repetida e pode ser registrada por outro Operador (RN-10). Problema descrito na devolução abre manutenção pendente por unidade (RN-14). Nova retirada sem reserva é recusada; os registros legados preservam seus vínculos.
 
 <b>Pós-condições:</b> Após a entrega, todas as unidades alocadas ficam em uso. Após devolução parcial, somente as unidades recebidas têm a pendência encerrada, e as demais continuam em uso. Unidade ativa sem impedimento retorna à disponibilidade; unidade com problema segue para manutenção. A devolução não reativa equipamento inativo nem libera manutenção já existente. Uma falha desfaz toda a confirmação e suas auditorias de sucesso.
 
@@ -117,6 +117,9 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 - <b>CA-08:</b> Dada uma tentativa de nova retirada sem reserva, quando a operação for solicitada, então o sistema deve recusá-la. Retiradas legadas sem reserva continuam aceitando devolução.
 - <b>CA-09:</b> Dada uma reserva já entregue, quando houver nova tentativa de entrega, então o sistema deve recusá-la sem duplicar movimentações.
 - <b>CA-10:</b> Dada uma falha de gravação em qualquer unidade da entrega ou devolução, quando a transação for encerrada, então nenhuma alteração parcial da confirmação deve permanecer salva.
+
+- <b>CA-11:</b> Dada uma unidade em manutenção, quando houver substituto do mesmo tipo/local livre em todo o período, então o sistema deve atualizar a alocação e preservar o histórico da troca.
+- <b>CA-12:</b> Dada uma falta de substituto, quando o Operador confirmar que informou o Professor, então deve ser possível entregar somente as unidades aptas, manter o saldo e complementá-lo até o fim do período, sem duplicar retiradas nem criar devolução para unidades não entregues.
 
 ## RF06 - Consultar o histórico de movimentações
 
@@ -143,13 +146,13 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 
 ## RF07 - Gerenciar manutenção
 
-<b>Descrição:</b> O sistema deve registrar e acompanhar as intervenções de manutenção dos equipamentos. A manutenção pode ser aberta pelo Administrador ou gerada a partir de um problema informado pelo Operador durante a devolução.
+<b>Descrição:</b> O sistema deve registrar e acompanhar as intervenções de manutenção dos equipamentos. A manutenção pode ser aberta pelo Administrador ou pelo Operador, inclusive fora da devolução, ou gerada a partir de um problema informado na devolução. O Operador consulta o andamento; início e conclusão são administrativos.
 
 <b>Atores:</b> Administrador e Operador.
 
-<b>Pré-condições:</b> Para a abertura manual, o Administrador deve estar autenticado, e o equipamento deve estar ativo e disponível. Para a abertura a partir da devolução, deve existir uma retirada em aberto e uma ocorrência descrita pelo Operador.
+<b>Pré-condições:</b> Para a abertura manual, o Administrador ou Operador deve estar autenticado e autorizado, e o equipamento deve estar ativo e disponível. Para a abertura a partir da devolução, deve existir uma retirada em aberto e uma ocorrência descrita pelo Operador.
 
-<b>Fluxo principal:</b> O Administrador abre uma manutenção manualmente ou o sistema a cria como pendente após uma devolução com problema. O equipamento passa a ficar indisponível. O Administrador acompanha a intervenção, altera seu estado para em andamento e, ao concluí-la, registra a descrição da solução ou conclusão e o resultado. Se foi reparado, o equipamento recebe a situação disponível, sem desfazer uma inativação independente; somente a unidade ativa volta a ficar disponível para uso. Caso não tenha possibilidade de reparo, é inativado com preservação do histórico.
+<b>Fluxo principal:</b> O Administrador ou Operador abre uma manutenção manualmente ou o sistema a cria como pendente após uma devolução com problema. A abertura tenta substituir a unidade nas reservas ativas ainda não atendidas; sem substituto, preserva as reservas e sinaliza a falta. O equipamento passa a ficar indisponível. O Administrador acompanha a intervenção, altera seu estado para em andamento e, ao concluí-la, registra a descrição da solução ou conclusão e o resultado. Se foi reparado, o equipamento recebe a situação disponível, sem desfazer uma inativação independente; somente a unidade ativa volta a ficar disponível para uso. Caso não tenha possibilidade de reparo, é inativado com preservação do histórico.
 
 <b>Regras de negócio:</b> A manutenção segue os estados pendente, em andamento e concluída. Enquanto estiver pendente ou em andamento, o equipamento permanece em manutenção e indisponível. A conclusão exige descrição e classificação do resultado (RN-05). A ocorrência identificada na devolução deve ser descrita pelo Operador e gerar uma manutenção pendente (RN-14).
 
@@ -164,6 +167,8 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 - <b>CA-05:</b> Dada uma tentativa de conclusão sem a descrição exigida, quando o Administrador confirmar a operação, então o sistema deve recusá-la.
 
 ## RF08 - Exibir painel resumido do inventário
+
+O Operador acessa um início próprio com situação atual dos equipamentos, entregas do dia, pendências de entrega e devoluções previstas ou vencidas. Cada lista apresenta até cinco reservas e informa o total. Unidades inativas ficam fora dos indicadores operacionais. A disponibilidade atual não substitui a consulta de reservas futuras. O painel analítico e os filtros descritos a seguir permanecem exclusivos do Administrador.
 
 <b>Descrição:</b> O sistema deve apresentar ao Administrador um resumo do uso e da situação do acervo, com indicadores, gráficos, reservas e pendências. O painel deve permitir filtros por categoria e pelos últimos 7, 30 ou 90 dias, com 30 dias como padrão.
 
@@ -213,7 +218,7 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 
 <b>Pré-condições:</b> O Professor deve estar autenticado, ativo e autorizado. Para corrigir o planejamento sem retirada, a reserva própria deve estar ativa e antes do limite de tolerância. Após a retirada, deve existir pelo menos uma unidade pendente. Novas escolhas exigem cadastros pedagógicos ativos; uma referência já vinculada pode ser mantida após inativação.
 
-<b>Fluxo principal:</b> O Professor informa o planejamento ao criar a reserva. Na entrega pelo Operador, o sistema cria uma utilização pedagógica para cada unidade retirada na mesma transação. Uma correção posterior aplica o contexto a todo o lote e sincroniza a reserva, inclusive após devolução parcial. Após a devolução integral, o contexto fica somente para consulta. Em retiradas legadas sem reserva, o Professor destinatário pode registrar ou corrigir o contexto do próprio lote enquanto há pendências.
+<b>Fluxo principal:</b> O Professor informa o planejamento ao criar a reserva. Na entrega pelo Operador, o sistema cria uma utilização pedagógica para cada unidade retirada na mesma transação. Uma correção posterior aplica o contexto a todo o lote e sincroniza a reserva, inclusive após devolução parcial. Após a devolução integral, quando não há saldo de entrega dentro do período reservado, o contexto fica somente para consulta. Em retiradas legadas sem reserva, o Professor destinatário pode registrar ou corrigir o contexto do próprio lote enquanto há pendências.
 
 <b>Regras de negócio:</b> O contexto é obrigatório nas novas reservas e sua observação é opcional. Agendamentos não contam como uso realizado; as utilizações são criadas na entrega (RN-15). A compatibilidade sem reserva aplica-se somente às retiradas antigas, sem criar novas retiradas diretas (RN-16). O vínculo pedagógico por retirada é único. Não há exclusão do contexto nem preenchimento automático de utilizações não realizadas.
 
@@ -250,3 +255,5 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 - <b>CA-04:</b> Dada uma reserva entregue com três equipamentos distintos e contexto pedagógico associado, quando os indicadores forem consultados sem outros registros no conjunto, então devem apresentar uma utilização, três unidades retiradas e três equipamentos distintos.
 - <b>CA-05:</b> Dada uma reserva ainda sem retirada, quando os indicadores forem consultados, então o agendamento não deve aumentar nenhuma das contagens.
 - <b>CA-06:</b> Dados usos com contexto pedagógico, quando os equipamentos forem devolvidos ou um cadastro pedagógico vinculado for inativado, então os registros devem continuar participando das contagens históricas.
+
+Na consulta operacional de reservas e histórico, o Operador visualiza somente a turma do contexto pedagógico. O menu da conta oferece Meus dados, com nome, nome de usuário, e-mail e perfil, em consulta restrita à própria conta e orientação para solicitar correção ou exclusão a um Administrador.

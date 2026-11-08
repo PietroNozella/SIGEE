@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-content">
     <header class="page-header"><div><h1>Manutenções</h1><p>Acompanhe as intervenções e consulte o histórico dos equipamentos.</p></div>
-        {% if pode_abrir_manutencao %}<a class="btn btn-primary-sigee" href="{% url 'manutencoes:manutencao_abrir' %}">Abrir manutenção</a>{% endif %}
+        {% if pode_abrir_manutencao %}<a class="btn btn-primary-sigee" href="{% url 'manutencoes:manutencao_abrir' %}">{% if e_operador %}Informar problema{% else %}Abrir manutenção{% endif %}</a>{% endif %}
     </header>
     <section class="inventory-card" aria-labelledby="maintenance-heading">
         <h2 id="maintenance-heading" class="visually-hidden">Intervenções registradas</h2>

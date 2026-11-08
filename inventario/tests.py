@@ -571,7 +571,7 @@ class AutenticacaoTests(TestCase):
             str(self.usuario.pk),
         )
 
-    def test_login_dos_demais_perfis_preserva_destino_da_listagem(self):
+    def test_login_operador_abre_inicio_e_professor_preserva_listagem(self):
         for perfil in ("Operador", "Professor"):
             with self.subTest(perfil=perfil):
                 self.client.logout()
@@ -580,7 +580,8 @@ class AutenticacaoTests(TestCase):
                     reverse("login"),
                     {"username": self.usuario.username, "password": self.SENHA},
                 )
-                self.assertRedirects(resposta, reverse("inventario:equipamento_lista"))
+                destino = "inventario:inicio_operador" if perfil == "Operador" else "inventario:equipamento_lista"
+                self.assertRedirects(resposta, reverse(destino))
 
     def test_login_administrador_sem_acesso_ao_painel_preserva_listagem(self):
         Group.objects.get(name=GRUPO_ADMINISTRADOR).permissions.remove(

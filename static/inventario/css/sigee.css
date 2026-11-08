@@ -2596,3 +2596,5 @@ summary:focus-visible,
     .reservation-detail-page .inventory-card { padding: 16px !important; }
     .reservation-detail-page h2 { font-size: 18px; }
 }
+
+.status-inativo { background: var(--sigee-surface-soft); color: var(--sigee-on-surface); white-space: normal; }
