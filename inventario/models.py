@@ -118,6 +118,14 @@ class Equipamento(models.Model):
     def possui_registros_relacionados(self):
         return self.movimentacoes.exists() or self.itens_reserva.exists() or self.manutencoes.exists()
 
+    @property
+    def situacao_operacional(self):
+        return self.situacao if self.ativo else "INATIVO"
+
+    @property
+    def rotulo_situacao_operacional(self):
+        return self.get_situacao_display() if self.ativo else "Inativo — indisponível para uso"
+
     def clean(self):
         super().clean()
         if (

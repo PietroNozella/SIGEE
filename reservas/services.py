@@ -10,7 +10,97 @@ from auditoria.services import registrar_evento
 from inventario.models import Equipamento, Local, TipoEquipamento
 from usuarios.permissoes import e_professor_funcional
 
-from .models import Reserva, ReservaEquipamento
+from .models import Reserva, ReservaEquipamento, SubstituicaoReserva
+
+
+def _substituir_unidades_bloqueadas(reserva, usuario):
+    """Exige bloqueios do tipo e da reserva, nesta ordem, na transação chamadora."""
+    from movimentacoes.models import Movimentacao
+
+    agora = timezone.now()
+    if reserva.status != Reserva.Status.ATIVA or reserva.fim <= agora:
+        return 0
+    if reserva.inicio + Reserva.TOLERANCIA_RETIRADA <= agora and not _possui_retirada_vinculada(reserva):
+        return 0
+    entregues = Movimentacao.objects.filter(reserva=reserva, tipo="RETIRADA").values("equipamento_id")
+    afetados = list(reserva.itens.select_related("equipamento").filter(
+        equipamento__situacao=Equipamento.Situacao.MANUTENCAO,
+    ).exclude(equipamento_id__in=entregues).order_by("pk"))
+    trocas = 0
+    for item in afetados:
+        manutencao = item.equipamento.manutencoes.order_by("-pk").first()
+        if manutencao is None:
+            continue
+        substituto = _equipamentos_disponiveis(
+            reserva.tipo_equipamento, reserva.local, reserva.inicio, reserva.fim, bloquear=True,
+        ).exclude(pk__in=entregues).exclude(pk__in=reserva.itens.values("equipamento_id")).first()
+        if substituto is None:
+            continue
+        troca = SubstituicaoReserva.objects.create(
+            reserva=reserva, equipamento_anterior=item.equipamento,
+            equipamento_substituto=substituto, manutencao=manutencao, registrado_por=usuario,
+        )
+        item.equipamento = substituto
+        item.save(update_fields=("equipamento",))
+        registrar_evento(
+            usuario=usuario, acao=AcaoAuditoria.EQUIPAMENTO_RESERVADO_SUBSTITUIDO,
+            resultado=RegistroAuditoria.Resultado.SUCESSO,
+            entidade="reservas.SubstituicaoReserva", entidade_id=troca.pk,
+        )
+        trocas += 1
+    return trocas
+
+
+@transaction.atomic
+def substituir_equipamentos_em_manutencao(*, reserva_id, usuario):
+    from usuarios.permissoes import pode_registrar_retirada
+
+    atual = get_user_model().objects.filter(pk=usuario.pk).first() if usuario.is_authenticated else None
+    if atual is None or not pode_registrar_retirada(atual):
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied
+    tipo_id = Reserva.objects.values_list("tipo_equipamento_id", flat=True).get(pk=reserva_id)
+    TipoEquipamento.objects.select_for_update().get(pk=tipo_id)
+    reserva = Reserva.objects.select_for_update().get(pk=reserva_id)
+    return _substituir_unidades_bloqueadas(reserva, atual)
+
+
+def substituir_reservas_do_equipamento(equipamento, usuario):
+    """Chamado na abertura da manutenção, com o tipo já bloqueado."""
+    reservas = Reserva.objects.filter(
+        pk__in=ReservaEquipamento.objects.filter(equipamento=equipamento).values("reserva_id"),
+        status=Reserva.Status.ATIVA, fim__gt=timezone.now(),
+    ).order_by("inicio", "pk")
+    for reserva in reservas.select_for_update():
+        _substituir_unidades_bloqueadas(reserva, usuario)
+
+
+def resumo_entrega(reserva):
+    from movimentacoes.models import Movimentacao
+
+    retiradas = Movimentacao.objects.filter(reserva=reserva, tipo="RETIRADA")
+    ids_entregues = set(retiradas.values_list("equipamento_id", flat=True))
+    unidades = list(reserva.itens.select_related("equipamento__tipo", "equipamento__local").order_by("equipamento__numero_patrimonio"))
+    aptas = 0
+    for item in unidades:
+        equipamento = item.equipamento
+        item.ja_entregue = equipamento.pk in ids_entregues
+        item.apta_para_entrega = (
+            not item.ja_entregue and equipamento.ativo
+            and equipamento.situacao == Equipamento.Situacao.DISPONIVEL
+            and equipamento.tipo_id == reserva.tipo_equipamento_id and equipamento.local_id == reserva.local_id
+        )
+        aptas += int(item.apta_para_entrega)
+    saldo = max(0, reserva.quantidade - len(ids_entregues))
+    encerrado = reserva.fim <= timezone.now()
+    return {
+        "unidades": unidades, "entregues": len(ids_entregues), "aptas": aptas,
+        "saldo": saldo, "pendentes": 0 if encerrado else saldo,
+        "nao_atendidas": saldo if encerrado else 0, "prazo_encerrado": encerrado,
+        "devolucoes_pendentes": retiradas.filter(devolucoes__isnull=True).count(),
+        "entrega_parcial": aptas > 0 and aptas < saldo,
+        "tem_indisponiveis": aptas < saldo,
+    }
 
 
 def _equipamentos_disponiveis(

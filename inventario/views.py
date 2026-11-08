@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Case, CharField, Count, Exists, F, OuterRef, Q, Value, When
+from django.db.models import Case, CharField, Count, Exists, F, Min, OuterRef, Q, Value, When
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -22,11 +22,42 @@ from reservas.models import Reserva, ReservaEquipamento
 from usuarios.permissoes import (
     e_operador_funcional, e_professor_funcional, pode_consultar_painel,
     pode_gerenciar_manutencao, pode_consultar_reservas_administrativas,
+    pode_consultar_inicio_operador,
 )
 
+from .consultas import resumo_situacao_equipamentos
 from .forms import EquipamentoForm, ImportacaoEquipamentosCSVForm
 from .importacao_csv import CABECALHOS_CSV, validar_equipamentos_csv
 from .models import Categoria, Equipamento, Local
+
+
+@login_required
+@require_GET
+def inicio_operador(request):
+    if not pode_consultar_inicio_operador(request.user):
+        raise PermissionDenied
+    from movimentacoes.services import retiradas_abertas, reservas_para_retirada
+    from reservas.services import expirar_reservas_vencidas
+
+    agora = timezone.now()
+    hoje = timezone.localdate(agora)
+    expirar_reservas_vencidas(agora)
+    resumo_acervo = resumo_situacao_equipamentos(Equipamento.objects.all())
+    reservas = reservas_para_retirada().filter(inicio__date=hoje)
+    pendencias = reservas_para_retirada().filter(tem_entrega_pendente=True).filter(
+        Q(tem_retirada=True) | Q(itens__equipamento__situacao="MANUTENCAO"),
+    ).distinct()
+    retornos = retiradas_abertas().filter(reserva__fim__date__lte=hoje)
+    devolucoes = retornos.order_by().values(
+        "reserva_id", "reserva__fim", "destinatario__first_name", "destinatario__last_name", "destinatario__username",
+    ).annotate(unidades=Count("pk"), retirada_id=Min("pk")).order_by("reserva__fim", "reserva_id")
+    return render(request, "inventario/inicio_operador.html", {
+        **resumo_acervo, "agora": agora, "hoje": hoje, "estoque": resumo_acervo["indicadores"],
+        "reservas_hoje": reservas[:5], "total_reservas_hoje": reservas.count(),
+        "pendencias": pendencias[:5], "total_pendencias": pendencias.count(),
+        "devolucoes": devolucoes[:5], "total_devolucoes": devolucoes.count(),
+        "unidades_vencidas": retornos.filter(reserva__fim__lt=agora).count(),
+    })
 
 
 @login_required
@@ -57,43 +88,7 @@ def painel(request):
         movimentacoes = movimentacoes.filter(equipamento__tipo__categoria=categoria)
         manutencoes = manutencoes.filter(equipamento__tipo__categoria=categoria)
 
-    indicadores = equipamentos.aggregate(
-        ativos=Count("pk", filter=Q(ativo=True)),
-        disponiveis=Count("pk", filter=Q(ativo=True, situacao=Equipamento.Situacao.DISPONIVEL)),
-        em_uso=Count("pk", filter=Q(ativo=True, situacao=Equipamento.Situacao.EM_USO)),
-        manutencao=Count("pk", filter=Q(ativo=True, situacao=Equipamento.Situacao.MANUTENCAO)),
-        inativos=Count("pk", filter=Q(ativo=False)),
-    )
-    distribuicao = [
-        {"nome": "Disponíveis", "chave": "disponiveis"},
-        {"nome": "Em uso", "chave": "em_uso"},
-        {"nome": "Em manutenção", "chave": "manutencao"},
-    ]
-    percentuais = {
-        chave: indicadores[chave] * 100 / indicadores["ativos"] if indicadores["ativos"] else None
-        for chave in ("disponiveis", "em_uso", "manutencao")
-    }
-    por_categoria = list(
-        equipamentos.filter(ativo=True)
-        .values("tipo__categoria_id", "tipo__categoria__nome")
-        .annotate(
-            total=Count("pk"),
-            disponiveis=Count("pk", filter=Q(situacao=Equipamento.Situacao.DISPONIVEL)),
-            em_uso=Count("pk", filter=Q(situacao=Equipamento.Situacao.EM_USO)),
-            manutencao=Count("pk", filter=Q(situacao=Equipamento.Situacao.MANUTENCAO)),
-        )
-        .order_by("tipo__categoria__nome", "tipo__categoria_id")
-    )
-    maior_categoria = max((item["total"] for item in por_categoria), default=0)
-    for item in por_categoria:
-        item["id"] = item["tipo__categoria_id"]
-        item["nome"] = item["tipo__categoria__nome"]
-        item["indisponiveis"] = item["em_uso"] + item["manutencao"]
-        item["segmentos"] = [
-            {"chave": estado["chave"], "percentual": item[estado["chave"]] * 100 / maior_categoria}
-            for estado in distribuicao
-        ]
-    por_categoria.sort(key=lambda item: (-item["indisponiveis"], -item["total"], item["nome"]))
+    resumo_acervo = resumo_situacao_equipamentos(equipamentos)
 
     # Limites em horário local; a agregação usa o mesmo fuso e conta registros,
     # pois cada RETIRADA representa uma unidade física, inclusive em lotes.
@@ -182,13 +177,11 @@ def painel(request):
         "equipamento__tipo", "operador", "destinatario",
     ).order_by("-data_hora", "-pk")[:10]
     return render(request, "inventario/painel.html", {
-        "indicadores": indicadores, "distribuicao": distribuicao,
-        "percentuais": percentuais, "atualizado_em": agora,
+        **resumo_acervo, "atualizado_em": agora,
         "periodos_painel": periodos, "periodo_selecionado": periodo,
         "dias_periodo": dias_periodo, "avisos_filtros": avisos,
         "movimentacoes_recentes": recentes,
         "categorias_painel": categorias, "categoria_selecionada": categoria,
-        "situacao_por_categoria": por_categoria, "maior_categoria": maior_categoria,
         "retiradas_diarias": retiradas_diarias, "inicio_periodo": inicio_periodo,
         "fim_periodo": hoje, "fuso_painel": str(fuso),
         "total_retiradas": total_retiradas, "maior_dia": maior_dia,
@@ -227,12 +220,15 @@ def equipamento_lista(request):
         indicadores = {
             "total": total_equipamentos,
             "disponiveis": equipamentos.filter(
+                ativo=True,
                 situacao=Equipamento.Situacao.DISPONIVEL
             ).count(),
             "em_uso": equipamentos.filter(
+                ativo=True,
                 situacao=Equipamento.Situacao.EM_USO
             ).count(),
             "manutencao": equipamentos.filter(
+                ativo=True,
                 situacao=Equipamento.Situacao.MANUTENCAO
             ).count(),
         }
@@ -253,6 +249,8 @@ def equipamento_lista(request):
         equipamentos = equipamentos.filter(local_id=local)
     if situacao in Equipamento.Situacao.values:
         equipamentos = equipamentos.filter(situacao=situacao)
+        if situacao == Equipamento.Situacao.DISPONIVEL:
+            equipamentos = equipamentos.filter(ativo=True)
 
     if e_professor:
         equipamentos = equipamentos.filter(

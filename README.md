@@ -42,6 +42,8 @@ Inventário, reservas e utilização de equipamentos escolares em um único ambi
 
 O SIGEE é uma aplicação web para gerenciar equipamentos tecnológicos de instituições de ensino, desde o cadastro patrimonial até a reserva, entrega, devolução e manutenção. O sistema relaciona o uso dos equipamentos a turmas, disciplinas e atividades pedagógicas e reúne consultas operacionais, indicadores e auditoria.
 
+O início do Operador reúne entregas do dia, pendências de entrega e devoluções previstas ou vencidas, com resumo da situação atual dos equipamentos. Equipamentos inativos são apresentados como indisponíveis para uso.
+
 O fluxo de empréstimo é organizado em **Reservas**, **Em uso** e **Histórico**. O Professor agenda os equipamentos e informa o contexto pedagógico; o Operador confirma a entrega e recebe as devoluções; o Administrador mantém os cadastros e acompanha o acervo. Toda nova retirada exige uma reserva válida.
 
 ## Funcionalidades
@@ -50,8 +52,8 @@ O fluxo de empréstimo é organizado em **Reservas**, **Em uso** e **Histórico*
 |---|---|
 | **Inventário** | Cadastro por unidade física, patrimônio único, tipo/modelo, categoria e local; importação CSV com gravação integral do lote; filtros, edição e exclusão ou inativação conforme o histórico. |
 | **Reservas** | Agendamento próprio em lote por tipo/modelo e local, alocação de patrimônios, contexto pedagógico obrigatório, disponibilidade, prevenção de conflitos, cancelamento e expiração por tolerância de retirada. |
-| **Entrega e devolução** | Entrega integral das unidades reservadas, atualização de situação, devolução total ou parcial e registro de problemas por patrimônio, com transações e rastreabilidade por unidade. |
-| **Manutenção** | Abertura automática na devolução com problema ou manual pelo Administrador; acompanhamento e conclusão como reparado ou sem possibilidade de reparo, com preservação do histórico. |
+| **Entrega e devolução** | Entrega integral, parcial por manutenção ou complementar, substituição automática com histórico, atualização de situação, devolução total ou parcial e registro de problemas por patrimônio, com transações e rastreabilidade por unidade. |
+| **Manutenção** | Abertura automática na devolução com problema ou manual pelo Administrador ou Operador; acompanhamento e conclusão como reparado ou sem possibilidade de reparo, com preservação do histórico. |
 | **Contexto pedagógico** | Cadastros de turmas, disciplinas e atividades; planejamento na reserva, criação das utilizações na entrega e correção pelo Professor até a devolução integral. |
 | **Consultas e indicadores** | Itens em uso, histórico de reservas e movimentações, painel do inventário e indicadores por turma, disciplina e atividade, com acesso conforme o perfil. |
 | **Identidade e auditoria** | Cadastro controlado de contas, recuperação de senha, desativação reversível, Administrador principal, autorização no servidor e registro das ações relevantes. |
@@ -68,7 +70,7 @@ O sistema não possui cadastro público. As contas funcionais pertencem a um ún
 | Perfil | Responsabilidades |
 |---|---|
 | **Administrador** | Gerencia equipamentos, usuários e cadastros pedagógicos; acompanha reservas, itens em uso, histórico e manutenção; consulta painel, indicadores e auditoria. |
-| **Operador** | Confere e entrega os equipamentos reservados; registra devoluções totais ou parciais e problemas por unidade; consulta itens em uso e histórico. |
+| **Operador** | Acessa início operacional e Meus dados; confere entregas integrais, parciais e complementares; registra devoluções e problemas; abre e consulta manutenção; acompanha pendências e histórico com contexto limitado à turma. |
 | **Professor** | Consulta disponibilidade, cria e cancela reservas próprias quando permitido, informa e corrige o contexto pedagógico e acompanha seus itens em uso e registros históricos. |
 
 O **Administrador principal** pertence ao mesmo perfil Administrador e possui autoridade exclusiva para desativar ou reativar administradores comuns. O Superuser do Django é uma conta técnica de configuração e manutenção, separada dos perfis funcionais.

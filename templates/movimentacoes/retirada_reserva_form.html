@@ -1,26 +1,40 @@
 {% extends "base.html" %}
-{% block title %}Conferir reserva | SIGEE{% endblock %}
+{% load static %}
+{% block title %}Conferir reserva #{{ reserva.pk }} | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'inventario/css/operador.css' %}">{% endblock %}
 {% block content %}
-<div class="page-content form-page">
+<div class="page-content form-page operator-delivery-page">
     <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'movimentacoes:retirada_reserva_lista' %}">Reservas</a><span aria-hidden="true">/</span><span aria-current="page">Conferir reserva #{{ reserva.pk }}</span></nav>
-    <header class="page-header form-page-header"><div><h1>Conferir reserva #{{ reserva.pk }}</h1><p>A confirmação entrega todas as unidades alocadas. Os patrimônios e o destinatário são obtidos da reserva.</p></div></header>
-    <section class="form-card" aria-labelledby="reserved-return-heading">
-        <div class="form-card-header"><h2 id="reserved-return-heading">Entrega de {{ reserva.quantidade }} equipamento(s)</h2><p>Permitida a partir do início e antes de completar os 30 minutos de tolerância.</p></div>
-        {% if form.errors %}<div class="validation-summary" role="alert" tabindex="-1" data-focus-on-load><h3>Não foi possível registrar a retirada</h3><ul>{% for erro in form.non_field_errors %}<li>{{ erro }}</li>{% endfor %}{% for field in form %}{% for erro in field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ erro }}</a></li>{% endfor %}{% endfor %}</ul></div>{% endif %}
-        <div class="equipment-form-grid">
-            <div class="form-field"><strong>Professor destinatário</strong><p>{{ reserva.professor.get_full_name|default:reserva.professor.username }} ({{ reserva.professor.username }})</p></div>
-            <div class="form-field"><strong>Período reservado</strong><p>{{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }}</p></div>
-            <div class="form-field"><strong>Tipo/modelo e local</strong><p>{{ reserva.tipo_equipamento.nome }} · {{ reserva.local.nome }}</p></div>
-            <div class="form-field"><strong>Situação da reserva</strong><p>{{ reserva.get_status_display }}{% if retirada %} · Retirada registrada{% endif %}</p></div>
-        </div>
+    <header class="page-header"><div><h1>Conferir reserva #{{ reserva.pk }}</h1><p>{% if resumo.entregues %}Confira os equipamentos para complementar a entrega.{% else %}Confira o Professor e os patrimônios antes de entregar.{% endif %}</p></div><a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Histórico da reserva</a></header>
+    {% if form.errors %}<div class="validation-summary" role="alert" tabindex="-1" data-focus-on-load><h2>Não foi possível registrar a retirada</h2><ul>{% for erro in form.non_field_errors %}<li>{{ erro }}</li>{% endfor %}{% for field in form %}{% for erro in field.errors %}<li>{{ field.label }}: {{ erro }}</li>{% endfor %}{% endfor %}</ul></div>{% endif %}
+    <section class="form-card" aria-labelledby="delivery-heading">
+        <div class="form-card-header"><h2 id="delivery-heading">Professor e equipamentos</h2><p>{{ reserva.professor.get_full_name|default:reserva.professor.username }} · {{ reserva.tipo_equipamento.nome }}</p></div>
+        <dl class="equipment-form-grid operator-reservation-facts">
+            <div><dt>Professor destinatário</dt><dd>{{ reserva.professor.get_full_name|default:reserva.professor.username }} ({{ reserva.professor.username }})</dd></div>
+            <div><dt>Período reservado</dt><dd>{{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }}</dd></div>
+            <div><dt>Local de retirada</dt><dd>{{ reserva.local.nome }}</dd></div>
+            <div><dt>Situação da reserva</dt><dd>{{ reserva.get_status_display }}</dd></div>
+        </dl>
         {% include "reservas/_contexto.html" %}
-        {% if not reserva.turma_id %}<p role="status">O Professor precisa completar o contexto pedagógico antes da entrega.</p>{% endif %}
-        <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Patrimônios alocados à reserva">
-            <table class="table inventory-table"><caption class="visually-hidden">Unidades que serão entregues integralmente, sem substituições</caption><thead><tr><th scope="col">Patrimônio</th><th scope="col">Equipamento e local</th><th scope="col">Situação</th></tr></thead><tbody>{% for item in unidades %}<tr><td><strong>{{ item.equipamento.numero_patrimonio }}</strong></td><td>{{ item.equipamento.tipo.nome }}<span class="table-metadata">{{ item.equipamento.local.nome }}</span></td><td>{{ item.equipamento.get_situacao_display }}{% if not item.equipamento.ativo %} · Inativo{% endif %}</td></tr>{% empty %}<tr><td colspan="3">Nenhuma unidade alocada. A retirada não poderá ser confirmada.</td></tr>{% endfor %}</tbody></table>
+        {% include "reservas/_resumo_entrega.html" %}
+        {% if not reserva.turma_id %}<p class="operator-notice" role="status">O Professor precisa completar o contexto pedagógico antes da entrega.</p>{% endif %}
+        <div class="table-responsive inventory-table-wrapper" tabindex="0" role="region" aria-label="Conferência dos patrimônios">
+            <table class="table inventory-table"><caption class="visually-hidden">Unidades alocadas e condições para entrega</caption><thead><tr><th scope="col">Patrimônio</th><th scope="col">Equipamento e local</th><th scope="col">Conferência</th></tr></thead><tbody>{% for item in unidades %}<tr><td><strong>{{ item.equipamento.numero_patrimonio }}</strong></td><td>{{ item.equipamento.tipo.nome }}<span class="table-metadata">{{ item.equipamento.local.nome }}</span></td><td>{% if item.ja_entregue %}<span class="table-metadata">Entrega já registrada</span>{% elif item.apta_para_entrega %}<span class="status-badge status-disponivel">Apto para entrega</span>{% else %}{% include "inventario/_situacao.html" with equipamento=item.equipamento %}<span class="table-metadata">Pendente de substituição</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="3">Nenhuma unidade alocada. A retirada não poderá ser confirmada.</td></tr>{% endfor %}</tbody></table>
         </div>
-        {% if retirada %}<div class="validation-summary" role="status"><p>Esta reserva já possui retirada registrada.</p></div><div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_registrar' retirada.pk %}">Conferir devolução</a></div>
-        {% elif reserva.status != 'ATIVA' %}<div class="validation-summary" role="status"><p>Reservas canceladas ou expiradas não podem ser retiradas.</p></div>
-        {% else %}<form method="post" novalidate>{% csrf_token %}<div class="form-field"><label for="{{ form.observacao.id_for_label }}">Observação <span class="form-optional">(opcional)</span></label>{{ form.observacao }}</div><p class="form-help">Ao confirmar, o lote inteiro será entregue ao Professor indicado. Operador e data/hora serão registrados automaticamente.</p><div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_lista' %}">Voltar</a><button class="btn btn-primary-sigee" type="submit">Confirmar entrega da reserva</button></div></form>{% endif %}
+        {% include "reservas/_substituicoes.html" %}
+        {% if reserva.status != 'ATIVA' %}<p class="operator-notice" role="status">Reservas canceladas ou expiradas não podem ser retiradas.</p>
+        {% elif resumo.prazo_encerrado %}<p role="status">O prazo para entrega desta reserva terminou.</p>
+        {% elif not resumo.saldo %}<p role="status">Todos os equipamentos desta reserva já foram entregues.</p>
+        {% elif not resumo.aptas %}<p role="status">Nenhuma unidade está apta para entrega. A pendência será mantida.</p>
+        {% else %}
+        <form method="post" novalidate>{% csrf_token %}
+            {% if resumo.entrega_parcial %}<div class="operator-notice"><p><strong>Entrega parcial: {{ resumo.aptas }} de {{ resumo.saldo }} unidades pendentes.</strong> Informe o Professor sobre a falta antes de confirmar.</p><label class="operator-check" for="{{ form.professor_informado.id_for_label }}">{{ form.professor_informado }} {{ form.professor_informado.label }}</label></div>{% endif %}
+            <div class="form-field"><label for="{{ form.observacao.id_for_label }}">Observação <span class="form-optional">(opcional)</span></label>{{ form.observacao }}</div>
+            <p class="form-help">Quantidade de equipamentos nesta entrega: {{ resumo.aptas }}. Operador, patrimônios e data/hora serão registrados automaticamente.{% if not resumo.entregues %} A primeira entrega é permitida antes de completar 30 minutos do início.{% else %} A complementação é permitida até o fim do período reservado.{% endif %}</p>
+            <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_lista' %}">Voltar</a><button class="btn btn-primary-sigee" type="submit">{% if resumo.entregues %}Confirmar entrega complementar{% elif resumo.entrega_parcial %}Confirmar entrega parcial{% else %}Confirmar entrega da reserva{% endif %}</button></div>
+        </form>
+        {% endif %}
+        {% if retirada and resumo.devolucoes_pendentes %}<div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_registrar' retirada.pk %}">Conferir devolução</a></div>{% endif %}
     </section>
 </div>
 {% endblock %}

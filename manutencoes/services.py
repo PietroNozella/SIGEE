@@ -6,7 +6,7 @@ from django.utils import timezone
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
-from inventario.models import Equipamento
+from inventario.models import Equipamento, TipoEquipamento
 from usuarios.permissoes import pode_gerenciar_manutencao
 
 from .models import Manutencao
@@ -41,6 +41,8 @@ def _abrir_manutencao_bloqueada(*, equipamento, usuario, descricao_problema, dev
     equipamento.situacao = Equipamento.Situacao.MANUTENCAO
     equipamento.save(update_fields=("situacao", "data_atualizacao"))
     _registrar_sucesso(manutencao, usuario, AcaoAuditoria.MANUTENCAO_ABERTA)
+    from reservas.services import substituir_reservas_do_equipamento
+    substituir_reservas_do_equipamento(equipamento, usuario)
     return manutencao
 
 
@@ -48,6 +50,8 @@ def _abrir_manutencao_bloqueada(*, equipamento, usuario, descricao_problema, dev
 def abrir_manutencao(*, administrador, equipamento_id, descricao_problema):
     usuario = _administrador_autorizado(administrador, "add")
     try:
+        tipo_id = Equipamento.objects.values_list("tipo_id", flat=True).get(pk=equipamento_id)
+        TipoEquipamento.objects.select_for_update().get(pk=tipo_id)
         equipamento = Equipamento.objects.select_for_update().get(pk=equipamento_id)
     except Equipamento.DoesNotExist as erro:
         raise ValidationError("O equipamento informado não existe.") from erro

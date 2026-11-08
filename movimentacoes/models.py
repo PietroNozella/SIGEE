@@ -39,6 +39,7 @@ class Movimentacao(models.Model):
         related_name="devolucoes",
     )
     observacao = models.TextField(blank=True)
+    professor_informado = models.BooleanField(default=False)
     lote_retirada = models.UUIDField(null=True, blank=True, db_index=True, editable=False)
 
     class Meta:
@@ -46,6 +47,10 @@ class Movimentacao(models.Model):
         verbose_name = "movimentação"
         verbose_name_plural = "movimentações"
         constraints = [
+            models.UniqueConstraint(
+                fields=["reserva", "equipamento"], condition=models.Q(tipo="RETIRADA", reserva__isnull=False),
+                name="mov_retirada_unica_reserva_unidade",
+            ),
             models.UniqueConstraint(
                 fields=["retirada_origem"], condition=models.Q(tipo="DEVOLUCAO"),
                 name="mov_devolucao_unica_origem",

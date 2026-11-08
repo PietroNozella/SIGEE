@@ -12,7 +12,7 @@ from auditoria.services import registrar_evento
 from inventario.models import Equipamento
 from usuarios.permissoes import pode_consultar_historico, pode_registrar_devolucao, pode_registrar_retirada
 from reservas.models import Reserva
-from reservas.services import expirar_reservas_vencidas
+from reservas.services import expirar_reservas_vencidas, resumo_entrega, substituir_equipamentos_em_manutencao
 from reservas.consultas import historico_reservas
 
 from .forms import DevolucaoForm, HistoricoFiltroForm, RetiradaReservaForm
@@ -91,19 +91,24 @@ def retirada_reserva_registrar(request, reserva_id):
     if not pode_registrar_retirada(request.user):
         raise PermissionDenied
     reserva = get_object_or_404(Reserva.objects.select_related("professor", "tipo_equipamento", "local"), pk=reserva_id)
+    if substituir_equipamentos_em_manutencao(reserva_id=reserva.pk, usuario=request.user):
+        messages.info(request, "Equipamento em manutenção substituído por uma unidade disponível do mesmo tipo e local.")
     form = RetiradaReservaForm(request.POST if request.method == "POST" else None)
     if request.method == "POST":
         if form.is_valid():
             try:
                 movimentacoes = registrar_retirada_reserva(
                     operador=request.user, reserva_id=reserva.pk, observacao=form.cleaned_data["observacao"],
+                    professor_informado=form.cleaned_data["professor_informado"],
                 )
             except ValidationError as erro:
                 form.add_error(None, erro)
             except IntegrityError:
                 form.add_error(None, "Não foi possível registrar a retirada. Nenhuma alteração foi salva. Tente novamente.")
             else:
-                messages.success(request, f"Retirada da reserva #{reserva.pk} registrada: {len(movimentacoes)} equipamento(s) em uso.")
+                resumo = resumo_entrega(reserva)
+                saldo = f" {resumo['pendentes']} unidade(s) permanece(m) pendente(s) de entrega." if resumo["pendentes"] else ""
+                messages.success(request, f"Retirada da reserva #{reserva.pk} registrada: {len(movimentacoes)} equipamento(s) em uso.{saldo}")
                 return redirect("movimentacoes:devolucao_lista")
         registrar_evento(
             usuario=request.user, acao=AcaoAuditoria.RETIRADA_REGISTRADA,
@@ -111,10 +116,11 @@ def retirada_reserva_registrar(request, reserva_id):
             entidade="reservas.Reserva", entidade_id=reserva.pk,
         )
         reserva.refresh_from_db()
-    unidades = reserva.itens.select_related("equipamento__tipo", "equipamento__local").order_by("equipamento__numero_patrimonio")
+    resumo = resumo_entrega(reserva)
     retirada = Movimentacao.objects.filter(reserva=reserva, tipo=Movimentacao.Tipo.RETIRADA).order_by("pk").first()
     return render(request, "movimentacoes/retirada_reserva_form.html", {
-        "reserva": reserva, "unidades": unidades, "form": form, "retirada": retirada,
+        "reserva": reserva, "unidades": resumo["unidades"], "resumo": resumo, "form": form, "retirada": retirada,
+        "substituicoes": reserva.substituicoes.select_related("equipamento_anterior", "equipamento_substituto"),
     })
 
 
