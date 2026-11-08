@@ -1,25 +1,66 @@
 {% extends "base.html" %}
 {% load static %}
-{% block extra_styles %}<link rel="stylesheet" href="{% static 'inventario/css/operador.css' %}">{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'inventario/css/operador.css' %}">{% if e_professor %}<link rel="stylesheet" href="{% static 'reservas/professor.css' %}">{% endif %}{% endblock %}
 {% block title %}Reserva #{{ reserva.pk }} | SIGEE{% endblock %}
 {% block content %}
-<div class="page-content reservation-detail-page">
+<div class="page-content reservation-detail-page{% if e_professor %} professor-reservation-detail{% endif %}">
     <header class="page-header"><div><h1>Reserva #{{ reserva.pk }}</h1><p>{{ reserva.professor.get_full_name|default:reserva.professor.username }} · {{ reserva.tipo_equipamento.nome }} · {{ reserva.local.nome }}</p></div></header>
     <section class="inventory-card p-3" aria-label="Detalhes da reserva">
-        <p><strong>Situação:</strong> {% if reserva.etapa == 'AGUARDANDO' %}Aguardando retirada{% elif reserva.etapa == 'EM_USO' %}Em uso{% elif reserva.etapa == 'ENCERRADA' %}Encerrada{% else %}{{ reserva.get_status_display }}{% endif %}</p>
+        <p><strong>Situação:</strong> {% if e_professor %}{% include "reservas/_situacao_professor.html" %}{% else %}{% if reserva.etapa == 'AGUARDANDO' %}Aguardando retirada{% elif reserva.etapa == 'EM_USO' %}Em uso{% elif reserva.etapa == 'ENCERRADA' %}Encerrada{% else %}{{ reserva.get_status_display }}{% endif %}{% endif %}</p>
         <p><strong>Período reservado:</strong> {{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }} · {{ reserva.quantidade }} unidade(s)</p>
-        {% include "reservas/_contexto.html" %}
+        {% if e_professor %}
+        <section class="professor-detail-section" aria-labelledby="professor-context-heading">
+            <header class="professor-section-header">
+                <h2 id="professor-context-heading">Contexto pedagógico</h2>
+                {% if reserva.etapa == 'AGUARDANDO' or reserva.etapa == 'EM_USO' %}<a class="btn btn-secondary-sigee" href="{% url 'pedagogico:utilizacao_reserva' reserva.pk %}">Editar contexto pedagógico</a>{% endif %}
+            </header>
+            {% include "reservas/_contexto.html" %}
+        </section>
+        {% else %}{% include "reservas/_contexto.html" %}{% endif %}
         {% include "reservas/_resumo_entrega.html" %}
-        {% if e_professor and reserva.etapa == 'AGUARDANDO' or e_professor and reserva.etapa == 'EM_USO' %}<p><a class="btn btn-secondary-sigee" href="{% url 'pedagogico:utilizacao_reserva' reserva.pk %}">Editar contexto pedagógico</a></p>{% endif %}
+
         <h2>Patrimônios reservados</h2>
-        <ul>{% for item in unidades %}<li>{{ item.equipamento.numero_patrimonio }} · {{ item.equipamento.tipo.nome }}</li>{% endfor %}</ul>
+        {% if e_professor %}<ul class="professor-patrimony-list" aria-label="Patrimônios de {{ reserva.tipo_equipamento.nome }}">{% for item in unidades %}<li>{{ item.equipamento.numero_patrimonio }}</li>{% endfor %}</ul>{% else %}<ul>{% for item in unidades %}<li>{{ item.equipamento.numero_patrimonio }} · {{ item.equipamento.tipo.nome }}</li>{% endfor %}</ul>{% endif %}
         <h2>Entregas e devoluções</h2>
         {% include "reservas/_substituicoes.html" %}
-        <div class="table-responsive"><table class="table"><caption>Registros da reserva, em ordem de ocorrência</caption>
+        <div class="table-responsive"{% if e_professor %} tabindex="0" aria-label="Entregas e devoluções; use rolagem horizontal em telas pequenas"{% endif %}><table class="table{% if e_professor %} inventory-table{% endif %}"><caption>Registros da reserva, em ordem de ocorrência</caption>
             <thead><tr><th scope="col">Movimentação</th><th scope="col">Patrimônio</th><th scope="col">Data e hora</th><th scope="col">Operador</th><th scope="col">Detalhes</th></tr></thead>
             <tbody>{% for registro in registros %}<tr><td>{{ registro.get_tipo_display }} #{{ registro.pk }}</td><td>{{ registro.equipamento.numero_patrimonio }}</td><td>{{ registro.data_hora|date:"d/m/Y H:i:s" }}</td><td>{{ registro.operador.get_full_name|default:registro.operador.username }}</td><td>{{ registro.observacao|linebreaksbr }}{% if registro.professor_informado %}<span class="table-metadata">Entrega parcial: Professor informado sobre a falta.</span>{% endif %}{% if registro.retirada_origem_id %}<span>Retirada de origem #{{ registro.retirada_origem_id }}</span>{% endif %}{% if registro.manutencao %}<span>Manutenção #{{ registro.manutencao.pk }} · {{ registro.manutencao.get_estado_display }}</span>{% endif %}{% if registro.tipo == 'RETIRADA' %}{% include "pedagogico/_contexto_historico.html" with contexto=registro.utilizacao_pedagogica %}{% endif %}</td></tr>{% empty %}<tr><td colspan="5">Nenhuma entrega registrada.</td></tr>{% endfor %}</tbody>
         </table></div>
-        <a class="btn btn-secondary-sigee" href="{{ url_voltar }}">Voltar para {{ rotulo_voltar }}</a>
+        <div class="form-actions">
+            <a class="btn btn-secondary-sigee" href="{{ url_voltar }}">Voltar para {{ rotulo_voltar }}</a>
+            {% if pode_cancelar %}
+            <button class="btn btn-danger-sigee" type="button"
+                data-cancel-reservation-trigger
+                data-cancel-url="{% url 'reservas:reserva_cancelar' reserva.pk %}"
+                data-reservation-equipment="{{ reserva.quantidade }}x {{ reserva.tipo_equipamento.nome }}"
+                data-reservation-date="{{ reserva.inicio|date:'d/m/Y' }}"
+                aria-haspopup="dialog" aria-controls="cancel-reservation-dialog">Cancelar reserva</button>
+            {% endif %}
+        </div>
     </section>
+    {% if pode_cancelar %}
+    <dialog class="modal-exclusao" id="cancel-reservation-dialog" aria-labelledby="cancel-reservation-title" aria-describedby="cancel-reservation-description" aria-modal="true" data-cancel-reservation-dialog>
+        <div class="modal-exclusao-conteudo">
+            <header class="modal-exclusao-cabecalho reservation-cancel-header">
+                <span class="modal-exclusao-icone" aria-hidden="true">!</span>
+                <div class="modal-exclusao-titulo-grupo">
+                    <h2 id="cancel-reservation-title">Cancelar reserva</h2>
+                    <p id="cancel-reservation-description">
+                        Confirma o cancelamento de <strong data-cancel-reservation-equipment></strong> para <strong data-cancel-reservation-date></strong>?
+                    </p>
+                </div>
+                <button class="modal-exclusao-fechar" type="button" aria-label="Fechar confirmação" data-cancel-reservation-close>×</button>
+            </header>
+        </div>
+        <footer class="modal-exclusao-acoes">
+            <button class="btn btn-secondary-sigee" type="button" data-cancel-reservation-close>Manter reserva</button>
+            <form method="post" data-cancel-reservation-form>
+                {% csrf_token %}
+                <button class="btn btn-danger-sigee" type="submit">Sim, cancelar reserva</button>
+            </form>
+        </footer>
+    </dialog>
+    {% endif %}
 </div>
 {% endblock %}

@@ -1,19 +1,28 @@
 {% extends "base.html" %}
+{% load static %}
+{% block extra_styles %}{% if e_professor %}<link rel="stylesheet" href="{% static 'reservas/professor.css' %}">{% endif %}{% endblock %}
 {% block title %}Histórico | SIGEE{% endblock %}
 {% block content %}
-<div class="page-content">
+<div class="page-content{% if e_professor %} professor-history-page{% endif %}">
     <header class="page-header"><div><h1>Histórico</h1><p>Reservas encerradas, canceladas ou expiradas. Consulte os detalhes de cada reserva.</p></div></header>
     <section class="inventory-card" aria-label="Reservas no histórico">
         <p class="form-help px-3">O período filtra as datas das movimentações. Para reservas sem retirada, considera a data reservada.</p>
         <form method="get" class="reservation-filter-toolbar">
-            {% for field in form.visible_fields %}<div class="reservation-filter-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for erro in field.errors %}<p class="field-error">{{ erro }}</p>{% endfor %}</div>{% endfor %}
+            {% for field in form.visible_fields %}<div class="reservation-filter-field"><label for="{{ field.id_for_label }}">{% if e_professor and field.name == 'inicio' %}Data inicial{% elif e_professor and field.name == 'fim' %}Data final{% else %}{{ field.label }}{% endif %}</label>{{ field }}{% for erro in field.errors %}<p class="field-error">{{ erro }}</p>{% endfor %}</div>{% endfor %}
             <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Filtrar</button><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:historico_lista' %}">Limpar</a></div>
         </form>
-        <div class="table-responsive"><table class="table inventory-table"><caption class="visually-hidden">Uma linha por reserva encerrada</caption>
-            <thead><tr><th scope="col">Reserva</th><th scope="col">Professor</th><th scope="col">Equipamentos e período</th><th scope="col">Situação</th><th scope="col">Consulta</th></tr></thead>
-            <tbody>{% for reserva in pagina %}<tr><td>#{{ reserva.pk }}</td><td>{{ reserva.professor.get_full_name|default:reserva.professor.username }}</td><td>{{ reserva.quantidade }} × {{ reserva.tipo_equipamento.nome }}<span class="table-metadata">{{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }}</span></td><td>{% if reserva.etapa == 'ENCERRADA' %}Encerrada{% else %}{{ reserva.get_status_display }}{% endif %}</td><td><a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Consultar detalhes</a></td></tr>{% empty %}<tr><td colspan="5">Nenhuma reserva no histórico para os filtros informados.</td></tr>{% endfor %}</tbody>
+        {% if e_professor and not pagina.object_list %}
+        <div class="empty-state" role="status">
+            <h2>{% if form.errors %}Revise os filtros{% else %}Nenhuma reserva encontrada{% endif %}</h2>
+            <p>{% if form.errors %}Corrija os campos indicados e consulte novamente.{% else %}Não há reservas no histórico para os filtros informados.{% endif %}</p>
+        </div>
+        {% else %}
+        <div class="table-responsive"{% if e_professor %} tabindex="0" aria-label="Histórico de reservas; use rolagem horizontal em telas pequenas"{% endif %}><table class="table inventory-table"><caption class="visually-hidden">Uma linha por reserva encerrada</caption>
+            <thead><tr><th scope="col">Reserva</th>{% if not e_professor %}<th scope="col">Professor</th>{% endif %}<th scope="col">Equipamentos e período</th><th scope="col">Situação</th><th scope="col">Consulta</th></tr></thead>
+            <tbody>{% for reserva in pagina %}<tr><td>#{{ reserva.pk }}</td>{% if not e_professor %}<td>{{ reserva.professor.get_full_name|default:reserva.professor.username }}</td>{% endif %}<td>{{ reserva.quantidade }} × {{ reserva.tipo_equipamento.nome }}<span class="table-metadata">{{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }}</span></td><td>{% if e_professor %}{% include "reservas/_situacao_professor.html" with reserva=reserva %}{% elif reserva.etapa == 'ENCERRADA' %}Encerrada{% else %}{{ reserva.get_status_display }}{% endif %}</td><td><a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Consultar detalhes</a></td></tr>{% empty %}<tr><td colspan="{% if e_professor %}4{% else %}5{% endif %}">Nenhuma reserva no histórico para os filtros informados.</td></tr>{% endfor %}</tbody>
         </table></div>
         {% include "movimentacoes/_paginacao.html" %}
+        {% endif %}
     </section>
     {% if pagina_legados.paginator.count %}
     <section class="inventory-card p-3" aria-label="Registros anteriores sem reserva">

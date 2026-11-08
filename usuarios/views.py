@@ -21,7 +21,7 @@ from .permissoes import (
     pode_cadastrar_usuario,
     pode_consultar_painel,
     pode_consultar_inicio_operador,
-    e_operador_funcional,
+    pode_consultar_meus_dados,
     pode_gerenciar_usuarios,
     usuarios_funcionais,
 )
@@ -40,7 +40,7 @@ class EntrarView(LoginView):
 @login_required
 @require_GET
 def meus_dados(request):
-    if not e_operador_funcional(request.user):
+    if not pode_consultar_meus_dados(request.user):
         raise PermissionDenied
     return render(request, "usuarios/meus_dados.html")
 

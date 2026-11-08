@@ -55,6 +55,11 @@ def reserva_detalhe(request, reserva_id):
     return render(request, "reservas/reserva_detalhe.html", {
         "reserva": reserva, "registros": registros,
         "resumo": resumo_entrega(reserva),
+        "pode_cancelar": (
+            e_professor_funcional(request.user)
+            and reserva.status == Reserva.Status.ATIVA
+            and not reserva.tem_retirada
+        ),
         "substituicoes": reserva.substituicoes.select_related("equipamento_anterior", "equipamento_substituto"),
         "unidades": reserva.itens.select_related("equipamento__tipo"),
         "url_voltar": reverse(rota), "rotulo_voltar": rotulo,

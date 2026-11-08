@@ -32,7 +32,7 @@
                     <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
                     <span class="side-nav-label">Equipamentos</span>
                 </a>
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} is-active{% endif %}" title="Minhas Reservas" href="{% url 'reservas:reserva_lista' %}"{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' or e_professor and aba_fluxo == 'reservas' %} is-active{% endif %}" title="Minhas Reservas" href="{% url 'reservas:reserva_lista' %}"{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' or e_professor and aba_fluxo == 'reservas' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
                     <span class="side-nav-label">Minhas Reservas</span>
                 </a>
@@ -61,7 +61,7 @@
                 </span>
             {% endif %}
             {% if pode_consultar_reservas_administrativas %}
-            <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} is-active{% endif %}" title="Reservas" href="{% url 'reservas:reserva_consulta' %}"{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' %} aria-current="page"{% endif %}>
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' or e_professor and aba_fluxo == 'reservas' %} is-active{% endif %}" title="Reservas" href="{% url 'reservas:reserva_consulta' %}"{% if request.resolver_match.namespace == 'reservas' and aba_fluxo != 'em_uso' and aba_fluxo != 'historico' or e_professor and aba_fluxo == 'reservas' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
                     <span class="side-nav-label">Reservas</span>
                 </a>
@@ -140,7 +140,7 @@
     </aside>
 
     <nav class="user-menu-panel" id="user-menu-panel" aria-label="Menu do usuário" popover>
-        {% if e_operador %}<span class="user-menu-heading">Minha conta</span><a href="{% url 'usuarios:meus_dados' %}">Meus dados</a>{% endif %}
+        {% if pode_consultar_meus_dados %}<span class="user-menu-heading">Minha conta</span><a href="{% url 'usuarios:meus_dados' %}">Meus dados</a>{% endif %}
         <span class="user-menu-heading">Documentos legais</span>
         <a href="{% url 'legal:termos_de_uso' %}" target="_blank" rel="noopener">Termos de Uso</a>
         <a href="{% url 'legal:politica_privacidade' %}" target="_blank" rel="noopener">Política de Privacidade</a>

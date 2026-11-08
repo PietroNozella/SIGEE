@@ -1,0 +1,73 @@
+.professor-form-section {
+    min-width: 0;
+    margin: 0 0 32px;
+    padding: 0;
+    border: 0;
+}
+
+.professor-form-section legend {
+    float: none;
+    width: auto;
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.professor-reservation-form .reservation-quantity-field {
+    grid-column: 1 / -1;
+    max-width: 280px;
+}
+
+.professor-context-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.professor-detail-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--sigee-border);
+}
+
+.professor-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.professor-section-header h2 { margin: 0; }
+.professor-reservation-detail h2 { font-size: 20px; font-weight: 600; }
+
+.professor-patrimony-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0 32px;
+    padding: 0;
+    list-style: none;
+}
+
+.professor-patrimony-list li {
+    padding: 8px 12px;
+    border: 1px solid var(--sigee-border);
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+}
+
+.professor-reservation-detail .reservation-status-encerrada,
+.professor-history-page .reservation-status-encerrada {
+    color: var(--sigee-on-surface-variant);
+    background: var(--sigee-background);
+}
+
+.professor-history-page .reservation-filter-toolbar { flex-wrap: wrap; }
+.professor-history-page .reservation-filter-field { flex: 1 1 160px; width: auto; min-width: 0; }
+.professor-history-page .reservation-filter-field:first-child { flex-grow: 2; }
+
+@media (max-width: 767px) {
+    .professor-context-grid { grid-template-columns: minmax(0, 1fr); }
+    .professor-reservation-form .reservation-quantity-field { max-width: none; }
+    .professor-history-page .reservation-filter-field { flex-basis: 100%; }
+}

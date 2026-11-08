@@ -15,6 +15,7 @@ O SIGEE aplica autenticação por sessão e autorização por grupos e permissõ
 | Ação | Administrador | Operador | Professor |
 |---|:---:|:---:|:---:|
 | Autenticar e encerrar sessão | Sim | Sim | Sim |
+| Consultar os próprios dados da conta, sem edição | Sim | Sim | Sim |
 | Consultar equipamentos | Sim | Sim | Sim |
 | Cadastrar, importar, editar, excluir ou inativar equipamentos | Sim | Não | Não |
 | Cadastrar e consultar contas funcionais | Sim | Não | Não |

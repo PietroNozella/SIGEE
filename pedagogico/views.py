@@ -202,7 +202,7 @@ def utilizacao_reserva(request, reserva_id):
     if not pode_gerenciar_utilizacao_pedagogica(request.user):
         raise PermissionDenied
     reserva = get_object_or_404(
-        Reserva.objects.select_related("tipo_equipamento", "local"),
+        Reserva.objects.select_related("tipo_equipamento", "local").com_etapa(),
         pk=reserva_id, professor=request.user,
     )
     retiradas = list(retiradas_com_contexto(reserva))
@@ -257,7 +257,6 @@ def utilizacao_retirada(request, retirada_id):
         salvar=lambda dados: salvar_contexto_retirada(professor=request.user, retirada_id=retirada.pk, **dados),
         contexto={
             "descricao_origem": f"Retirada sem reserva · {retirada.equipamento.tipo.nome} · {retirada.equipamento.local.nome}",
-            "url_voltar": reverse("pedagogico:utilizacao_lista"), "rotulo_voltar": "Minhas Utilizações",
         },
     )
 
@@ -267,6 +266,14 @@ def _utilizacao_form(request, *, origem, retiradas, salvar, contexto):
     reserva = contexto.get("contexto_reserva")
     aguardando = reserva is not None and not retiradas and reserva.status == Reserva.Status.ATIVA
     pendentes = sum(not retirada.devolucoes.all() for retirada in retiradas)
+    if reserva is not None:
+        aba_fluxo = {"AGUARDANDO": "reservas", "EM_USO": "em_uso"}.get(reserva.etapa, "historico")
+    else:
+        aba_fluxo = "em_uso" if pendentes else "historico"
+        contexto.update({
+            "url_voltar": reverse("movimentacoes:devolucao_lista" if pendentes else "movimentacoes:historico_lista"),
+            "rotulo_voltar": "Em uso" if pendentes else "Histórico",
+        })
     acao_permissao = "change" if utilizacao or (reserva and reserva.turma_id) else "add"
     pode_gravar = pode_gerenciar_utilizacao_pedagogica(request.user, acao_permissao)
     form = UtilizacaoPedagogicaForm(
@@ -298,6 +305,6 @@ def _utilizacao_form(request, *, origem, retiradas, salvar, contexto):
             )
     return render(request, "pedagogico/utilizacao_reserva.html", {
         **contexto, "retiradas": retiradas, "utilizacao": utilizacao,
-        "pendentes": pendentes, "form": form,
+        "pendentes": pendentes, "form": form, "aba_fluxo": aba_fluxo,
         "pode_editar": bool((pendentes or aguardando) and pode_gravar),
     })

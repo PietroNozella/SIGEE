@@ -89,6 +89,14 @@ def e_operador_funcional(user):
     return set(user.groups.values_list("name", flat=True)) == {GRUPO_OPERADOR}
 
 
+def pode_consultar_meus_dados(user):
+    return (
+        e_operador_funcional(user)
+        or e_professor_funcional(user)
+        or e_administrador_funcional(user)
+    )
+
+
 def pode_registrar_retirada(user):
     return e_operador_funcional(user) and user.has_perm(PERMISSAO_REGISTRAR_RETIRADA)
 

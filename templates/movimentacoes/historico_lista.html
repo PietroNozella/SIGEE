@@ -17,13 +17,13 @@
         <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Histórico; use rolagem horizontal em telas pequenas">
             <table class="table inventory-table mb-0">
                 <caption class="visually-hidden">Histórico somente para consulta; data e hora no fuso local do sistema</caption>
-                <thead><tr><th scope="col">Registro e patrimônio</th><th scope="col">Movimentação</th><th scope="col">Data e hora</th><th scope="col">Operador</th><th scope="col">Destinatário</th><th scope="col">Origem e vínculos</th></tr></thead>
+                <thead><tr><th scope="col">Registro e patrimônio</th><th scope="col">Movimentação</th><th scope="col">Data e hora</th><th scope="col">Operador</th>{% if not e_professor %}<th scope="col">Destinatário</th>{% endif %}<th scope="col">Origem e vínculos</th></tr></thead>
                 <tbody>{% for registro in pagina %}<tr id="mov-{{ registro.pk }}" tabindex="-1">
                     <td><strong>#{{ registro.pk }} · {{ registro.equipamento.numero_patrimonio }}</strong><span class="table-metadata">{{ registro.equipamento.tipo.nome }}</span>{% if registro.observacao %}<details><summary>Observação</summary><p>{{ registro.observacao }}</p></details>{% endif %}</td>
                     <td>{{ registro.get_tipo_display }}</td>
                     <td>{{ registro.data_hora|date:"d/m/Y H:i:s" }}</td>
                     <td>{{ registro.operador.get_full_name|default:registro.operador.username }}<span class="table-metadata">{{ registro.operador.username }}</span></td>
-                    <td>{{ registro.destinatario.get_full_name|default:registro.destinatario.username }}<span class="table-metadata">{{ registro.destinatario.username }}</span></td>
+                    {% if not e_professor %}<td>{{ registro.destinatario.get_full_name|default:registro.destinatario.username }}<span class="table-metadata">{{ registro.destinatario.username }}</span></td>{% endif %}
                     <td>{% if registro.reserva_id %}<a href="?reserva={{ registro.reserva_id }}">Reserva #{{ registro.reserva_id }}</a>{% else %}<span class="table-metadata">Sem reserva</span>{% endif %}
                         {% if registro.retirada_origem_id %}<span class="table-metadata"><a href="?retirada={{ registro.retirada_origem_id }}#mov-{{ registro.retirada_origem_id }}">Retirada #{{ registro.retirada_origem_id }}</a></span>{% else %}{% for devolucao in registro.devolucoes.all %}<span class="table-metadata"><a href="?retirada={{ registro.pk }}#mov-{{ devolucao.pk }}">Devolução #{{ devolucao.pk }}</a></span>{% endfor %}{% endif %}
                         {% if registro.manutencao %}<span class="table-metadata">{% if pode_consultar_manutencoes %}<a href="{% url 'manutencoes:manutencao_detalhe' registro.manutencao.pk %}">Manutenção #{{ registro.manutencao.pk }}</a>{% else %}Manutenção #{{ registro.manutencao.pk }}{% endif %} · {{ registro.manutencao.get_estado_display }}</span>{% endif %}

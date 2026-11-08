@@ -9,6 +9,7 @@ from .permissoes import (
     pode_consultar_historico,
     pode_consultar_painel,
     pode_consultar_inicio_operador,
+    pode_consultar_meus_dados,
     pode_consultar_reservas_administrativas,
     pode_consultar_indicadores_pedagogicos,
     pode_gerenciar_cadastro_pedagogico,
@@ -21,6 +22,7 @@ def permissoes_funcionais(request):
     return {
         "e_operador": e_operador_funcional(request.user),
         "e_professor": e_professor_funcional(request.user),
+        "pode_consultar_meus_dados": pode_consultar_meus_dados(request.user),
         "pode_consultar_utilizacoes": pode_gerenciar_utilizacao_pedagogica(request.user),
         "pode_cadastrar_usuario": pode_cadastrar_usuario(request.user),
         "pode_consultar_usuarios": pode_gerenciar_usuarios(request.user),

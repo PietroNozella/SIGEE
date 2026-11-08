@@ -55,21 +55,6 @@
                                 </td>
                                 <td>
                                     <a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Consultar reserva</a>
-                                    <a class="btn btn-secondary-sigee" href="{% url 'pedagogico:utilizacao_reserva' reserva.pk %}">{% if reserva.turma_id %}Editar contexto pedagógico{% else %}Completar contexto pedagógico{% endif %}</a>
-                                    {% if reserva.status == status_reserva.ATIVA and not reserva.tem_retirada %}
-                                        <button
-                                            class="btn btn-secondary-sigee"
-                                            type="button"
-                                            data-cancel-reservation-trigger
-                                            data-cancel-url="{% url 'reservas:reserva_cancelar' reserva.pk %}"
-                                            data-reservation-equipment="{{ reserva.quantidade }}x {{ reserva.tipo_equipamento.nome }}"
-                                            data-reservation-date="{{ reserva.inicio|date:'d/m/Y' }}"
-                                            aria-haspopup="dialog"
-                                            aria-controls="cancel-reservation-dialog"
-                                        >Cancelar</button>
-                                    {% else %}
-                                        <span class="table-muted">Sem ações</span>
-                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}
@@ -114,26 +99,6 @@
         {% endif %}
     </section>
 
-    <dialog class="modal-exclusao" id="cancel-reservation-dialog" aria-labelledby="cancel-reservation-title" aria-describedby="cancel-reservation-description" aria-modal="true" data-cancel-reservation-dialog>
-        <div class="modal-exclusao-conteudo">
-            <header class="modal-exclusao-cabecalho reservation-cancel-header">
-                <span class="modal-exclusao-icone" aria-hidden="true">!</span>
-                <div class="modal-exclusao-titulo-grupo">
-                    <h2 id="cancel-reservation-title">Cancelar reserva</h2>
-                    <p id="cancel-reservation-description">
-                        Confirma o cancelamento de <strong data-cancel-reservation-equipment></strong> para <strong data-cancel-reservation-date></strong>?
-                    </p>
-                </div>
-                <button class="modal-exclusao-fechar" type="button" aria-label="Fechar confirmação" data-cancel-reservation-close>×</button>
-            </header>
-        </div>
-        <footer class="modal-exclusao-acoes">
-            <button class="btn btn-secondary-sigee" type="button" data-cancel-reservation-close>Manter reserva</button>
-            <form method="post" data-cancel-reservation-form>
-                {% csrf_token %}
-                <button class="btn btn-danger-sigee" type="submit">Sim, cancelar reserva</button>
-            </form>
-        </footer>
-    </dialog>
+
 </div>
 {% endblock %}

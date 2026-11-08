@@ -40,9 +40,9 @@ class AtividadePedagogicaForm(CadastroPedagogicoForm):
 
 
 class UtilizacaoPedagogicaForm(forms.Form):
-    turma = forms.ModelChoiceField(queryset=Turma.objects.none(), label="Turma")
-    disciplina = forms.ModelChoiceField(queryset=Disciplina.objects.none(), label="Disciplina")
-    atividade = forms.ModelChoiceField(queryset=AtividadePedagogica.objects.none(), label="Atividade pedagógica")
+    turma = forms.ModelChoiceField(queryset=Turma.objects.none(), label="Turma", empty_label="Selecione uma turma")
+    disciplina = forms.ModelChoiceField(queryset=Disciplina.objects.none(), label="Disciplina", empty_label="Selecione uma disciplina")
+    atividade = forms.ModelChoiceField(queryset=AtividadePedagogica.objects.none(), label="Atividade pedagógica", empty_label="Selecione uma atividade pedagógica")
     observacao = forms.CharField(label="Observação", required=False, widget=forms.Textarea(attrs={"rows": 3}))
 
     def __init__(self, *args, utilizacao=None, reserva=None, marcar_erros=True, **kwargs):

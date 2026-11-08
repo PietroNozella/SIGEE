@@ -11,10 +11,10 @@
             <div><dt>Nome completo</dt><dd>{{ request.user.get_full_name|default:"Não informado" }}</dd></div>
             <div><dt>Nome de usuário</dt><dd>{{ request.user.username }}</dd></div>
             <div><dt>E-mail</dt><dd>{{ request.user.email|default:"Não informado" }}</dd></div>
-            <div><dt>Perfil de acesso</dt><dd>Operador</dd></div>
+            <div><dt>Perfil de acesso</dt><dd>{{ request.user.groups.all.0.name }}</dd></div>
         </dl>
         <div class="operator-account-help"><h2>Precisa corrigir seus dados ou excluir a conta?</h2><p>Entre em contato com um administrador da instituição para solicitar a correção dos seus dados ou a exclusão da sua conta.</p><p>A solicitação será analisada considerando os registros vinculados à sua conta e a preservação do histórico das operações.</p></div>
-        <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'inventario:inicio_operador' %}">Voltar ao início</a></div>
+        <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% if e_operador %}{% url 'inventario:inicio_operador' %}{% elif pode_consultar_painel %}{% url 'inventario:painel' %}{% else %}{% url 'inventario:equipamento_lista' %}{% endif %}">Voltar ao início</a></div>
     </section>
 </div>
 {% endblock %}
