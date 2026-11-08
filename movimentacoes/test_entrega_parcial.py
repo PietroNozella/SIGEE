@@ -87,6 +87,21 @@ class EntregaParcialTests(TestCase):
         with patch("movimentacoes.services.timezone.now", return_value=self.reserva.fim):
             self.assertEqual(Reserva.objects.com_etapa().get(pk=self.reserva.pk).etapa, "ENCERRADA")
 
+    def test_painel_administrativo_preserva_complemento_apos_devolucao_e_tolerancia(self):
+        entregas = self.entregar(professor_informado=True)
+        registrar_devolucoes(
+            operador=self.operador, retirada_id=entregas[0].pk,
+            retiradas_ids=[entrega.pk for entrega in entregas],
+        )
+        self.client.force_login(self.cenario["administrador"])
+        with patch("movimentacoes.services.timezone.now", return_value=self.reserva.inicio + timedelta(minutes=45)):
+            resposta = self.client.get(reverse("inventario:painel"))
+        etapas = {item["chave"]: item["total"] for item in resposta.context["etapas_reservas"]}
+        self.assertEqual(etapas["AGUARDANDO"], 1)
+        self.assertEqual(etapas["EXPIRADA"], 0)
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.status, Reserva.Status.ATIVA)
+
     def test_professor_visualiza_saldo_e_nao_pode_entregar(self):
         self.entregar(professor_informado=True)
         self.client.force_login(self.cenario["professor"])

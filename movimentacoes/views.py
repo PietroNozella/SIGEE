@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods
 
 from auditoria.eventos import AcaoAuditoria
@@ -145,11 +146,14 @@ def devolucao_lista(request):
     pagina = Paginator(grupos_devolucao(busca, usuario=request.user), 15).get_page(request.GET.get("pagina"))
     grupos = list(pagina.object_list)
     referencias = Movimentacao.objects.select_related(
-        "equipamento__tipo", "destinatario", "operador",
+        "equipamento__tipo", "destinatario", "operador", "reserva",
     ).in_bulk([grupo["retirada_id"] for grupo in grupos])
+    agora = timezone.now()
     for grupo in grupos:
         grupo["retirada"] = referencias[grupo["retirada_id"]]
         grupo["devolvidas"] = grupo["total"] - grupo["pendentes"]
+        reserva = grupo["retirada"].reserva
+        grupo["prazo_vencido"] = reserva is not None and reserva.fim < agora
     pagina.object_list = grupos
     parametros = request.GET.copy()
     parametros.pop("pagina", None)

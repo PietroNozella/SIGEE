@@ -71,6 +71,16 @@ class ConsultaAdministrativaReservasTests(TestCase):
             self.assertNotContains(resposta, reverse("reservas:reserva_cancelar", args=[registro.pk]))
             self.assertNotContains(resposta, reverse("movimentacoes:retirada_reserva_registrar", args=[registro.pk]))
 
+    def test_categoria_do_painel_restringe_a_consulta_sem_perder_busca(self):
+        registro = self.reserva()
+        outra = Categoria.objects.create(nome="Outra categoria visual")
+        tipo = TipoEquipamento.objects.create(categoria=outra, nome="Outro modelo")
+        self.reserva(tipo_equipamento=tipo)
+        filtros = {"categoria": self.categoria.pk, "busca": self.professor.username}
+        resposta = self.client.get(self.url, filtros)
+        self.assertEqual([item.pk for item in resposta.context["pagina"]], [registro.pk])
+        self.assertIn(f"categoria={self.categoria.pk}", resposta.context["parametros_paginacao"])
+
 
     def test_busca_por_professor_local_equipamento_numero_e_patrimonio_sem_duplicar(self):
         self.professor.first_name, self.professor.last_name = "Maria", "Silva"

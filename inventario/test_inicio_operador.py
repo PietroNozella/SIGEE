@@ -47,3 +47,23 @@ class InicioOperadorTests(TestCase):
         self.client.force_login(self.cenario["administrador"])
         painel = self.client.get(reverse("inventario:painel"))
         self.assertEqual(resposta.context["situacao_por_categoria"], painel.context["situacao_por_categoria"])
+
+    def test_categoria_abre_equipamentos_para_operador_e_filtra_painel_para_administrador(self):
+        categoria_id = self.cenario["equipamento"].tipo.categoria_id
+        resposta = self.client.get(self.url)
+        self.assertTemplateUsed(resposta, "inventario/_situacao_por_categoria.html")
+        self.assertContains(
+            resposta,
+            f'class="category-link" href="{reverse("inventario:equipamento_lista")}?categoria={categoria_id}"',
+        )
+        self.assertContains(resposta, "Selecione uma categoria para consultar os equipamentos.")
+
+        self.client.force_login(self.cenario["administrador"])
+        resposta = self.client.get(reverse("inventario:painel"), {"periodo": "7"})
+        self.assertTemplateUsed(resposta, "inventario/_situacao_por_categoria.html")
+        self.assertContains(
+            resposta,
+            f'class="category-link" href="?categoria={categoria_id}&amp;periodo=7"',
+        )
+        self.assertContains(resposta, "Clique em uma categoria para filtrar")
+        self.assertContains(resposta, "Sobre a disponibilidade")

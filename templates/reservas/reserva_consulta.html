@@ -3,17 +3,19 @@
 {% block content %}
 <div class="page-content">
     <header class="page-header">
-        <div><h1>Reservas</h1><p>Acompanhe as reservas aguardando retirada. A entrega é confirmada pelo Operador.</p></div>
+        <div><h1>Reservas aguardando retirada</h1><p>A entrega é confirmada pelo Operador. Depois da entrega, acompanhe em Em uso; após o encerramento, consulte o Histórico.</p></div>
     </header>
     <section class="inventory-card" aria-labelledby="reservations-heading">
-        <h2 class="visually-hidden" id="reservations-heading">Consulta administrativa de reservas</h2>
+        <h2 class="visually-hidden" id="reservations-heading">Consulta administrativa de reservas aguardando retirada</h2>
+        <nav class="flow-links" aria-label="Acompanhamento das reservas"><strong>Aguardando retirada</strong><a href="{% url 'movimentacoes:devolucao_lista' %}">Consultar em uso</a><a href="{% url 'movimentacoes:historico_lista' %}">Consultar histórico</a></nav>
         <form class="reservation-filter-toolbar" method="get">
             <div class="reservation-filter-field">
                 <label for="busca">Professor, equipamento, local ou patrimônio</label>
                 <input class="form-control" id="busca" name="busca" type="search" value="{{ busca }}" maxlength="200" placeholder="Busque uma reserva ou seu número">
             </div>
 
-            <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Buscar</button>{% if busca or status %}<a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_consulta' %}">Limpar</a>{% endif %}</div>
+            <div class="reservation-filter-field"><label for="categoria">Categoria</label><select class="form-select" id="categoria" name="categoria"><option value="">Todas as categorias</option>{% for categoria in categorias %}<option value="{{ categoria.pk }}"{% if categoria == categoria_selecionada %} selected{% endif %}>{{ categoria.nome }}</option>{% endfor %}</select></div>
+            <div class="filter-actions"><button class="btn btn-primary-sigee" type="submit">Buscar</button>{% if busca or status or categoria_selecionada %}<a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_consulta' %}">Limpar</a>{% endif %}</div>
         </form>
         {% if pagina.object_list %}
         <div class="table-responsive inventory-table-wrapper" tabindex="0" aria-label="Reservas; use rolagem horizontal em telas pequenas">

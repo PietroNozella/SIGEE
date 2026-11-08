@@ -3,7 +3,7 @@
 {% block extra_styles %}<link rel="stylesheet" href="{% static 'inventario/css/operador.css' %}">{% endblock %}
 {% block title %}Reserva #{{ reserva.pk }} | SIGEE{% endblock %}
 {% block content %}
-<div class="page-content">
+<div class="page-content reservation-detail-page">
     <header class="page-header"><div><h1>Reserva #{{ reserva.pk }}</h1><p>{{ reserva.professor.get_full_name|default:reserva.professor.username }} · {{ reserva.tipo_equipamento.nome }} · {{ reserva.local.nome }}</p></div></header>
     <section class="inventory-card p-3" aria-label="Detalhes da reserva">
         <p><strong>Situação:</strong> {% if reserva.etapa == 'AGUARDANDO' %}Aguardando retirada{% elif reserva.etapa == 'EM_USO' %}Em uso{% elif reserva.etapa == 'ENCERRADA' %}Encerrada{% else %}{{ reserva.get_status_display }}{% endif %}</p>

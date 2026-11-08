@@ -92,6 +92,19 @@ class IndicadoresPedagogicosTests(TestCase):
             self.assertEqual(linhas[0]["equipamentos"], 3)
             self.assertContains(resposta, self.escolhas[grupo["campo"]].nome)
 
+    def test_ranking_compara_dimensao_sem_mudar_denominadores(self):
+        self.salvar()
+        for dimensao in ("turma", "disciplina", "atividade"):
+            with self.subTest(dimensao=dimensao):
+                resposta = self.client.get(self.url, {"dimensao": dimensao})
+                ranking = resposta.context["ranking"]
+                self.assertEqual(ranking[0]["nome"], self.escolhas[dimensao].nome)
+                self.assertEqual(ranking[0]["utilizacoes"], 1)
+                self.assertEqual(ranking[0]["retiradas"], 3)
+                self.assertEqual(ranking[0]["equipamentos"], 3)
+        resposta = self.client.get(self.url, {"dimensao": "invalida"})
+        self.assertEqual(resposta.context["dimensao"], "turma")
+
     def test_equipamento_reutilizado_aumenta_retiradas_sem_duplicar_patrimonio(self):
         self.salvar()
         self.devolver()
@@ -285,7 +298,7 @@ class IndicadoresPedagogicosTests(TestCase):
             registro.save(update_fields=["ativo"])
         resposta = self.client.get(self.url)
         self.assertEqual(resposta.context["totais"], {"utilizacoes": 1, "retiradas": 3, "equipamentos": 3})
-        self.assertContains(resposta, "Cadastro inativo", count=3)
+        self.assertContains(resposta, "Cadastro inativo", count=4)
 
     def test_edicao_do_contexto_atualiza_consolidacao_sem_nova_utilizacao(self):
         self.salvar()
@@ -315,7 +328,7 @@ class IndicadoresPedagogicosTests(TestCase):
         self.assertEqual([linha["nome"] for linha in turmas["pagina"]], ["Turma 11", "Turma 12"])
         self.assertEqual(len(disciplinas["pagina"]), 10)
         self.assertEqual(len(atividades["pagina"]), 10)
-        self.assertContains(resposta, "pagina_turma=2&amp;pagina_disciplina=2#heading-disciplina")
+        self.assertContains(resposta, "pagina_turma=2&amp;dimensao=disciplina&amp;pagina_disciplina=2#heading-disciplina")
         for numero, esperado in (("invalido", 1), ("-1", 2), ("999", 2)):
             pagina = self.client.get(self.url, {"pagina_turma": numero}).context["grupos"][0]["pagina"]
             self.assertEqual(pagina.number, esperado)

@@ -5,7 +5,7 @@
 {% block extra_styles %}{% if lista_tipos %}<link rel="stylesheet" href="{% static 'inventario/css/operador.css' %}">{% endif %}{% endblock %}
 
 {% block content %}
-<div class="page-content">
+<div class="page-content inventory-page">
     <header class="page-header">
         <div>
             <h1>Equipamentos</h1>
@@ -34,13 +34,15 @@
     </header>
 
     {% if perms.inventario.view_resumo_inventario %}
-        <section class="kpi-grid" aria-label="Resumo do inventário">
+        <p class="inventory-scope">Resumo geral do acervo ativo · os totais abaixo não mudam com os filtros da lista.</p>
+        <section class="kpi-grid inventory-kpis" aria-label="Resumo do inventário ativo">
             <article class="kpi-card">
-                <span class="kpi-label">Total</span>
-                <strong class="kpi-value">{{ indicadores.total }}</strong>
+                <span class="kpi-label">Equipamentos ativos</span>
+                <strong class="kpi-value">{{ indicadores.ativos }}</strong>
+                <span class="kpi-note">{{ indicadores.inativos }} inativo{{ indicadores.inativos|pluralize:"s" }} · {{ indicadores.total }} cadastrados</span>
             </article>
             <article class="kpi-card">
-                <span class="kpi-label">Disponíveis</span>
+                <span class="kpi-label">Disponíveis agora</span>
                 <strong class="kpi-value kpi-available">{{ indicadores.disponiveis }}</strong>
             </article>
             <article class="kpi-card">
@@ -183,7 +185,7 @@
                                                             data-possui-historico="{{ equipamento.possui_historico|yesno:'true,false' }}"
                                                             aria-haspopup="dialog"
                                                             aria-controls="modal-exclusao"
-                                                        >Excluir</button>
+                                                        >{% if equipamento.possui_historico %}Inativar{% else %}Excluir{% endif %}</button>
                                                     </form>
                                                 {% endif %}
                                             </div>
@@ -264,11 +266,11 @@
                 <div class="modal-exclusao-titulo-grupo">
                     <h2 id="modal-exclusao-titulo">Excluir equipamento</h2>
                     <p id="modal-exclusao-descricao">
-                        Tem certeza de que deseja excluir o equipamento
+                        Tem certeza de que deseja <span data-delete-action>excluir</span> o equipamento
                         <strong><span data-delete-name></span> (patrimônio: <span data-delete-patrimonio></span>)?</strong>
                     </p>
                 </div>
-                <button class="modal-exclusao-fechar" type="button" aria-label="Fechar confirmação de exclusão" data-delete-close>
+                <button class="modal-exclusao-fechar" type="button" aria-label="Fechar confirmação" data-delete-close>
                     <span aria-hidden="true">×</span>
                 </button>
             </header>

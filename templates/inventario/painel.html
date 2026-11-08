@@ -1,44 +1,65 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Visão geral | SIGEE{% endblock %}
-{% block extra_styles %}<link rel="stylesheet" href="{% static 'inventario/css/painel.css' %}?v=20261103.1">{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'inventario/css/painel.css' %}?v=20261106.3">{% endblock %}
 {% block content %}
 <div class="page-content dashboard-page">
     <header class="page-header">
-        <div><h1>Visão geral</h1><p>Uso do acervo, demanda e capacidade para atender à escola.</p></div>
-        <p class="dashboard-updated">Dados consultados em <time datetime="{{ atualizado_em|date:'c' }}">{{ atualizado_em|date:"d/m/Y H:i" }}</time></p>
+        <div><h1>Visão geral</h1></div>
+        <div class="dashboard-header-actions"><p class="dashboard-updated">Atualizado em <time datetime="{{ atualizado_em|date:'c' }}">{{ atualizado_em|date:"d/m/Y H:i" }}</time></p><a class="btn btn-secondary-sigee" href="?periodo={{ periodo_selecionado }}{% if categoria_selecionada %}&amp;categoria={{ categoria_selecionada.pk }}{% endif %}">Atualizar painel</a></div>
     </header>
     <form class="dashboard-filter" method="get" action="{% url 'inventario:painel' %}" aria-label="Filtrar a visão geral">
         <div class="dashboard-filter-field">
-            <label for="dashboard-category">Categoria de equipamento</label>
+            <label for="dashboard-category">Categoria</label>
             <select id="dashboard-category" name="categoria" class="form-select">
                 <option value="">Todas as categorias</option>
                 {% for categoria in categorias_painel %}<option value="{{ categoria.pk }}"{% if categoria.pk == categoria_selecionada.pk %} selected{% endif %}>{{ categoria.nome }}</option>{% endfor %}
             </select>
         </div>
-        <div class="dashboard-period-field"><label for="dashboard-period">Período de análise</label><select id="dashboard-period" name="periodo" class="form-select">{% for valor, rotulo in periodos_painel %}<option value="{{ valor }}"{% if valor == periodo_selecionado %} selected{% endif %}>{{ rotulo }}</option>{% endfor %}</select></div>
+        <div class="dashboard-period-field"><label for="dashboard-period">Período</label><select id="dashboard-period" name="periodo" class="form-select">{% for valor, rotulo in periodos_painel %}<option value="{{ valor }}"{% if valor == periodo_selecionado %} selected{% endif %}>{{ valor }} dias</option>{% endfor %}</select></div>
         <div class="dashboard-filter-actions"><button type="submit" class="btn btn-primary-sigee">Aplicar filtros</button>{% if categoria_selecionada or periodo_selecionado != '30' %}<a class="btn btn-secondary-sigee" href="{% url 'inventario:painel' %}">Limpar filtros</a>{% endif %}</div>
-        <p class="dashboard-scope"><strong>{{ categoria_selecionada.nome|default:"Todas as categorias" }}</strong><span>{{ inicio_periodo|date:"d/m/Y" }} a {{ fim_periodo|date:"d/m/Y" }} · hoje em andamento</span></p>
+        <p class="dashboard-scope"><strong>{{ inicio_periodo|date:"d/m/Y" }} a {{ fim_periodo|date:"d/m/Y" }}</strong><span>Hoje em andamento</span></p>
+        <details class="dashboard-filter-help"><summary>Critérios dos dados</summary><p>A categoria vale para todo o painel. O período recorta retiradas e reservas; capacidade e pendências mostram a situação atual.</p></details>
         {% for aviso in avisos_filtros %}<p class="dashboard-filter-error" role="alert">{{ aviso }}</p>{% endfor %}
     </form>
-    <section class="kpi-grid dashboard-kpis" aria-label="Indicadores de uso e capacidade">
-        <article class="kpi-card"><span class="kpi-label">Retiradas no período</span><strong class="kpi-value {% if total_retiradas %}metric-info{% else %}metric-neutral{% endif %}">{{ total_retiradas }}</strong><span class="dashboard-kpi-note">{% if variacao_retiradas is not None %}{% if variacao_retiradas > 0 %}{{ variacao_absoluta|floatformat:1 }}% a mais{% elif variacao_retiradas < 0 %}{{ variacao_absoluta|floatformat:1 }}% a menos{% else %}Mesmo volume{% endif %} que no período anterior{% elif total_retiradas %}Sem retiradas no período anterior{% else %}Nenhuma retirada registrada{% endif %}</span></article>
-        <article class="kpi-card"><span class="kpi-label">Unidades utilizadas</span><strong class="kpi-value {% if unidades_utilizadas %}metric-info{% else %}metric-neutral{% endif %}">{{ unidades_utilizadas }}</strong><span class="dashboard-kpi-note">Equipamentos distintos retirados no período</span></article>
-        <article class="kpi-card"><span class="kpi-label">Disponíveis agora</span><strong class="kpi-value {% if indicadores.disponiveis %}metric-success{% elif indicadores.ativos %}metric-danger{% else %}metric-neutral{% endif %}">{{ indicadores.disponiveis }}</strong><span class="dashboard-kpi-note">{% if indicadores.ativos %}{{ percentuais.disponiveis|floatformat:1 }}% dos {{ indicadores.ativos }} ativos{% else %}Nenhum equipamento ativo{% endif %}</span></article>
-        <article class="kpi-card"><span class="kpi-label">Em manutenção agora</span><strong class="kpi-value {% if indicadores.manutencao %}metric-danger{% elif indicadores.ativos %}metric-success{% else %}metric-neutral{% endif %}">{{ indicadores.manutencao }}</strong><span class="dashboard-kpi-note">{% if indicadores.ativos %}{{ percentuais.manutencao|floatformat:1 }}% do acervo ativo indisponível{% else %}Nenhum equipamento ativo{% endif %}</span></article>
+    <div class="dashboard-summary">
+        <section class="dashboard-summary-group" aria-labelledby="current-summary-heading" aria-describedby="current-summary-scope">
+            <header><h2 id="current-summary-heading">Acervo ativo</h2><span class="dashboard-eyebrow">Agora</span></header>
+            <p class="dashboard-summary-scope" id="current-summary-scope">{% if indicadores.ativos %}{{ indicadores.ativos }} equipamentos{% else %}Nenhum equipamento ativo{% endif %}</p>
+            <div class="kpi-grid dashboard-kpis">
+                <article class="kpi-card"><span class="kpi-label">Disponíveis</span><strong class="kpi-value {% if indicadores.disponiveis %}metric-success{% elif indicadores.ativos %}metric-danger{% else %}metric-neutral{% endif %}">{{ indicadores.disponiveis }}</strong>{% if indicadores.ativos %}<span class="dashboard-kpi-note">{{ percentuais.disponiveis|floatformat:1 }}%</span>{% endif %}</article>
+                <article class="kpi-card"><span class="kpi-label">Em manutenção</span><strong class="kpi-value {% if indicadores.manutencao %}metric-danger{% elif indicadores.ativos %}metric-success{% else %}metric-neutral{% endif %}">{{ indicadores.manutencao }}</strong>{% if indicadores.ativos %}<span class="dashboard-kpi-note">{{ percentuais.manutencao|floatformat:1 }}%</span>{% endif %}</article>
+            </div>
+        </section>
+        <section class="dashboard-summary-group" aria-labelledby="period-summary-heading">
+            <header><h2 id="period-summary-heading">Uso no período</h2></header>
+            <div class="kpi-grid dashboard-kpis">
+                <article class="kpi-card"><span class="kpi-label">Retiradas</span><strong class="kpi-value {% if total_retiradas %}metric-info{% else %}metric-neutral{% endif %}">{{ total_retiradas }}</strong>{% if variacao_retiradas is not None %}<span class="dashboard-kpi-note">{% if variacao_retiradas > 0 %}{{ variacao_absoluta|floatformat:1 }}% a mais{% elif variacao_retiradas < 0 %}{{ variacao_absoluta|floatformat:1 }}% a menos{% else %}Mesmo volume{% endif %} que no período anterior</span>{% endif %}</article>
+                <article class="kpi-card"><span class="kpi-label">Patrimônios distintos</span><strong class="kpi-value {% if unidades_utilizadas %}metric-info{% else %}metric-neutral{% endif %}">{{ unidades_utilizadas }}</strong></article>
+            </div>
+        </section>
+    </div>
+    <section class="dashboard-attention" aria-labelledby="attention-heading">
+        <header><h2 id="attention-heading">Precisa de atenção</h2><p>Pendências atuais · {{ categoria_selecionada.nome|default:"todas as categorias" }}</p></header>
+        <div class="attention-links">
+            {% if pode_ver_reservas_painel %}<a href="#overdue-panel" class="attention-item"><strong class="{% if total_atrasadas %}metric-danger{% else %}metric-success{% endif %}">{{ total_atrasadas }}</strong><span><b>Unidades com devolução vencida</b><small>Ver equipamentos e prazos</small></span><span aria-hidden="true">→</span></a>{% endif %}
+            {% if pode_ver_manutencoes_painel %}<a href="#maintenance-panel" class="attention-item"><strong class="{% if total_manutencoes_abertas %}metric-danger{% else %}metric-success{% endif %}">{{ total_manutencoes_abertas }}</strong><span><b>Manutenções em aberto</b><small>Acompanhar intervenções</small></span><span aria-hidden="true">→</span></a>{% endif %}
+            {% if not pode_ver_reservas_painel and not pode_ver_manutencoes_painel %}<p class="attention-restricted">Seu perfil não possui permissão para consultar estas pendências.</p>{% endif %}
+        </div>
     </section>
-    <nav class="dashboard-sections" aria-label="Seções da dashboard"><a href="#usage-analysis">Uso e demanda</a><a href="#inventory-overview">Capacidade</a><a href="#pending-panel">Pendências</a><a href="#recent-panel">Registros</a></nav>
+    <nav class="dashboard-sections" aria-label="Seções da dashboard"><a href="#usage-analysis">Uso no período</a><a href="#inventory-overview">Capacidade agora</a><a href="#pending-panel">Pendências</a><a href="#recent-panel">Registros</a></nav>
     <div id="usage-analysis" class="dashboard-analysis dashboard-usage">
     <section id="withdrawals-panel" class="inventory-card dashboard-timeline" aria-labelledby="withdrawals-heading">
-        <header class="dashboard-section-header"><div><h2 id="withdrawals-heading">Evolução das retiradas</h2><p>Unidades físicas retiradas por dia nos últimos {{ dias_periodo }} dias.</p></div></header>
-        <div class="dashboard-comparison"><span><strong>{{ total_retiradas }}</strong> no período</span><span><strong>{{ total_anterior }}</strong> nos {{ dias_periodo }} dias anteriores</span><span>Pico diário: <strong>{{ maior_dia }}</strong></span></div>
+        <header class="dashboard-section-header"><div><h2 id="withdrawals-heading">Evolução das retiradas</h2><p>Unidades físicas por dia</p></div></header>
+        <div class="dashboard-comparison">{% if total_anterior %}<span>Período anterior: <strong>{{ total_anterior }}</strong></span>{% else %}<span>Sem retiradas no período anterior</span>{% endif %}<span>Pico diário: <strong>{{ maior_dia }}</strong></span></div>
         {% if not total_retiradas %}<p class="timeline-empty" role="status">Nenhuma retirada registrada no período. Todos os dias estão em zero.</p>{% endif %}
         <figure class="withdrawals-figure">
-            <figcaption class="visually-hidden">Quantidade de unidades físicas retiradas por dia. Selecione uma barra para consultar a data e a quantidade ou use a tabela de dados.</figcaption>
-            <div class="timeline-scroll" tabindex="0" role="region" aria-label="Gráfico de retiradas; role horizontalmente para ver todos os dias"><div class="timeline-plot{% if dias_periodo == 90 %} timeline-plot-long{% endif %}">
+            <figcaption class="visually-hidden">Quantidade de unidades físicas retiradas por dia. Selecione um dia para consultar a data e a quantidade ou use a tabela de dados.</figcaption>
+            <div class="timeline-scroll" tabindex="0" role="region" aria-label="Gráfico de retiradas; role horizontalmente para ver todos os dias"><div class="timeline-plot">
                 <div class="timeline-scale" aria-hidden="true"><span>{{ escala_retiradas }}</span><span>{{ meia_escala_retiradas }}</span><span>0</span></div>
-                <div class="timeline-columns" role="group" aria-label="Retiradas por dia" aria-describedby="timeline-keyboard-help">
-                    {% for item in retiradas_diarias %}<button type="button" class="timeline-day{% if not item.total %} timeline-day-zero{% endif %}" style="--bar-height: {{ item.percentual|floatformat:'2u' }}%" data-date="{{ item.dia|date:'d/m/Y' }}" data-count="{{ item.total }}" tabindex="{% if forloop.last %}0{% else %}-1{% endif %}" aria-pressed="false" aria-label="{{ item.dia|date:'d/m/Y' }}: {{ item.total }} {% if item.total == 1 %}unidade retirada{% else %}unidades retiradas{% endif %}"><span class="timeline-bar-space" aria-hidden="true"><span class="timeline-bar"></span></span><span class="timeline-day-label" aria-hidden="true">{{ item.dia|date:"d/m" }}</span></button>{% endfor %}
+                <div class="timeline-columns{% if dias_periodo != 7 %} timeline-columns-line{% endif %}{% if dias_periodo == 90 %} timeline-columns-long{% endif %}" role="group" aria-label="Retiradas por dia" aria-describedby="timeline-keyboard-help">
+                    {% if dias_periodo != 7 %}<svg class="timeline-line" viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true" focusable="false"><polyline points="{{ linha_retiradas }}" vector-effect="non-scaling-stroke" /></svg>{% endif %}
+                    {% for item in retiradas_diarias %}<button type="button" class="timeline-day{% if not item.total %} timeline-day-zero{% endif %}" style="--bar-height: {{ item.percentual|floatformat:'2u' }}%" data-date="{{ item.dia|date:'d/m/Y' }}" data-count="{{ item.total }}" tabindex="{% if forloop.last %}0{% else %}-1{% endif %}" aria-pressed="false" aria-label="{{ item.dia|date:'d/m/Y' }}: {{ item.total }} {% if item.total == 1 %}unidade retirada{% else %}unidades retiradas{% endif %}"><span class="timeline-bar-space" aria-hidden="true"><span class="timeline-bar"></span><span class="timeline-point"></span></span><span class="timeline-day-label" aria-hidden="true">{{ item.dia|date:"d/m" }}</span></button>{% endfor %}
                 </div>
             </div>
             </div><span id="timeline-keyboard-help" class="visually-hidden">Use as setas esquerda e direita para selecionar os dias. Home seleciona o primeiro dia e End, o último.</span>
@@ -49,9 +70,10 @@
     </section>
 
         <section class="inventory-card dashboard-ranking" aria-labelledby="ranking-heading">
-            <header class="dashboard-section-header"><div><h2 id="ranking-heading">Tipos mais retirados</h2><p>Os cinco tipos com mais retiradas no período.</p></div></header>
-            {% if tipos_mais_retirados %}<ol class="ranking-list">{% for tipo in tipos_mais_retirados %}<li><div class="ranking-heading"><strong>{{ tipo.equipamento__tipo__nome }}</strong><span><strong>{{ tipo.total }}</strong> retirada{{ tipo.total|pluralize:"s" }}</span></div><div class="ranking-track" aria-hidden="true"><span style="width: {{ tipo.percentual|floatformat:'2u' }}%"></span></div><p>{{ tipo.unidades }} unidade{{ tipo.unidades|pluralize:"s" }} distinta{{ tipo.unidades|pluralize:"s" }} · {{ tipo.participacao|floatformat:1 }}% das retiradas</p></li>{% endfor %}</ol>
-            <p class="dashboard-chart-note">Demanda registrada por tipo. Escala comum: até {{ tipos_mais_retirados.0.total }} retiradas. O volume também depende da quantidade de unidades no acervo.</p>
+            <header class="dashboard-section-header"><div><h2 id="ranking-heading">{% if tipos_mais_retirados|length == 1 %}Tipo retirado{% else %}Tipos mais retirados{% endif %}</h2></div></header>
+            {% if tipos_mais_retirados|length == 1 %}<div class="ranking-single"><strong>{{ tipos_mais_retirados.0.equipamento__tipo__nome }}</strong></div>
+            {% elif tipos_mais_retirados %}<ol class="ranking-list">{% for tipo in tipos_mais_retirados %}<li><div class="ranking-heading"><strong>{{ tipo.equipamento__tipo__nome }}</strong><span><strong>{{ tipo.total }}</strong> retirada{{ tipo.total|pluralize:"s" }}</span></div><div class="ranking-track" aria-hidden="true"><span style="width: {{ tipo.percentual|floatformat:'2u' }}%"></span></div><p>{{ tipo.unidades }} unidade{{ tipo.unidades|pluralize:"s" }} distinta{{ tipo.unidades|pluralize:"s" }} · {{ tipo.participacao|floatformat:1 }}% das retiradas</p></li>{% endfor %}</ol>
+            <details class="dashboard-method"><summary>Sobre o ranking</summary><p>Escala comum: até {{ tipos_mais_retirados.0.total }} retiradas. O volume também depende da quantidade de unidades no acervo; não representa demanda não atendida.</p></details>
             {% else %}<div class="empty-state"><h3>Sem retiradas para comparar</h3><p>O ranking aparecerá quando houver retiradas neste período e categoria.</p></div>{% endif %}
         </section>
     </div>
@@ -59,20 +81,21 @@
         {% include "inventario/_situacao_por_categoria.html" %}
 
         <section class="inventory-card dashboard-reservations" aria-labelledby="reservations-heading">
-            <header class="dashboard-section-header"><div><h2 id="reservations-heading">Demanda por reservas</h2><p>Etapa atual das reservas com início no período selecionado.</p></div></header>
+            <header class="dashboard-section-header"><div><h2 id="reservations-heading">Situação das reservas</h2><p>Etapas atuais das reservas iniciadas no período.</p></div></header>
             {% if pode_ver_reservas_painel %}
-                {% if total_reservas %}<p class="reservation-total"><strong>{{ total_reservas }}</strong> reserva{{ total_reservas|pluralize:"s" }} no período</p><dl class="reservation-stages">{% for etapa in etapas_reservas %}<div><dt>{{ etapa.nome }}</dt><dd><strong>{{ etapa.total }}</strong><span>{{ etapa.percentual|floatformat:1 }}%</span></dd><dd class="stage-track" aria-hidden="true"><span class="stage-{{ etapa.chave|lower }}" style="width: {{ etapa.percentual|floatformat:'2u' }}%"></span></dd></div>{% endfor %}</dl>
+                {% if total_reservas %}<p class="reservation-total"><strong>{{ total_reservas }}</strong> reserva{{ total_reservas|pluralize:"s" }} no período</p><div class="reservation-composition" aria-hidden="true">{% for etapa in etapas_reservas %}{% if etapa.total %}<span class="stage-{{ etapa.chave|lower }}" style="width: {{ etapa.percentual|floatformat:'2u' }}%"></span>{% endif %}{% endfor %}</div><dl class="reservation-stages">{% for etapa in etapas_reservas %}<div><dt><i class="stage-dot stage-{{ etapa.chave|lower }}" aria-hidden="true"></i>{{ etapa.nome }}</dt><dd><strong>{{ etapa.total }}</strong><span>{{ etapa.percentual|floatformat:1 }}%</span></dd></div>{% endfor %}</dl>
                 {% else %}<div class="empty-state"><h3>Nenhuma reserva no período</h3><p>As etapas aparecerão quando houver reservas com início neste recorte.</p></div>{% endif %}
                 <details class="dashboard-method"><summary>Como interpretar as etapas</summary><p>Cada reserva conta uma vez, independentemente da quantidade de equipamentos. Em uso: há unidades ainda não devolvidas. Devolvida: todas as retiradas vinculadas têm devolução. Sem retirada após a tolerância de 30 minutos do início, a reserva é contada como expirada, sem alterar seu cadastro. Reservas canceladas permanecem separadas. Retiradas sem reserva não entram nesta análise.</p></details>
-                <div class="dashboard-panel-action"><a href="{% url 'reservas:reserva_consulta' %}">Consultar reservas</a></div>
+                <div class="dashboard-panel-action"><a href="{% url 'reservas:reserva_consulta' %}{% if categoria_selecionada %}?categoria={{ categoria_selecionada.pk }}{% endif %}">Ver reservas aguardando retirada</a></div>
+                <p class="dashboard-chart-note">A consulta abre as reservas aguardando retirada nesta categoria, sem recorte de período.</p>
             {% else %}<div class="empty-state"><h3>Consulta de reservas restrita</h3><p>Seu perfil não possui permissão para consultar as reservas.</p></div>{% endif %}
         </section>
     </div>
     <div id="pending-panel" class="dashboard-analysis">
         <section id="maintenance-panel" class="inventory-card dashboard-maintenance" aria-labelledby="maintenance-heading">
-            <header class="dashboard-section-header"><div><h2 id="maintenance-heading">Manutenções em aberto</h2><p>Intervenções que precisam de acompanhamento agora.</p></div>{% if pode_ver_manutencoes_painel %}<strong class="panel-count {% if total_manutencoes_abertas %}metric-danger{% else %}metric-success{% endif %}" aria-label="{{ total_manutencoes_abertas }} manutenções abertas">{{ total_manutencoes_abertas }}</strong>{% endif %}</header>
+            <header class="dashboard-section-header"><div><h2 id="maintenance-heading">Manutenções em aberto</h2><p>Pendentes e em andamento · mais antigas primeiro</p></div></header>
             {% if pode_ver_manutencoes_painel %}
-                {% if total_manutencoes_abertas > 5 %}<p class="dashboard-explanation">Exibindo as {{ manutencoes_abertas|length }} mais antigas de {{ total_manutencoes_abertas }} manutenções em aberto.</p>{% endif %}
+                {% if total_manutencoes_abertas > 5 %}<p class="dashboard-explanation">Exibindo as {{ manutencoes_abertas|length }} mais antigas.</p>{% endif %}
                 {% if manutencoes_abertas %}
                 <ol class="maintenance-list" aria-label="Intervenções abertas mais antigas primeiro">
                     {% for manutencao in manutencoes_abertas %}
@@ -85,23 +108,23 @@
                 </ol>
                 {% else %}<div class="empty-state"><h3>Nenhuma manutenção em aberto</h3><p>Não há intervenções pendentes ou em andamento neste recorte.</p></div>{% endif %}
                 <details class="dashboard-method"><summary>Critério de acompanhamento</summary><p>Somente pendentes ou em andamento, inclusive de equipamentos inativos. Da abertura mais antiga para a mais recente. O tempo em aberto não representa atraso: não há prazo de manutenção definido. A categoria é aplicada; o período de análise não limita pendências atuais.</p></details>
-                <div class="dashboard-panel-action"><a href="{% url 'manutencoes:manutencao_lista' %}">Consultar todas as manutenções</a></div>
+                <div class="dashboard-panel-action"><a href="{% url 'manutencoes:manutencao_lista' %}?estado=ABERTAS{% if categoria_selecionada %}&amp;categoria={{ categoria_selecionada.pk }}{% endif %}">Ver manutenções em aberto</a></div>
             {% else %}<div class="empty-state"><h3>Consulta de manutenções restrita</h3><p>Seu perfil não possui permissão para consultar os registros de manutenção.</p></div>{% endif %}
         </section>
 
-        <section class="inventory-card dashboard-overdue" aria-labelledby="overdue-heading">
-            <header class="dashboard-section-header"><div><h2 id="overdue-heading">Devoluções com prazo vencido</h2><p>Unidades retiradas com reserva e ainda sem devolução.</p></div>{% if pode_ver_reservas_painel %}<strong class="panel-count {% if total_atrasadas %}metric-danger{% else %}metric-success{% endif %}" aria-label="{{ total_atrasadas }} unidades com devolução vencida">{{ total_atrasadas }}</strong>{% endif %}</header>
+        <section id="overdue-panel" class="inventory-card dashboard-overdue" aria-labelledby="overdue-heading">
+            <header class="dashboard-section-header"><div><h2 id="overdue-heading">Devoluções com prazo vencido</h2><p>Unidades com reserva · prazos mais antigos primeiro</p></div></header>
             {% if pode_ver_reservas_painel %}
                 {% if devolucoes_atrasadas %}<ol class="maintenance-list">{% for retirada in devolucoes_atrasadas %}<li><a class="overdue-link" href="{% url 'reservas:reserva_detalhe' retirada.reserva_id %}"><strong>{{ retirada.equipamento.tipo.nome }}</strong><span>Patrimônio {{ retirada.equipamento.numero_patrimonio }}</span><span>Fim previsto: <time datetime="{{ retirada.reserva.fim|date:'c' }}">{{ retirada.reserva.fim|date:"d/m/Y H:i" }}</time></span><span class="maintenance-action">Consultar reserva</span></a></li>{% endfor %}</ol>
                 {% else %}<div class="empty-state"><h3>Nenhuma devolução com prazo vencido</h3><p>Não há unidades com reserva vencida aguardando devolução.</p></div>{% endif %}
-                <p class="dashboard-chart-note">Até cinco unidades, pelo fim de reserva mais antigo. Pendências atuais de qualquer período, na categoria selecionada. Retiradas sem reserva não possuem prazo registrado e ficam fora deste indicador.</p>
+                <details class="dashboard-method"><summary>Critério dos prazos</summary><p>Até cinco unidades ainda sem devolução, pelo fim de reserva mais antigo. Pendências atuais de qualquer período, na categoria selecionada. Retiradas sem reserva não possuem prazo registrado e ficam fora deste indicador.</p></details>
             {% else %}<div class="empty-state"><h3>Consulta de prazos restrita</h3><p>A permissão de consulta de reservas é necessária para visualizar os prazos.</p></div>{% endif %}
         </section>
     </div>
     <section id="recent-panel" class="inventory-card dashboard-recent" aria-labelledby="recent-heading">
-        <header class="dashboard-section-header"><div><h2 id="recent-heading">Movimentações recentes</h2><p>As dez últimas retiradas e devoluções no período e categoria, incluindo equipamentos inativos.</p></div>{% if pode_consultar_historico %}<a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:historico_lista' %}">Abrir histórico completo</a>{% endif %}</header>
+        <header class="dashboard-section-header"><div><h2 id="recent-heading">Movimentações recentes</h2><p>Últimos dez registros · período e categoria selecionados</p></div>{% if pode_consultar_historico %}<a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:historico_lista' %}?inicio={{ inicio_periodo|date:'Y-m-d' }}&amp;fim={{ fim_periodo|date:'Y-m-d' }}">Ver histórico do período</a>{% endif %}</header>
         {% if movimentacoes_recentes %}
-        <details class="dashboard-records"><summary>Consultar os últimos registros</summary><ol class="dashboard-activity" aria-label="Movimentações mais recentes primeiro">
+        <details class="dashboard-records"><summary>Ver movimentações</summary><p class="dashboard-records-note">Inclui equipamentos hoje inativos. O histórico recebe o período e mostra todas as categorias.</p><ol class="dashboard-activity" aria-label="Movimentações mais recentes primeiro">
             {% for registro in movimentacoes_recentes %}
             <li><details class="activity-record"><summary>
                 <span class="status-badge {% if registro.tipo == 'RETIRADA' %}activity-withdrawal{% else %}status-disponivel{% endif %}">{{ registro.get_tipo_display }}</span>
@@ -113,7 +136,7 @@
         </ol></details>
         {% else %}<div class="empty-state"><h3>Nenhuma movimentação registrada</h3><p>Não há retiradas ou devoluções neste período e categoria.</p></div>{% endif %}
     </section>
-    <footer class="dashboard-footer"><p>Dados atualizados a cada consulta. Para buscar novos registros, use <strong>Atualizar painel</strong>. Fuso: {{ fuso_painel }}.</p><a class="btn btn-secondary-sigee" href="?periodo={{ periodo_selecionado }}{% if categoria_selecionada %}&amp;categoria={{ categoria_selecionada.pk }}{% endif %}">Atualizar painel</a></footer>
+
 </div>
 {% endblock %}
-{% block extra_scripts %}<script src="{% static 'inventario/js/painel.js' %}?v=20261103.1" defer></script>{% endblock %}
+{% block extra_scripts %}<script src="{% static 'inventario/js/painel.js' %}?v=20261106.3" defer></script>{% endblock %}

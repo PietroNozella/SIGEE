@@ -78,7 +78,7 @@
                                 </td>
                                 <td>
                                     {{ registro.acao_exibicao }}
-                                    <small class="audit-metadata">{{ registro.acao }}</small>
+                                    <details class="audit-technical"><summary>Detalhes técnicos</summary><span>{{ registro.acao }}</span>{% if registro.entidade %}<span>{{ registro.entidade }}</span>{% endif %}</details>
                                 </td>
                                 <td>
                                     <span class="status-badge audit-result-{{ registro.resultado|lower }}">
@@ -87,7 +87,7 @@
                                 </td>
                                 <td>
                                     {% if registro.entidade %}
-                                        {{ registro.entidade }}
+                                        {{ registro.entidade_exibicao }}
                                         {% if registro.entidade_id %}
                                             <small class="audit-metadata">ID {{ registro.entidade_id }}</small>
                                         {% endif %}

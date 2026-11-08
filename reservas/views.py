@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from inventario.models import Local, TipoEquipamento
+from inventario.models import Categoria, Local, TipoEquipamento
 from movimentacoes.models import Movimentacao
 from movimentacoes.services import reservas_para_retirada
 from usuarios.permissoes import e_professor_funcional, pode_consultar_reservas_administrativas
@@ -69,6 +69,8 @@ def reserva_consulta(request):
         raise PermissionDenied
     expirar_reservas_vencidas()
     busca = request.GET.get("busca", "").strip()[:200]
+    categoria_id = request.GET.get("categoria", "")
+    categoria = Categoria.objects.filter(pk=categoria_id).first() if categoria_id.isdecimal() and len(categoria_id) <= 19 else None
     status = request.GET.get("status", "").strip()
     if status not in Reserva.Status.values:
         status = ""
@@ -77,11 +79,14 @@ def reserva_consulta(request):
         .prefetch_related("itens__equipamento")
         .order_by("-inicio", "-pk")
     )
+    if categoria:
+        reservas = reservas.filter(tipo_equipamento__categoria=categoria)
     pagina = Paginator(reservas, 15).get_page(request.GET.get("pagina"))
     parametros = request.GET.copy()
     parametros.pop("pagina", None)
     return render(request, "reservas/reserva_consulta.html", {
         "pagina": pagina, "busca": busca, "status": status,
+        "categorias": Categoria.objects.order_by("nome"), "categoria_selecionada": categoria,
         "status_choices": Reserva.Status.choices,
         "parametros_paginacao": parametros.urlencode(),
     })
