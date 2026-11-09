@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
+from movimentacoes.fixtures_testes import registrar_entrega_conferida
 from inventario.models import Equipamento
 from manutencoes.services import abrir_manutencao
 from pedagogico.models import UtilizacaoPedagogica
@@ -12,7 +13,7 @@ from reservas.models import Reserva
 from reservas.services import resumo_entrega
 
 from .models import Movimentacao
-from .services import registrar_devolucoes, registrar_retirada_reserva, reservas_para_retirada
+from .services import registrar_devolucoes, reservas_para_retirada
 from .test_retirada_reserva import criar_reserva_alocada
 from .tests import criar_cenario
 
@@ -33,7 +34,7 @@ class EntregaParcialTests(TestCase):
         self.manutencao = abrir_manutencao(administrador=self.operador, equipamento_id=self.unidades[0].pk, descricao_problema="Não liga")
 
     def entregar(self, **dados):
-        return registrar_retirada_reserva(operador=self.operador, reserva_id=self.reserva.pk, **dados)
+        return registrar_entrega_conferida(operador=self.operador, reserva_id=self.reserva.pk, **dados)
 
     def novo_equipamento(self):
         return Equipamento.objects.create(numero_patrimonio="COMPLEMENTO", tipo=self.reserva.tipo_equipamento, local=self.reserva.local)
@@ -136,7 +137,9 @@ class EntregaParcialTests(TestCase):
 
     def test_reenvio_http_nao_duplica_entrega_parcial(self):
         url = reverse("movimentacoes:retirada_reserva_registrar", args=[self.reserva.pk])
-        self.assertEqual(self.client.post(url, {"professor_informado": "on"}).status_code, 302)
-        resposta = self.client.post(url, {"professor_informado": "on"})
-        self.assertEqual(resposta.status_code, 200)
+        conferencia = self.client.get(url).context["form"].initial["conferencia"]
+        dados = {"professor_informado": "on", "conferencia": conferencia}
+        self.assertEqual(self.client.post(url, dados).status_code, 302)
+        resposta = self.client.post(url, dados)
+        self.assertEqual(resposta.status_code, 302)
         self.assertEqual(Movimentacao.objects.count(), 2)

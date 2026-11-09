@@ -13,13 +13,14 @@ from django.utils import timezone
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
+from movimentacoes.fixtures_testes import registrar_entrega_conferida
 from inventario.models import Equipamento, Local, TipoEquipamento
 from legal.services import registrar_aceite_vigente
 from reservas.models import Reserva, ReservaEquipamento
 from reservas.services import cancelar_reserva, expirar_reservas_vencidas
 
 from .models import Movimentacao
-from .services import registrar_devolucoes, registrar_retirada_reserva
+from .services import registrar_devolucoes
 from .tests import criar_cenario
 
 
@@ -63,10 +64,14 @@ class RetiradaReservaTests(TestCase):
         self.addCleanup(self.relogio.stop)
 
     def retirar(self, **alteracoes):
-        return registrar_retirada_reserva(**{
+        return registrar_entrega_conferida(**{
             "operador": self.operador, "reserva_id": self.reserva.pk,
             "observacao": "Lote entregue.", **alteracoes,
         })
+
+    def postar_conferencia(self, dados=None, **opcoes):
+        conferencia = self.client.get(self.url).context["form"].initial["conferencia"]
+        return self.client.post(self.url, {"conferencia": conferencia, **(dados or {})}, **opcoes)
 
     def assert_sem_retirada(self):
         self.assertFalse(Movimentacao.objects.filter(reserva=self.reserva).exists())
@@ -80,9 +85,9 @@ class RetiradaReservaTests(TestCase):
     def test_lote_valido_preserva_alocacoes_professor_reserva_e_audita_unidades(self):
         antes = Reserva.objects.values().get(pk=self.reserva.pk)
         ids_itens = list(self.reserva.itens.order_by("pk").values())
-        resposta = self.client.post(self.url, {"observacao": "Conferido."}, follow=True)
+        resposta = self.postar_conferencia({"observacao": "Conferido."}, follow=True)
         self.assertRedirects(resposta, reverse("movimentacoes:devolucao_lista"))
-        self.assertContains(resposta, "3 equipamento(s) em uso")
+        self.assertContains(resposta, "3 equipamento(s)")
         retiradas = list(Movimentacao.objects.filter(reserva=self.reserva))
         self.assertEqual(len(retiradas), 3)
         self.assertEqual({item.equipamento_id for item in retiradas}, {item.pk for item in self.unidades})
@@ -102,7 +107,7 @@ class RetiradaReservaTests(TestCase):
         ).values_list("entidade_id", flat=True)), {str(item.pk) for item in retiradas})
 
     def test_campos_adulterados_nao_substituem_vinculos_nem_quantidade(self):
-        self.client.post(self.url, {
+        self.postar_conferencia({
             "reserva": 999999, "reserva_id": 999999, "destinatario": self.operador.pk,
             "professor": self.cenario["administrador"].pk, "equipamentos": [self.cenario["equipamento"].pk],
             "operador": self.cenario["professor"].pk, "quantidade": 1,
@@ -192,7 +197,7 @@ class RetiradaReservaTests(TestCase):
     def test_no_limite_expira_sem_retirar_e_audita_expiracao_uma_vez(self):
         limite = self.reserva.inicio + Reserva.TOLERANCIA_RETIRADA
         with patch("movimentacoes.services.timezone.now", return_value=limite):
-            resposta = self.client.post(self.url)
+            resposta = self.postar_conferencia()
             self.assertContains(resposta, "expirou após os 30 minutos")
             self.assertContains(resposta, "Expirada")
             self.assertEqual(expirar_reservas_vencidas(), 0)
@@ -249,14 +254,14 @@ class RetiradaReservaTests(TestCase):
                 raise IntegrityError("Falha após auditoria da segunda unidade")
 
         with patch("movimentacoes.services.registrar_evento", side_effect=gravar_e_falhar):
-            self.assertContains(self.client.post(self.url), "Nenhuma alteração foi salva")
+            self.assertContains(self.postar_conferencia(), "Nenhuma alteração foi salva")
         self.assert_sem_retirada()
         self.reserva.refresh_from_db()
         self.assertEqual(self.reserva.status, "ATIVA")
 
     def test_rollback_se_atualizacao_do_equipamento_falhar(self):
         with patch("movimentacoes.services.Equipamento.save", side_effect=IntegrityError):
-            self.assertContains(self.client.post(self.url), "Nenhuma alteração foi salva")
+            self.assertContains(self.postar_conferencia(), "Nenhuma alteração foi salva")
         self.assert_sem_retirada()
 
     def test_retirada_impede_cancelamento_e_expiracao_inclusive_apos_devolucao(self):
@@ -270,16 +275,16 @@ class RetiradaReservaTests(TestCase):
         self.assertEqual(self.reserva.status, "ATIVA")
 
     def test_cancelamento_apos_abrir_tela_e_revalidado(self):
-        self.client.get(self.url)
+        conferencia = self.client.get(self.url).context["form"].initial["conferencia"]
         cancelar_reserva(professor=self.cenario["professor"], reserva=self.reserva)
-        self.assertContains(self.client.post(self.url), "cancelada ou expirada")
+        self.assertContains(self.client.post(self.url, {"conferencia": conferencia}), "cancelada ou expirada")
         self.assert_sem_retirada()
 
     def test_expiracao_apos_abrir_tela_e_revalidada(self):
-        self.client.get(self.url)
+        conferencia = self.client.get(self.url).context["form"].initial["conferencia"]
         with patch("movimentacoes.services.timezone.now", return_value=self.reserva.inicio + Reserva.TOLERANCIA_RETIRADA):
             self.assertEqual(expirar_reservas_vencidas(), 1)
-            self.assertContains(self.client.post(self.url), "cancelada ou expirada")
+            self.assertContains(self.client.post(self.url, {"conferencia": conferencia}), "cancelada ou expirada")
         self.assert_sem_retirada()
 
     def test_devolucao_pela_interface_e_parcial_preserva_cada_reserva_e_origem(self):
@@ -331,7 +336,7 @@ class ConcorrenciaRetiradaReservaTests(TransactionTestCase):
 
         def retirar(cenario, reserva):
             operador = get_user_model().objects.get(pk=cenario["operador"].pk)
-            registrar_retirada_reserva(operador=operador, reserva_id=reserva.pk)
+            registrar_entrega_conferida(operador=operador, reserva_id=reserva.pk)
             return "retirada"
 
         with patch("movimentacoes.services.timezone.now", return_value=agora):

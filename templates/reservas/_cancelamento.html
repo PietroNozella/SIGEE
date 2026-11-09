@@ -1,0 +1,12 @@
+{% if reserva.status == 'CANCELADA' %}
+<section aria-labelledby="cancelamento-heading">
+    <h2 id="cancelamento-heading">Detalhes do cancelamento</h2>
+    {% if reserva.cancelada_por_id %}
+    <dl class="equipment-form-grid">
+        <div><dt>Registrado por</dt><dd>{{ reserva.cancelada_por.get_full_name|default:reserva.cancelada_por.username }}</dd></div>
+        <div><dt>Data e hora</dt><dd>{{ reserva.data_cancelamento|date:"d/m/Y H:i:s" }}</dd></div>
+        <div><dt>Motivo da desistência comunicada pelo Professor</dt><dd>{{ reserva.motivo_cancelamento|linebreaksbr }}</dd></div>
+    </dl>
+    {% else %}<p>Este registro não possui detalhamento do cancelamento na reserva.</p>{% endif %}
+</section>
+{% endif %}

@@ -11,9 +11,9 @@ from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from inventario.models import Equipamento
-from usuarios.permissoes import pode_consultar_historico, pode_registrar_devolucao, pode_registrar_retirada
+from usuarios.permissoes import pode_cancelar_reserva_operacional, pode_consultar_historico, pode_registrar_devolucao, pode_registrar_retirada
 from reservas.models import Reserva
-from reservas.services import expirar_reservas_vencidas, resumo_entrega, substituir_equipamentos_em_manutencao
+from reservas.services import expirar_reservas_vencidas, permite_cancelamento_operacional, resumo_entrega, substituir_equipamentos_em_manutencao
 from reservas.consultas import historico_reservas
 
 from .forms import DevolucaoForm, HistoricoFiltroForm, RetiradaReservaForm
@@ -24,6 +24,7 @@ from .services import (
     registrar_devolucoes,
     retiradas_do_grupo,
     consultar_historico,
+    criar_conferencia_retirada,
     registrar_retirada_reserva,
     reservas_para_retirada,
 )
@@ -92,7 +93,7 @@ def retirada_reserva_registrar(request, reserva_id):
     if not pode_registrar_retirada(request.user):
         raise PermissionDenied
     reserva = get_object_or_404(Reserva.objects.select_related("professor", "tipo_equipamento", "local"), pk=reserva_id)
-    if substituir_equipamentos_em_manutencao(reserva_id=reserva.pk, usuario=request.user):
+    if request.method == "GET" and substituir_equipamentos_em_manutencao(reserva_id=reserva.pk, usuario=request.user):
         messages.info(request, "Equipamento em manutenção substituído por uma unidade disponível do mesmo tipo e local.")
     form = RetiradaReservaForm(request.POST if request.method == "POST" else None)
     if request.method == "POST":
@@ -100,6 +101,7 @@ def retirada_reserva_registrar(request, reserva_id):
             try:
                 movimentacoes = registrar_retirada_reserva(
                     operador=request.user, reserva_id=reserva.pk, observacao=form.cleaned_data["observacao"],
+                    conferencia=form.cleaned_data["conferencia"],
                     professor_informado=form.cleaned_data["professor_informado"],
                 )
             except ValidationError as erro:
@@ -109,7 +111,7 @@ def retirada_reserva_registrar(request, reserva_id):
             else:
                 resumo = resumo_entrega(reserva)
                 saldo = f" {resumo['pendentes']} unidade(s) permanece(m) pendente(s) de entrega." if resumo["pendentes"] else ""
-                messages.success(request, f"Retirada da reserva #{reserva.pk} registrada: {len(movimentacoes)} equipamento(s) em uso.{saldo}")
+                messages.success(request, f"Entrega da reserva #{reserva.pk} já registrada: {len(movimentacoes)} equipamento(s).{saldo} Consulte Em uso ou Histórico para conferir a situação atual.")
                 return redirect("movimentacoes:devolucao_lista")
         registrar_evento(
             usuario=request.user, acao=AcaoAuditoria.RETIRADA_REGISTRADA,
@@ -118,9 +120,19 @@ def retirada_reserva_registrar(request, reserva_id):
         )
         reserva.refresh_from_db()
     resumo = resumo_entrega(reserva)
+    conferencia = criar_conferencia_retirada(reserva=reserva, operador=request.user, resumo=resumo)
+    if form.is_bound:
+        dados = form.data.copy()
+        dados["conferencia"] = conferencia
+        form.data = dados
+    else:
+        form.initial["conferencia"] = conferencia
     retirada = Movimentacao.objects.filter(reserva=reserva, tipo=Movimentacao.Tipo.RETIRADA).order_by("pk").first()
     return render(request, "movimentacoes/retirada_reserva_form.html", {
         "reserva": reserva, "unidades": resumo["unidades"], "resumo": resumo, "form": form, "retirada": retirada,
+        "pode_cancelar_operacional": (
+            pode_cancelar_reserva_operacional(request.user) and permite_cancelamento_operacional(reserva)
+        ),
         "substituicoes": reserva.substituicoes.select_related("equipamento_anterior", "equipamento_substituto"),
     })
 

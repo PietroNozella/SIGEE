@@ -8,6 +8,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
+from movimentacoes.fixtures_testes import registrar_entrega_conferida
 from inventario.models import Equipamento, Local
 from movimentacoes.tests import criar_cenario
 from movimentacoes.test_retirada_reserva import criar_reserva_alocada
@@ -101,9 +102,9 @@ class ManutencaoOperadorTests(TestCase):
             substituir_equipamentos_em_manutencao(reserva_id=self.reserva.pk, usuario=self.cenario["professor"])
 
     def test_substituicoes_nao_reescrevem_entregas_existentes(self):
-        from movimentacoes.services import registrar_devolucoes, registrar_retirada_reserva
+        from movimentacoes.services import registrar_devolucoes
         with patch("movimentacoes.services.timezone.now", return_value=self.reserva.inicio):
-            entregas = registrar_retirada_reserva(operador=self.operador, reserva_id=self.reserva.pk)
+            entregas = registrar_entrega_conferida(operador=self.operador, reserva_id=self.reserva.pk)
             original = next(m for m in entregas if m.equipamento_id == self.unidades[0].pk)
             registrar_devolucoes(operador=self.operador, retirada_id=original.pk, retiradas_ids=[original.pk], problemas={original.pk: "Não liga"})
         self.assertFalse(SubstituicaoReserva.objects.exists())

@@ -85,11 +85,14 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 - <b>CA-01:</b> Dadas unidades suficientes do mesmo tipo/modelo e local, quando o Professor solicitar um período válido, então o sistema deve registrar uma única reserva com a quantidade e as unidades correspondentes.
 - <b>CA-02:</b> Dada uma quantidade superior à disponibilidade do período, quando o Professor tentar confirmar a reserva, então o sistema deve recusá-la.
 - <b>CA-03:</b> Dada uma unidade já alocada em reserva com período sobreposto, quando houver nova solicitação para o mesmo período, então essa unidade não deve ser alocada novamente.
-- <b>CA-04: </b>Dado um horário inicial no passado ou um período que inclua sábado ou domingo, quando o Professor tentar reservar, então o sistema deve impedir o registro.
+- <b>CA-04: </b>Dado um horário inicial no passado, uma data inicial além de 15 dias corridos após a data local atual ou um período que inclua sábado ou domingo, quando o Professor tentar reservar, então o sistema deve impedir o registro.
 - <b>CA-05:</b> Dada uma reserva própria ativa, sem retirada e antes de completar os 30 minutos de tolerância, quando o Professor solicitar seu cancelamento, então o sistema deve cancelá-la. Após o limite, a reserva deve expirar, sem receber cancelamento.
 - <b>CA-06:</b> Dada uma reserva ativa sem retirada e com 30 minutos ou mais decorridos do horário inicial, quando um fluxo sincronizar as reservas vencidas, então a reserva deve expirar integralmente e deixar de bloquear a disponibilidade.
 - <b>CA-07:</b> Dada uma reserva com contexto pedagógico completo, quando o Operador confirmar a entrega, então o sistema deve criar uma utilização por unidade retirada com turma, disciplina e atividade vinculadas à reserva.
 - <b>CA-08:</b> Dada uma nova reserva sem turma, disciplina ou atividade pedagógica, quando o Professor tentar confirmar o agendamento, então o sistema deve recusar o registro sem alocar parcialmente os equipamentos.
+- <b>CA-09:</b> Dada uma reserva ativa, no prazo e sem retirada, quando um Operador com permissão específica informar o motivo e confirmar a desistência comunicada pelo Professor, então toda a reserva deve ser cancelada, liberando somente seu compromisso de disponibilidade e preservando patrimônios, responsável, motivo, data e auditoria.
+- <b>CA-10:</b> Dada uma entrega registrada após a abertura da tela de cancelamento operacional, quando o Operador confirmar o cancelamento, então o servidor deve recusá-lo sem alterar a entrega. No limite dos 30 minutos sem retirada, deve persistir somente a expiração.
+- <b>CA-11:</b> Dado um cancelamento operacional concluído, quando um usuário autorizado consultar o detalhe da reserva, então deve visualizar motivo, responsável e data. Reenvios não devem sobrescrever esses dados nem duplicar a auditoria de sucesso.
 
 ## RF05 - Registrar retirada e devolução
 
@@ -120,6 +123,9 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 
 - <b>CA-11:</b> Dada uma unidade em manutenção, quando houver substituto do mesmo tipo/local livre em todo o período, então o sistema deve atualizar a alocação e preservar o histórico da troca.
 - <b>CA-12:</b> Dada uma falta de substituto, quando o Operador confirmar que informou o Professor, então deve ser possível entregar somente as unidades aptas, manter o saldo e complementá-lo até o fim do período, sem duplicar retiradas nem criar devolução para unidades não entregues.
+- <b>CA-13:</b> Dado um patrimônio com retirada sem devolução, quando houver tentativa de disponibilização cadastral ou nova entrega, então o sistema deve recusá-la, mesmo que a situação armazenada esteja inconsistente.
+- <b>CA-14:</b> Dada uma conferência cuja lista ou dados patrimoniais mudaram antes da confirmação, quando o Operador confirmar, então nenhuma entrega deve ser registrada e uma nova conferência deve ser exigida.
+- <b>CA-15:</b> Dada uma confirmação de entrega já processada, quando ela for reenviada pelo Operador ainda autorizado, então somente a operação original deve ser reconhecida, sem incorporar novos patrimônios ou repetir os efeitos da entrega.
 
 ## RF06 - Consultar o histórico de movimentações
 

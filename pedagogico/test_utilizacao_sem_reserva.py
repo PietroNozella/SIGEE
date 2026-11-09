@@ -1,4 +1,4 @@
-from movimentacoes.fixtures_testes import criar_retirada_legada
+from movimentacoes.fixtures_testes import criar_retirada_legada, registrar_entrega_conferida
 import json
 from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
@@ -23,7 +23,7 @@ from inventario.models import Equipamento
 from legal.services import registrar_aceite_vigente
 from manutencoes.models import Manutencao
 from movimentacoes.models import Movimentacao
-from movimentacoes.services import registrar_devolucoes, registrar_retirada_reserva
+from movimentacoes.services import registrar_devolucoes
 from movimentacoes.test_retirada_reserva import criar_reserva_alocada
 from movimentacoes.tests import criar_cenario
 from .models import AtividadePedagogica, Disciplina, Turma, UtilizacaoPedagogica
@@ -127,7 +127,7 @@ class UtilizacaoSemReservaTests(TestCase):
         reserva.professor = outro
         reserva.save(update_fields=("professor",))
         with patch("movimentacoes.services.timezone.now", return_value=reserva.inicio):
-            retiradas = registrar_retirada_reserva(operador=self.cenario["operador"], reserva_id=reserva.pk)
+            retiradas = registrar_entrega_conferida(operador=self.cenario["operador"], reserva_id=reserva.pk)
         self.assertEqual(self.client.get(self.lista).context["pagina"].paginator.count, 1)
         reserva.professor = self.professor
         reserva.save(update_fields=("professor",))

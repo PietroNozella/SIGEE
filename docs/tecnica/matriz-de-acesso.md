@@ -26,6 +26,7 @@ O SIGEE aplica autenticação por sessão e autorização por grupos e permissõ
 | Consultar auditoria | Sim | Não | Não |
 | Consultar painel e indicadores pedagógicos | Sim | Não | Não |
 | Criar, acompanhar e cancelar reserva própria | Não | Não | Sim |
+| Registrar desistência confirmada do Professor e cancelar reserva sem retirada | Não | Sim, com permissão específica e motivo | Não; mantém o cancelamento próprio |
 | Consultar reservas para acompanhamento | Sim, todas | Sim, para entrega | Somente próprias |
 | Confirmar entrega integral, parcial por manutenção ou complementar | Não | Sim | Não |
 | Registrar nova retirada sem reserva | Não | Não | Não |
@@ -48,7 +49,7 @@ A matriz descreve os acessos concedidos pela configuração oficial de perfis. A
 | Grupo | Permissões |
 |---|---|
 | Administrador | `inventario`: view/add/change/delete de equipamento e `view_resumo_inventario`; `contas`: add/view/change de user; `auditoria.view_registroauditoria`; `movimentacoes.view_movimentacao`; `reservas.view_reserva`; `manutencoes`: view/add/change de manutencao; `pedagogico`: view/add/change de turma, disciplina e atividadepedagogica, e view de utilizacaopedagogica. |
-| Operador | `inventario.view_equipamento`; `movimentacoes.add_movimentacao` e `movimentacoes.view_movimentacao`; `manutencoes.view_manutencao` e `manutencoes.add_manutencao`. |
+| Operador | `inventario.view_equipamento`; `movimentacoes.add_movimentacao` e `movimentacoes.view_movimentacao`; `reservas.cancelar_reserva_operacional`; `manutencoes.view_manutencao` e `manutencoes.add_manutencao`. |
 | Professor | `inventario.view_equipamento`; `reservas.add_reserva`, `view_reserva`, `change_reserva`; `pedagogico.view_utilizacaopedagogica`, `add_utilizacaopedagogica`, `change_utilizacaopedagogica`. |
 
 Nenhum grupo recebe exclusão de usuários, movimentações, manutenção ou utilização pedagógica. A exclusão de equipamento sem histórico segue as verificações do inventário.
@@ -60,6 +61,7 @@ Nenhum grupo recebe exclusão de usuários, movimentações, manutenção ou uti
 | Usuários | `/usuarios/`, `/usuarios/novo/`, `/usuarios/<uuid>/desativar/`, `/usuarios/<uuid>/reativar/` | Administrador com view/add/change conforme a ação; alterações de situação por POST com CSRF e autoridade sobre a conta alvo. |
 | Auditoria | `/auditoria/` | Administrador com `view_registroauditoria`; somente consulta. |
 | Reservas próprias | `/reservas/`, `/reservas/nova/`, `/reservas/<id>/cancelar/` | Professor proprietário; view/add/change conforme a ação; cancelamento por POST. |
+| Cancelamento operacional | `/reservas/<id>/cancelamento-operacional/` | Operador com `cancelar_reserva_operacional`; GET de conferência e POST com motivo e confirmação da desistência do Professor. Estado, prazo, ausência de retirada e autorização atual são revalidados no serviço. |
 | Detalhe da reserva | `/reservas/<id>/` | Administrador/Operador com `view_movimentacao`; Professor com `view_reserva`, restrito à própria reserva. Somente GET. |
 | Reservas administrativas | `/reservas/consulta/` | Administrador com `view_reserva`; GET, sem alteração manual dos registros. A consulta pode persistir expirações e suas auditorias. |
 | Entrega | `/movimentacoes/retirada/reservas/`, `/movimentacoes/retirada/reservas/<id>/` | Operador com `add_movimentacao`; nova conferência no serviço. |

@@ -57,6 +57,11 @@ class Command(BaseCommand):
                     "fim": _data_hora(reserva.fim),
                     "quantidade": reserva.quantidade,
                     "status": reserva.status,
+                    "cancelamento_operacional": {
+                        "motivo": reserva.motivo_cancelamento,
+                        "responsavel_id": str(reserva.cancelada_por_id) if reserva.cancelada_por_id else None,
+                        "data_hora": _data_hora(reserva.data_cancelamento),
+                    },
                     "contexto_pedagogico": {
                         "turma": reserva.turma.nome if reserva.turma_id else None,
                         "disciplina": reserva.disciplina.nome if reserva.disciplina_id else None,
@@ -71,6 +76,14 @@ class Command(BaseCommand):
                 for reserva in usuario.reservas.select_related(
                     "tipo_equipamento", "local", "turma", "disciplina", "atividade"
                 ).prefetch_related("itens__equipamento")
+            ],
+            "reservas_canceladas_como_operador": [
+                {
+                    "reserva_id": reserva.pk,
+                    "motivo": reserva.motivo_cancelamento,
+                    "data_hora": _data_hora(reserva.data_cancelamento),
+                }
+                for reserva in usuario.reservas_canceladas.order_by("data_cancelamento", "pk")
             ],
             "movimentacoes_como_operador": [
                 {

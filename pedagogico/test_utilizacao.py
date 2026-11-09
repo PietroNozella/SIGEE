@@ -17,10 +17,11 @@ from django.urls import reverse
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
+from movimentacoes.fixtures_testes import registrar_entrega_conferida
 from inventario.models import Equipamento
 from legal.services import registrar_aceite_vigente
 from movimentacoes.models import Movimentacao
-from movimentacoes.services import registrar_devolucoes, registrar_retirada_reserva
+from movimentacoes.services import registrar_devolucoes
 from movimentacoes.test_retirada_reserva import criar_reserva_alocada
 from movimentacoes.tests import criar_cenario
 from reservas.models import Reserva
@@ -34,7 +35,7 @@ def preparar_utilizacao():
     cenario = criar_cenario()
     reserva, unidades = criar_reserva_alocada(cenario)
     with patch("movimentacoes.services.timezone.now", return_value=reserva.inicio):
-        retiradas = registrar_retirada_reserva(operador=cenario["operador"], reserva_id=reserva.pk)
+        retiradas = registrar_entrega_conferida(operador=cenario["operador"], reserva_id=reserva.pk)
     UtilizacaoPedagogica.objects.all().delete()
     RegistroAuditoria.objects.filter(entidade="pedagogico.UtilizacaoPedagogica").delete()
     Reserva.objects.filter(pk=reserva.pk).update(turma=None, disciplina=None, atividade=None)

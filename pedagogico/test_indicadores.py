@@ -1,4 +1,4 @@
-from movimentacoes.fixtures_testes import criar_retirada_legada
+from movimentacoes.fixtures_testes import criar_retirada_legada, registrar_entrega_conferida
 from datetime import timedelta
 from importlib import import_module
 from unittest.mock import patch
@@ -13,9 +13,7 @@ from django.urls import reverse
 from inventario.models import Equipamento
 from legal.services import registrar_aceite_vigente
 from movimentacoes.models import Movimentacao
-from movimentacoes.services import (
-    registrar_devolucoes, registrar_retirada_reserva,
-)
+from movimentacoes.services import registrar_devolucoes
 from reservas.models import Reserva, ReservaEquipamento
 from usuarios.permissoes import pode_consultar_indicadores_pedagogicos
 
@@ -57,7 +55,7 @@ class IndicadoresPedagogicosTests(TestCase):
             ReservaEquipamento(reserva=reserva, equipamento=unidade) for unidade in unidades
         )
         with patch("movimentacoes.services.timezone.now", return_value=inicio):
-            retiradas = registrar_retirada_reserva(operador=self.cenario["operador"], reserva_id=reserva.pk)
+            retiradas = registrar_entrega_conferida(operador=self.cenario["operador"], reserva_id=reserva.pk)
         UtilizacaoPedagogica.objects.filter(movimentacao__reserva=reserva).delete()
         return reserva, retiradas
 

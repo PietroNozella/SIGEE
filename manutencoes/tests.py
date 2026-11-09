@@ -17,10 +17,11 @@ from django.utils import timezone
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
+from movimentacoes.fixtures_testes import registrar_entrega_conferida
 from inventario.models import Equipamento
 from legal.services import registrar_aceite_vigente
 from movimentacoes.models import Movimentacao
-from movimentacoes.services import registrar_devolucao, registrar_devolucoes, registrar_retirada_reserva
+from movimentacoes.services import registrar_devolucao, registrar_devolucoes
 from movimentacoes.test_devolucao import retirar
 from movimentacoes.test_retirada_reserva import criar_reserva_alocada
 from movimentacoes.tests import criar_cenario
@@ -229,7 +230,7 @@ class ManutencaoTests(TestCase):
         self.abrir(equipamento_id=unidades[0].pk)
         with patch("movimentacoes.services.timezone.now", return_value=reserva.inicio + timedelta(minutes=5)):
             with self.assertRaises(ValidationError):
-                registrar_retirada_reserva(operador=self.cenario["operador"], reserva_id=reserva.pk)
+                registrar_entrega_conferida(operador=self.cenario["operador"], reserva_id=reserva.pk)
         self.assertFalse(Movimentacao.objects.filter(reserva=reserva).exists())
 
     def test_exportacao_inclui_responsabilidades_sem_duplicar_ou_expor_outros_usuarios(self):
@@ -358,7 +359,7 @@ class DevolucaoComProblemaTests(TestCase):
     def test_devolucao_com_problema_preserva_reserva_e_destinatario_inativo(self):
         reserva, unidades = criar_reserva_alocada(self.cenario, quantidade=1)
         with patch("movimentacoes.services.timezone.now", return_value=reserva.inicio + timedelta(minutes=5)):
-            retirada = registrar_retirada_reserva(operador=self.cenario["operador"], reserva_id=reserva.pk)[0]
+            retirada = registrar_entrega_conferida(operador=self.cenario["operador"], reserva_id=reserva.pk)[0]
         get_user_model().objects.filter(pk=self.cenario["professor"].pk).update(is_active=False)
         # A devolução ocorre após a data sintética de retirada da reserva.
         with patch("movimentacoes.services.timezone.now", return_value=reserva.inicio + timedelta(hours=1)):

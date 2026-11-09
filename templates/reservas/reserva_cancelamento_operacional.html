@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Cancelar reserva #{{ reserva.pk }} | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'inventario/css/operador.css' %}">{% endblock %}
+{% block content %}
+<div class="page-content form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">{% if pode_consultar_lista %}<a href="{% url 'movimentacoes:retirada_reserva_lista' %}">Reservas</a>{% else %}<span>Reservas</span>{% endif %}<span aria-hidden="true">/</span><span>Registrar desistência</span></nav>
+    <header class="page-header"><div><h1>Cancelar reserva #{{ reserva.pk }}</h1><p>Registre a desistência confirmada pelo Professor antes de liberar o compromisso.</p></div></header>
+    <section class="form-card" aria-labelledby="conferencia-cancelamento-heading">
+        <div class="form-card-header"><h2 id="conferencia-cancelamento-heading">Conferência da reserva</h2><p>A ausência do Professor ou a solicitação de outra pessoa não autoriza este cancelamento.</p></div>
+        <dl class="equipment-form-grid">
+            <div><dt>Professor</dt><dd>{{ reserva.professor.get_full_name|default:reserva.professor.username }}</dd></div>
+            <div><dt>Equipamento e quantidade</dt><dd>{{ reserva.quantidade }} × {{ reserva.tipo_equipamento.nome }}</dd></div>
+            <div><dt>Período reservado</dt><dd>{{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }}</dd></div>
+            <div><dt>Local</dt><dd>{{ reserva.local.nome }}</dd></div>
+        </dl>
+        {% include "reservas/_contexto.html" %}
+        <p><strong>Patrimônios:</strong> {% for item in unidades %}{{ item.equipamento.numero_patrimonio }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+        {% include "reservas/_cancelamento.html" %}
+        {% if form.errors %}<div class="validation-summary" role="alert" tabindex="-1" data-focus-on-load><h2>Não foi possível cancelar a reserva</h2><ul>{% for erro in form.non_field_errors %}<li>{{ erro }}</li>{% endfor %}{% for campo in form %}{% for erro in campo.errors %}<li>{{ erro }}</li>{% endfor %}{% endfor %}</ul></div>{% endif %}
+        {% if pode_confirmar %}
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="form-field"><label for="{{ form.motivo.id_for_label }}">{{ form.motivo.label }}</label>{{ form.motivo }}{% for erro in form.motivo.errors %}<p class="field-error">{{ erro }}</p>{% endfor %}</div>
+            <div class="form-field"><label for="{{ form.desistencia_confirmada.id_for_label }}">{{ form.desistencia_confirmada }} {{ form.desistencia_confirmada.label }}</label>{% for erro in form.desistencia_confirmada.errors %}<p class="field-error">{{ erro }}</p>{% endfor %}</div>
+            <p class="form-help">O cancelamento vale para toda a reserva e não registra entrega ou devolução de equipamentos.</p>
+            <div class="form-actions">{% if pode_consultar_detalhe %}<a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Manter reserva</a>{% endif %}<button class="btn btn-danger-sigee" type="submit">Confirmar cancelamento</button></div>
+        </form>
+        {% else %}<p role="status">Esta reserva não permite cancelamento operacional: ela foi encerrada, possui entrega registrada ou atingiu o prazo de expiração.</p>{% if pode_consultar_detalhe %}<a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Consultar reserva</a>{% endif %}{% endif %}
+    </section>
+</div>
+{% endblock %}

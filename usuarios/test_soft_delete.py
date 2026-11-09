@@ -17,7 +17,8 @@ from django.urls import reverse
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from legal.services import registrar_aceite_vigente
-from movimentacoes.services import registrar_devolucao, registrar_retirada_reserva
+from movimentacoes.fixtures_testes import registrar_entrega_conferida
+from movimentacoes.services import registrar_devolucao
 from movimentacoes.test_retirada_reserva import criar_reserva_alocada
 from movimentacoes.tests import criar_cenario
 from reservas.models import Reserva
@@ -244,7 +245,7 @@ class SoftDeleteUsuarioTests(TestCase):
     def test_retirada_existente_permite_desativar_e_devolver_com_historico(self):
         reserva, _ = criar_reserva_alocada(self.cenario, quantidade=1)
         with patch("movimentacoes.services.timezone.now", return_value=reserva.inicio):
-            retirada = registrar_retirada_reserva(operador=self.cenario["operador"], reserva_id=reserva.pk)[0]
+            retirada = registrar_entrega_conferida(operador=self.cenario["operador"], reserva_id=reserva.pk)[0]
         self.alterar()
         self.professor.refresh_from_db()
         self.assertFalse(self.professor.is_active)

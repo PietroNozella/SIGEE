@@ -6,6 +6,8 @@ from django.utils import timezone
 from inventario.models import Local, TipoEquipamento
 from pedagogico.forms import UtilizacaoPedagogicaForm
 
+from .models import Reserva
+
 
 class PeriodoReservaForm(forms.Form):
     data_reserva = forms.DateField(
@@ -32,6 +34,16 @@ class PeriodoReservaForm(forms.Form):
             attrs={"class": "form-control", "type": "time"},
         ),
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["data_reserva"].widget.attrs.update({
+            "min": timezone.localdate().isoformat(),
+            "max": Reserva.data_limite_agendamento().isoformat(),
+        })
+        self.fields["data_reserva"].help_text = (
+            f"Agende para hoje ou até {Reserva.ANTECEDENCIA_MAXIMA_DIAS} dias corridos à frente."
+        )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -103,12 +115,10 @@ class ReservaForm(PeriodoReservaForm, UtilizacaoPedagogicaForm):
         self.fields["data_reserva"].widget.attrs["data-reservation-date"] = ""
         self.fields["hora_inicio"].widget.attrs["data-reservation-start"] = ""
         self.fields["hora_fim"].widget.attrs["data-reservation-end"] = ""
-        self.fields["data_reserva"].help_text = ""
         self.fields["hora_inicio"].help_text = ""
         self.fields["hora_fim"].help_text = ""
         self.fields["quantidade"].help_text = ""
 
-        self.fields["data_reserva"].widget.attrs["min"] = timezone.localtime().strftime("%Y-%m-%d")
         self.order_fields(
             (
                 "tipo_equipamento",
@@ -145,3 +155,16 @@ class DisponibilidadeReservaForm(PeriodoReservaForm):
         self.order_fields(
             ("tipo_equipamento", "local", "data_reserva", "hora_inicio", "hora_fim")
         )
+
+
+class CancelamentoOperacionalForm(forms.Form):
+    motivo = forms.CharField(
+        label="Motivo da desistência",
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+        error_messages={"required": "Informe o motivo da desistência comunicada pelo Professor."},
+    )
+    desistencia_confirmada = forms.BooleanField(
+        label="Confirmo que o Professor comunicou que não utilizará os equipamentos desta reserva.",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        error_messages={"required": "Confirme que o Professor comunicou a desistência da reserva."},
+    )

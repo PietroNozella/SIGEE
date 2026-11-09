@@ -12,9 +12,9 @@ from django.db import connection, IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
 
+from movimentacoes.fixtures_testes import registrar_entrega_conferida
 from legal.services import registrar_aceite_vigente
 from movimentacoes.models import Movimentacao
-from movimentacoes.services import registrar_retirada_reserva
 from movimentacoes.test_retirada_reserva import criar_reserva_alocada
 from movimentacoes.tests import criar_cenario
 from pedagogico.models import UtilizacaoPedagogica, Turma
@@ -35,7 +35,9 @@ class FluxoReservaTests(TestCase):
     def entregar(self):
         with patch("movimentacoes.services.timezone.now", return_value=self.reserva.inicio):
             self.client.force_login(self.cenario["operador"])
-            resposta = self.client.post(reverse("movimentacoes:retirada_reserva_registrar", args=[self.reserva.pk]))
+            url = reverse("movimentacoes:retirada_reserva_registrar", args=[self.reserva.pk])
+            conferencia = self.client.get(url).context["form"].initial["conferencia"]
+            resposta = self.client.post(url, {"conferencia": conferencia})
         self.assertRedirects(resposta, reverse("movimentacoes:devolucao_lista"))
         return list(Movimentacao.objects.filter(reserva=self.reserva, tipo="RETIRADA").order_by("pk"))
 
@@ -150,7 +152,7 @@ class FluxoReservaTests(TestCase):
         Reserva.objects.filter(pk=self.reserva.pk).update(turma=None, disciplina=None, atividade=None)
         with patch("movimentacoes.services.timezone.now", return_value=self.reserva.inicio):
             with self.assertRaisesMessage(ValidationError, "completar o contexto"):
-                registrar_retirada_reserva(operador=self.cenario["operador"], reserva_id=self.reserva.pk)
+                registrar_entrega_conferida(operador=self.cenario["operador"], reserva_id=self.reserva.pk)
         self.client.force_login(self.cenario["professor"])
         resposta = self.client.post(reverse("pedagogico:utilizacao_reserva", args=[self.reserva.pk]), {campo: obj.pk for campo, obj in self.escolhas().items()})
         self.assertEqual(resposta.status_code, 302)

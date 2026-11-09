@@ -18,6 +18,7 @@
         </section>
         {% else %}{% include "reservas/_contexto.html" %}{% endif %}
         {% include "reservas/_resumo_entrega.html" %}
+        {% include "reservas/_cancelamento.html" %}
 
         <h2>Patrimônios reservados</h2>
         {% if e_professor %}<ul class="professor-patrimony-list" aria-label="Patrimônios de {{ reserva.tipo_equipamento.nome }}">{% for item in unidades %}<li>{{ item.equipamento.numero_patrimonio }}</li>{% endfor %}</ul>{% else %}<ul>{% for item in unidades %}<li>{{ item.equipamento.numero_patrimonio }} · {{ item.equipamento.tipo.nome }}</li>{% endfor %}</ul>{% endif %}
@@ -29,6 +30,7 @@
         </table></div>
         <div class="form-actions">
             <a class="btn btn-secondary-sigee" href="{{ url_voltar }}">Voltar para {{ rotulo_voltar }}</a>
+            {% if pode_cancelar_operacional %}<a class="btn btn-danger-sigee" href="{% url 'reservas:reserva_cancelamento_operacional' reserva.pk %}">Registrar desistência do Professor</a>{% endif %}
             {% if pode_cancelar %}
             <button class="btn btn-danger-sigee" type="button"
                 data-cancel-reservation-trigger

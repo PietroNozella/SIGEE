@@ -74,6 +74,10 @@ class DevolucaoForm(forms.Form):
 
 
 class RetiradaReservaForm(forms.Form):
+    conferencia = forms.CharField(
+        label="Conferência da entrega", widget=forms.HiddenInput,
+        error_messages={"required": "Reabra a conferência e confira os patrimônios antes de confirmar."},
+    )
     professor_informado = forms.BooleanField(required=False, label="Informei o Professor sobre os equipamentos pendentes de entrega.")
     observacao = forms.CharField(
         label="Observação", required=False,

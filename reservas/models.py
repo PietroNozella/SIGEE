@@ -61,6 +61,7 @@ class ReservaQuerySet(models.QuerySet):
 class Reserva(models.Model):
     objects = ReservaQuerySet.as_manager()
     TOLERANCIA_RETIRADA = timedelta(minutes=30)
+    ANTECEDENCIA_MAXIMA_DIAS = 15
 
     class Status(models.TextChoices):
         ATIVA = "ATIVA", "Ativa"
@@ -95,6 +96,12 @@ class Reserva(models.Model):
         choices=Status.choices,
         default=Status.ATIVA,
     )
+    motivo_cancelamento = models.TextField(blank=True, default="", db_default="")
+    cancelada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True,
+        related_name="reservas_canceladas",
+    )
+    data_cancelamento = models.DateTimeField(null=True, blank=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
 
@@ -102,6 +109,9 @@ class Reserva(models.Model):
         ordering = ["-inicio", "-pk"]
         verbose_name = "reserva"
         verbose_name_plural = "reservas"
+        permissions = [
+            ("cancelar_reserva_operacional", "Pode registrar cancelamento operacional de reserva"),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=(Q(turma__isnull=True, disciplina__isnull=True, atividade__isnull=True)
@@ -116,6 +126,16 @@ class Reserva(models.Model):
                 condition=Q(quantidade__gte=1),
                 name="reserva_quantidade_positiva",
             ),
+            models.CheckConstraint(
+                condition=(
+                    Q(motivo_cancelamento="", cancelada_por__isnull=True, data_cancelamento__isnull=True)
+                    | (
+                        Q(status="CANCELADA", cancelada_por__isnull=False, data_cancelamento__isnull=False)
+                        & ~Q(motivo_cancelamento="")
+                    )
+                ),
+                name="reserva_cancelamento_completo",
+            ),
         ]
         indexes = [
             models.Index(
@@ -123,6 +143,10 @@ class Reserva(models.Model):
                 name="res_tipo_loc_periodo_idx",
             ),
         ]
+
+    @classmethod
+    def data_limite_agendamento(cls):
+        return timezone.localdate() + timedelta(days=cls.ANTECEDENCIA_MAXIMA_DIAS)
 
     def clean(self):
         super().clean()
@@ -162,6 +186,14 @@ class Reserva(models.Model):
         if periodo_valido and self._state.adding and self.inicio < timezone.now():
             erros["inicio"] = (
                 "A data e a hora inicial da reserva não podem estar no passado."
+            )
+
+        if (
+            periodo_valido and self._state.adding
+            and timezone.localtime(self.inicio).date() > self.data_limite_agendamento()
+        ):
+            erros["inicio"] = (
+                f"A reserva pode ser agendada com até {self.ANTECEDENCIA_MAXIMA_DIAS} dias corridos de antecedência."
             )
 
         if periodo_valido and periodo_inclui_fim_de_semana(self.inicio, self.fim):

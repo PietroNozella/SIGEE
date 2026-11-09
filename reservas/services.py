@@ -81,12 +81,16 @@ def resumo_entrega(reserva):
     retiradas = Movimentacao.objects.filter(reserva=reserva, tipo="RETIRADA")
     ids_entregues = set(retiradas.values_list("equipamento_id", flat=True))
     unidades = list(reserva.itens.select_related("equipamento__tipo", "equipamento__local").order_by("equipamento__numero_patrimonio"))
+    sem_custodia = set(Equipamento.objects.filter(
+        pk__in=[item.equipamento_id for item in unidades],
+    ).sem_retirada_aberta().values_list("pk", flat=True))
     aptas = 0
     for item in unidades:
         equipamento = item.equipamento
         item.ja_entregue = equipamento.pk in ids_entregues
         item.apta_para_entrega = (
             not item.ja_entregue and equipamento.ativo
+            and equipamento.pk in sem_custodia
             and equipamento.situacao == Equipamento.Situacao.DISPONIVEL
             and equipamento.tipo_id == reserva.tipo_equipamento_id and equipamento.local_id == reserva.local_id
         )
@@ -124,7 +128,7 @@ def _equipamentos_disponiveis(
             local=local,
             ativo=True,
             situacao=Equipamento.Situacao.DISPONIVEL,
-        )
+        ).sem_retirada_aberta()
         .annotate(possui_conflito=Exists(conflitos))
         .filter(possui_conflito=False)
         .order_by("numero_patrimonio")
@@ -335,6 +339,71 @@ def criar_reserva(
     return reserva
 
 
+def permite_cancelamento_operacional(reserva):
+    return (
+        reserva.status == Reserva.Status.ATIVA
+        and timezone.now() < reserva.inicio + Reserva.TOLERANCIA_RETIRADA
+        and not _possui_retirada_vinculada(reserva)
+    )
+
+
+def _validar_cancelamento_bloqueado(reserva, agora):
+    if reserva.status == Reserva.Status.CANCELADA:
+        raise ValidationError("Esta reserva já está cancelada.")
+    if reserva.status == Reserva.Status.EXPIRADA:
+        raise ValidationError("Esta reserva já expirou e não pode ser cancelada.")
+    if reserva.status != Reserva.Status.ATIVA:
+        raise ValidationError("Esta reserva não está ativa.")
+    if _expirar_reserva_bloqueada(reserva, agora):
+        return False
+    if _possui_retirada_vinculada(reserva):
+        raise ValidationError("Esta reserva já possui retirada registrada e não pode ser cancelada.")
+    return True
+
+
+def cancelar_reserva_operacional(*, operador, reserva_id, motivo, desistencia_confirmada):
+    from django.core.exceptions import PermissionDenied
+    from usuarios.permissoes import pode_cancelar_reserva_operacional
+
+    def operador_autorizado():
+        atual = get_user_model().objects.filter(pk=operador.pk).first() if operador.is_authenticated else None
+        if atual is None or not pode_cancelar_reserva_operacional(atual):
+            raise PermissionDenied
+        return atual
+
+    operador_autorizado()
+    motivo = motivo.strip()
+    if not motivo:
+        raise ValidationError({"motivo": "Informe o motivo da desistência comunicada pelo Professor."})
+    if desistencia_confirmada is not True:
+        raise ValidationError({"desistencia_confirmada": "Confirme que o Professor comunicou a desistência da reserva."})
+
+    with transaction.atomic():
+        try:
+            reserva = Reserva.objects.select_for_update().get(pk=reserva_id)
+        except Reserva.DoesNotExist as erro:
+            raise ValidationError("A reserva informada não existe.") from erro
+        operador_atual = operador_autorizado()
+        agora = timezone.now()
+        cancelavel = _validar_cancelamento_bloqueado(reserva, agora)
+        if cancelavel:
+            reserva.status = Reserva.Status.CANCELADA
+            reserva.motivo_cancelamento = motivo
+            reserva.cancelada_por = operador_atual
+            reserva.data_cancelamento = agora
+            reserva.save(update_fields=(
+                "status", "motivo_cancelamento", "cancelada_por", "data_cancelamento", "data_atualizacao",
+            ))
+            registrar_evento(
+                usuario=operador_atual, acao=AcaoAuditoria.RESERVA_CANCELADA,
+                resultado=RegistroAuditoria.Resultado.SUCESSO,
+                entidade="reservas.Reserva", entidade_id=reserva.pk,
+            )
+    if not cancelavel:
+        raise ValidationError("Esta reserva já expirou e não pode ser cancelada.")
+    return reserva
+
+
 def cancelar_reserva(*, professor, reserva):
     professor = get_user_model().objects.get(pk=professor.pk)
     if not e_professor_funcional(professor):
@@ -350,18 +419,8 @@ def cancelar_reserva(*, professor, reserva):
             pk=reserva.pk,
             professor=professor,
         )
-        if reserva_bloqueada.status == Reserva.Status.CANCELADA:
-            raise ValidationError("Esta reserva já está cancelada.")
-        if reserva_bloqueada.status == Reserva.Status.EXPIRADA:
-            raise ValidationError("Esta reserva já expirou e não pode ser cancelada.")
-        if reserva_bloqueada.status != Reserva.Status.ATIVA:
-            raise ValidationError("Esta reserva não está ativa.")
-        if _expirar_reserva_bloqueada(reserva_bloqueada, timezone.now()):
+        if not _validar_cancelamento_bloqueado(reserva_bloqueada, timezone.now()):
             expirou_durante_cancelamento = True
-        elif _possui_retirada_vinculada(reserva_bloqueada):
-            raise ValidationError(
-                "Esta reserva já possui retirada registrada e não pode ser cancelada."
-            )
         else:
             reserva_bloqueada.status = Reserva.Status.CANCELADA
             reserva_bloqueada.full_clean()

@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
+from movimentacoes.fixtures_testes import registrar_entrega_conferida
 from inventario.models import Categoria, Equipamento, Local, TipoEquipamento
 from usuarios.permissoes import GRUPO_PROFESSOR
 
@@ -25,7 +26,7 @@ class ConcorrenciaReservaTests(TransactionTestCase):
     def test_criacao_e_entrega_do_mesmo_professor_nao_invertem_bloqueios(self):
         from movimentacoes.tests import criar_cenario
         from movimentacoes.test_retirada_reserva import criar_reserva_alocada
-        from movimentacoes.services import registrar_retirada_reserva
+
         from pedagogico.services import validar_contexto_pedagogico
         from unittest.mock import patch
 
@@ -53,7 +54,7 @@ class ConcorrenciaReservaTests(TransactionTestCase):
                     inicio = reserva.inicio + timedelta(days=7)
                     return criar_reserva(professor=cenario["professor"], tipo_equipamento=reserva.tipo_equipamento,
                                          local=reserva.local, quantidade=1, inicio=inicio, fim=inicio + timedelta(hours=1), **escolhas).pk
-                return len(registrar_retirada_reserva(operador=cenario["operador"], reserva_id=reserva.pk))
+                return len(registrar_entrega_conferida(operador=cenario["operador"], reserva_id=reserva.pk))
             finally:
                 connections.close_all()
 

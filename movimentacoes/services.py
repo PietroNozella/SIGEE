@@ -1,6 +1,7 @@
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from django.contrib.auth import get_user_model
+from django.core import signing
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Case, CharField, Count, Exists, Max, Min, OuterRef, Q, Value, When
@@ -13,10 +14,58 @@ from auditoria.services import registrar_evento
 from inventario.models import Equipamento, TipoEquipamento
 from manutencoes.services import _abrir_manutencao_bloqueada
 from reservas.models import Reserva
-from reservas.services import _expirar_reserva_bloqueada, _substituir_unidades_bloqueadas
+from reservas.services import _expirar_reserva_bloqueada, resumo_entrega
 from usuarios.permissoes import pode_registrar_devolucao, pode_registrar_retirada, usuarios_funcionais_ativos
 
 from .models import Movimentacao
+
+
+SALT_CONFERENCIA_RETIRADA = "movimentacoes.conferencia_retirada.v1"
+ERRO_CONFERENCIA = "A conferência da entrega mudou ou é inválida. Reabra a conferência e confira os patrimônios novamente."
+
+
+def _retrato_conferencia(reserva, resumo):
+    return {
+        "professor": str(reserva.professor_id),
+        "tipo": reserva.tipo_equipamento_id,
+        "local": reserva.local_id,
+        "inicio": reserva.inicio.timestamp(),
+        "fim": reserva.fim.timestamp(),
+        "quantidade": reserva.quantidade,
+        "turma": reserva.turma_id,
+        "aptas": sorted(item.equipamento_id for item in resumo["unidades"] if item.apta_para_entrega),
+        "unidades": sorted([
+            item.equipamento_id, item.equipamento.numero_patrimonio,
+            item.equipamento.tipo_id, item.equipamento.local_id,
+            item.equipamento.ativo, item.equipamento.situacao, item.ja_entregue,
+        ] for item in resumo["unidades"]),
+    }
+
+
+def criar_conferencia_retirada(*, reserva, operador, resumo):
+    return signing.dumps({
+        "versao": 1, "reserva": reserva.pk, "operador": str(operador.pk),
+        "lote": str(uuid4()), "retrato": _retrato_conferencia(reserva, resumo),
+    }, salt=SALT_CONFERENCIA_RETIRADA, compress=True)
+
+
+def _ler_conferencia_retirada(conferencia, operador, reserva):
+    try:
+        dados = signing.loads(conferencia, salt=SALT_CONFERENCIA_RETIRADA)
+    except (signing.BadSignature, TypeError) as erro:
+        raise ValidationError(ERRO_CONFERENCIA) from erro
+    if (
+        not isinstance(dados, dict) or dados.get("versao") != 1
+        or dados.get("reserva") != reserva.pk or dados.get("operador") != str(operador.pk)
+        or not isinstance(dados.get("retrato"), dict)
+        or not isinstance(dados["retrato"].get("aptas"), list)
+    ):
+        raise ValidationError(ERRO_CONFERENCIA)
+    try:
+        lote = UUID(dados["lote"])
+    except (KeyError, TypeError, ValueError, AttributeError) as erro:
+        raise ValidationError(ERRO_CONFERENCIA) from erro
+    return dados["retrato"], lote
 
 
 def reservas_para_retirada(*, busca="", status=Reserva.Status.ATIVA):
@@ -41,7 +90,7 @@ def reservas_para_retirada(*, busca="", status=Reserva.Status.ATIVA):
     return reservas.order_by("inicio", "pk")
 
 
-def registrar_retirada_reserva(*, operador, reserva_id, observacao="", professor_informado=False):
+def registrar_retirada_reserva(*, operador, reserva_id, conferencia, observacao="", professor_informado=False):
     if not operador.is_authenticated:
         raise PermissionDenied
     operador_atual = get_user_model().objects.filter(pk=operador.pk).first()
@@ -58,6 +107,17 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao="", professor
             reserva = Reserva.objects.select_for_update().get(pk=reserva_id)
         except Reserva.DoesNotExist as erro:
             raise ValidationError("A reserva informada não existe.") from erro
+        retrato, lote = _ler_conferencia_retirada(conferencia, operador_atual, reserva)
+        registradas = list(Movimentacao.objects.filter(
+            reserva=reserva, lote_retirada=lote, tipo=Movimentacao.Tipo.RETIRADA,
+        ).order_by("pk"))
+        if registradas:
+            if (
+                sorted(item.equipamento_id for item in registradas) != retrato["aptas"]
+                or any(item.operador_id != operador_atual.pk for item in registradas)
+            ):
+                raise ValidationError(ERRO_CONFERENCIA)
+            return registradas
         if reserva.status != Reserva.Status.ATIVA:
             raise ValidationError("Esta reserva está cancelada ou expirada e não pode ser retirada.")
         entregues = set(Movimentacao.objects.filter(reserva=reserva, tipo=Movimentacao.Tipo.RETIRADA).values_list("equipamento_id", flat=True))
@@ -73,7 +133,6 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao="", professor
             # A tentativa de retirada não grava movimentações nem altera unidades.
             expirou = True
         else:
-            _substituir_unidades_bloqueadas(reserva, operador_atual)
             from pedagogico.models import UtilizacaoPedagogica
             from pedagogico.services import validar_contexto_pedagogico
 
@@ -93,6 +152,7 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao="", professor
             equipamentos = list(Equipamento.objects.select_for_update().filter(pk__in=ids).order_by("pk"))
             if len(equipamentos) != len(ids):
                 raise ValidationError("Uma unidade alocada não está mais cadastrada.")
+            sem_custodia = set(Equipamento.objects.filter(pk__in=ids).sem_retirada_aberta().values_list("pk", flat=True))
             para_entrega = []
             for equipamento in equipamentos:
                 if equipamento.pk in entregues:
@@ -104,6 +164,7 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao="", professor
                     or equipamento.local_id != reserva.local_id
                     or not equipamento.ativo
                     or equipamento.situacao != Equipamento.Situacao.DISPONIVEL
+                    or equipamento.pk not in sem_custodia
                 ):
                     raise ValidationError(
                         f"O patrimônio {equipamento.numero_patrimonio} está indisponível, inativo "
@@ -112,10 +173,11 @@ def registrar_retirada_reserva(*, operador, reserva_id, observacao="", professor
                 para_entrega.append(equipamento)
             if not para_entrega:
                 raise ValidationError("Nenhum equipamento está disponível para entrega. A reserva permanece com pendência de substituição.")
+            if retrato != _retrato_conferencia(reserva, resumo_entrega(reserva)):
+                raise ValidationError(ERRO_CONFERENCIA)
             parcial = len(para_entrega) + len(entregues) < reserva.quantidade
             if parcial and not professor_informado:
                 raise ValidationError("Informe o Professor sobre a falta e confirme a comunicação antes da entrega parcial.")
-            lote = uuid4()
             for equipamento in para_entrega:
                 movimentacao = Movimentacao(
                     equipamento=equipamento, operador=operador_atual,

@@ -28,6 +28,7 @@
         {% elif not resumo.aptas %}<p role="status">Nenhuma unidade está apta para entrega. A pendência será mantida.</p>
         {% else %}
         <form method="post" novalidate>{% csrf_token %}
+            {{ form.conferencia }}
             {% if resumo.entrega_parcial %}<div class="operator-notice"><p><strong>Entrega parcial: {{ resumo.aptas }} de {{ resumo.saldo }} unidades pendentes.</strong> Informe o Professor sobre a falta antes de confirmar.</p><label class="operator-check" for="{{ form.professor_informado.id_for_label }}">{{ form.professor_informado }} {{ form.professor_informado.label }}</label></div>{% endif %}
             <div class="form-field"><label for="{{ form.observacao.id_for_label }}">Observação <span class="form-optional">(opcional)</span></label>{{ form.observacao }}</div>
             <p class="form-help">Quantidade de equipamentos nesta entrega: {{ resumo.aptas }}. Operador, patrimônios e data/hora serão registrados automaticamente.{% if not resumo.entregues %} A primeira entrega é permitida antes de completar 30 minutos do início.{% else %} A complementação é permitida até o fim do período reservado.{% endif %}</p>
@@ -35,6 +36,7 @@
         </form>
         {% endif %}
         {% if retirada and resumo.devolucoes_pendentes %}<div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:devolucao_registrar' retirada.pk %}">Conferir devolução</a></div>{% endif %}
+        {% if pode_cancelar_operacional %}<div class="form-actions"><a class="btn btn-danger-sigee" href="{% url 'reservas:reserva_cancelamento_operacional' reserva.pk %}">Registrar desistência do Professor</a></div>{% endif %}
     </section>
 </div>
 {% endblock %}

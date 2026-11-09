@@ -9,22 +9,27 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from inventario.models import Categoria, Local, TipoEquipamento
 from movimentacoes.models import Movimentacao
 from movimentacoes.services import reservas_para_retirada
-from usuarios.permissoes import e_professor_funcional, pode_consultar_reservas_administrativas
+from usuarios.permissoes import (
+    e_professor_funcional, pode_cancelar_reserva_operacional, pode_consultar_historico,
+    pode_consultar_reservas_administrativas, pode_registrar_retirada,
+)
 
 from .brasilapi import consultar_feriados_no_periodo
-from .forms import DisponibilidadeReservaForm, ReservaForm
+from .forms import CancelamentoOperacionalForm, DisponibilidadeReservaForm, ReservaForm
 from .models import Reserva
 from .consultas import reservas_visiveis
 from .services import (
     cancelar_reserva,
+    cancelar_reserva_operacional,
     consultar_disponibilidade,
     criar_reserva,
     expirar_reservas_vencidas,
+    permite_cancelamento_operacional,
 )
 
 
@@ -60,10 +65,45 @@ def reserva_detalhe(request, reserva_id):
             and reserva.status == Reserva.Status.ATIVA
             and not reserva.tem_retirada
         ),
+        "pode_cancelar_operacional": (
+            pode_cancelar_reserva_operacional(request.user) and permite_cancelamento_operacional(reserva)
+        ),
         "substituicoes": reserva.substituicoes.select_related("equipamento_anterior", "equipamento_substituto"),
         "unidades": reserva.itens.select_related("equipamento__tipo"),
         "url_voltar": reverse(rota), "rotulo_voltar": rotulo,
         "aba_fluxo": "reservas" if reserva.etapa == "AGUARDANDO" else ("em_uso" if reserva.etapa == "EM_USO" else "historico"),
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def reserva_cancelamento_operacional(request, reserva_id):
+    if not pode_cancelar_reserva_operacional(request.user):
+        raise PermissionDenied
+    reserva = get_object_or_404(Reserva.objects.select_related(
+        "professor", "tipo_equipamento", "local", "turma", "cancelada_por",
+    ), pk=reserva_id)
+    form = CancelamentoOperacionalForm(request.POST if request.method == "POST" else None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            cancelar_reserva_operacional(
+                operador=request.user, reserva_id=reserva.pk, motivo=form.cleaned_data["motivo"],
+                desistencia_confirmada=form.cleaned_data["desistencia_confirmada"],
+            )
+        except ValidationError as erro:
+            _adicionar_erros_validacao(form, erro)
+            reserva.refresh_from_db()
+        else:
+            messages.success(request, "Reserva cancelada. A desistência e o responsável foram registrados.")
+            destino = "reservas:reserva_detalhe" if pode_consultar_historico(request.user) else "reservas:reserva_cancelamento_operacional"
+            return redirect(destino, reserva_id=reserva.pk)
+    return render(request, "reservas/reserva_cancelamento_operacional.html", {
+        "reserva": reserva, "form": form,
+        "pode_consultar_detalhe": pode_consultar_historico(request.user),
+        "pode_consultar_lista": pode_registrar_retirada(request.user),
+        "pode_confirmar": permite_cancelamento_operacional(reserva),
+        "unidades": reserva.itens.select_related("equipamento__tipo"),
+        "aba_fluxo": "reservas",
     })
 
 

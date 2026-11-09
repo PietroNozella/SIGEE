@@ -17,6 +17,7 @@ PERMISSAO_CONSULTAR_AUDITORIA = "auditoria.view_registroauditoria"
 PERMISSAO_CRIAR_RESERVA = "reservas.add_reserva"
 PERMISSAO_CONSULTAR_RESERVA = "reservas.view_reserva"
 PERMISSAO_ALTERAR_RESERVA = "reservas.change_reserva"
+PERMISSAO_CANCELAR_RESERVA_OPERACIONAL = "reservas.cancelar_reserva_operacional"
 PERMISSAO_REGISTRAR_RETIRADA = "movimentacoes.add_movimentacao"
 
 PERMISSOES_POR_GRUPO = {
@@ -51,6 +52,7 @@ PERMISSOES_POR_GRUPO = {
         "manutencoes.view_manutencao",
         "manutencoes.add_manutencao",
         PERMISSAO_REGISTRAR_RETIRADA,
+        PERMISSAO_CANCELAR_RESERVA_OPERACIONAL,
         "movimentacoes.view_movimentacao",
     ),
     GRUPO_PROFESSOR: (
@@ -99,6 +101,10 @@ def pode_consultar_meus_dados(user):
 
 def pode_registrar_retirada(user):
     return e_operador_funcional(user) and user.has_perm(PERMISSAO_REGISTRAR_RETIRADA)
+
+
+def pode_cancelar_reserva_operacional(user):
+    return e_operador_funcional(user) and user.has_perm(PERMISSAO_CANCELAR_RESERVA_OPERACIONAL)
 
 
 def pode_registrar_devolucao(user):

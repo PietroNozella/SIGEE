@@ -10,7 +10,7 @@ from .models import Reserva
 def reservas_visiveis(usuario):
     if not pode_consultar_historico(usuario):
         raise PermissionDenied
-    reservas = Reserva.objects.select_related("professor", "tipo_equipamento", "local", "turma", "disciplina", "atividade")
+    reservas = Reserva.objects.select_related("professor", "tipo_equipamento", "local", "turma", "disciplina", "atividade", "cancelada_por")
     return reservas.filter(professor=usuario) if e_professor_funcional(usuario) else reservas
 
 

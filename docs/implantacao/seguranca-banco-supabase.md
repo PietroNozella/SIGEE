@@ -96,6 +96,16 @@ Na atualização de PostgreSQL com dados existentes, coordenar migrations e publ
 
 Quando `0005` e `0006` são aplicadas na mesma transação PostgreSQL, executar `SET CONSTRAINTS ALL IMMEDIATE` entre elas para descarregar eventos diferidos das novas FKs antes da criação do CHECK. Conferir preservação dos dados, perfis e migrations antes de liberar o acesso. Uma recuperação com código anterior também exige tratar o default dessa coluna e reconciliar o contexto.
 
+### Cancelamento operacional de reserva
+
+`reservas.0008` acrescenta motivo, responsável e data de cancelamento, com restrição de completude quando esses metadados estiverem presentes. Reservas existentes mantêm os campos vazios; não há inferência de autoria ou motivo. O motivo possui default persistente vazio para preservar inserções pela versão anterior durante a preparação da atualização.
+
+`usuarios.0005` cria a permissão específica de cancelamento operacional e a acrescenta ao grupo Operador sem substituir as demais concessões. A configuração oficial em `configurar_perfis` também inclui essa permissão. Aplicar as migrations antes de disponibilizar o código que consulta os novos campos e executar `configurar_perfis` somente após as migrations.
+
+A mudança não cria tabelas novas. Validar o upgrade em banco isolado com reservas existentes e o fluxo de cancelamento versus entrega antes de publicar. A reversão da migration de campos elimina os metadados; preservar backup e registros antes de qualquer reversão. Reverter código não desfaz cancelamentos nem as novas alocações que a liberação tornou possíveis.
+
+Na aplicação ao banco configurado em 09/11/2026, também estavam pendentes `reservas.0007`, `movimentacoes.0005` e `usuarios.0004`. As cinco migrations foram aplicadas após backup `pg_dump`, na mesma transação da proteção da nova tabela de substituições. Nessa atualização, foi mantido um default SQL `false` em `movimentacoes_movimentacao.professor_informado`: a versão anterior do backend omite essa coluna nos INSERTs. Esse default é uma compatibilidade operacional, ainda não representada por `db_default` no estado Django; mantê-lo enquanto houver código antigo em execução e reavaliá-lo explicitamente após a atualização de todas as instâncias. O recibo local da execução está em `.tmp/ajustes-perfis-migrations-receipt.json`.
+
 ### Configuração da aplicação
 
 `vercel.json` define a região `gru1` e não contém suspensão do deploy da `main` nem comando de migrations. A aplicação usa `DATABASE_URL`; `sslmode=require` exige cifragem, sem equivaler à verificação completa de identidade por `verify-full`. Configurar segredos, hosts, `DEBUG=False` e SMTP no ambiente de destino, sem versionar valores reais. Validar a conexão usada pelo backend, os fluxos autenticados e a recuperação de senha após a publicação.

@@ -6,6 +6,7 @@ from . import views
 app_name = "reservas"
 
 urlpatterns = [
+    path("<int:reserva_id>/cancelamento-operacional/", views.reserva_cancelamento_operacional, name="reserva_cancelamento_operacional"),
     path("<int:reserva_id>/", views.reserva_detalhe, name="reserva_detalhe"),
     path("consulta/", views.reserva_consulta, name="reserva_consulta"),
     path("", views.reserva_lista, name="reserva_lista"),

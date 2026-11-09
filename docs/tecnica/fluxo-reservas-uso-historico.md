@@ -8,19 +8,33 @@ O fluxo organiza o empréstimo em Reservas, Em uso e Histórico. A classificaç�
 
 | Etapa | Professor | Operador | Administrador |
 |---|---|---|---|
-| Reservas | Cria e acompanha as próprias reservas, informa contexto e cancela quando permitido | Confere e entrega unidades aptas; acompanha o saldo e complementa a entrega | Consulta |
+| Reservas | Cria e acompanha as próprias reservas, informa contexto e cancela quando permitido | Confere e entrega unidades aptas; acompanha o saldo, complementa a entrega e registra desistência confirmada do Professor | Consulta |
 | Em uso | Consulta seus empréstimos pendentes e corrige o contexto | Registra devoluções parciais ou integrais e problemas por patrimônio | Consulta |
 | Histórico | Consulta somente seus registros encerrados | Consulta registros encerrados | Consulta registros encerrados |
 
 ## Reserva e entrega
 
 1. O Professor consulta disponibilidade por tipo/modelo, local e período e informa uma quantidade positiva, turma, disciplina e atividade. A observação é opcional.
-2. O servidor valida perfil, período, referências ativas, disponibilidade e conflitos; aloca unidades físicas compatíveis e grava uma única reserva com seus itens.
+2. O servidor valida perfil, período, antecedência de até 15 dias corridos pela data local, referências ativas, disponibilidade e conflitos; aloca unidades físicas compatíveis e grava uma única reserva com seus itens.
 3. O Professor cancela a reserva própria enquanto está ativa, sem retirada e antes de vencer a tolerância. Reservas sem retirada expiram integralmente ao completar 30 minutos do início; a rotina é acionada nos fluxos que sincronizam expiração.
-4. O Operador confere as unidades aptas. A conferência tenta substituir patrimônios em manutenção por unidades do mesmo tipo/local livres no período. Sem substituto suficiente, permite entrega parcial após comunicação ao Professor, mantendo o saldo explícito. A primeira entrega exige reserva ativa, contexto completo e equipamentos ativos e disponíveis, a partir do início e antes de completar a tolerância.
+4. O Operador confere as unidades aptas. A conferência tenta substituir patrimônios em manutenção por unidades do mesmo tipo/local livres no período. Sem substituto suficiente, permite entrega parcial após comunicação ao Professor, mantendo o saldo explícito. A primeira entrega exige reserva ativa, contexto completo e equipamentos ativos e disponíveis, a partir do início e antes do menor limite entre o término da reserva e a tolerância.
 5. A transação grava retiradas, situações `EM_USO`, utilizações pedagógicas por unidade e auditoria. A repetição não reentrega uma unidade. O lote passa para Em uso; o saldo não entregue continua acessível em Reservas e pode ser complementado até o fim do período. Após esse prazo, o saldo é apresentado como não atendido e as devoluções físicas permanecem abertas.
 
 Toda nova retirada exige reserva. As rotas e o serviço antigos de retirada sem reserva recusam novas operações. O fim do horário agendado não representa devolução física nem encerra o empréstimo.
+
+A situação disponível não substitui a verificação da custódia: reservas, substituições e entregas excluem patrimônios com retirada sem devolução, mesmo diante de uma situação cadastral inconsistente. A edição cadastral também recusa sua disponibilização.
+
+A tela de conferência emite uma confirmação assinada pelo Django, vinculada ao Operador, à reserva, ao conjunto exibido e a um UUID de lote. A preparação da tela pode substituir unidades em manutenção; a confirmação não faz novas substituições. Sob os bloqueios transacionais, a entrega compara o retrato conferido com os patrimônios e dados atuais. Mudanças exigem conferir novamente a lista, sem gravar a entrega desatualizada.
+
+Reenviar a mesma confirmação após sucesso consulta somente as retiradas daquele lote. Não cria complemento, utilizações ou auditorias de sucesso adicionais, inclusive após surgir um substituto ou depois de devolução e término do prazo. A autorização atual do Operador continua obrigatória. Uma entrega complementar exige nova conferência. Nenhuma tabela nova é necessária para esse controle.
+
+## Cancelamento operacional
+
+O Operador com `reservas.cancelar_reserva_operacional` acessa um formulário separado da entrega para registrar a desistência comunicada pelo Professor. Exige motivo e confirmação da comunicação. Não atende ausência presumida, disputa por equipamentos ou exceção administrativa ainda não definida.
+
+O serviço recarrega a autorização atual, bloqueia a mesma reserva utilizada na entrega e revalida estado, prazo e ausência de qualquer retirada, inclusive já devolvida. Se a reserva atingir o limite sem retirada, persiste a expiração e recusa o cancelamento. Caso contrário, grava `CANCELADA`, motivo, responsável, data e auditoria na mesma transação. A falha na auditoria desfaz o cancelamento. Não há alteração de equipamentos, exclusão de alocações ou criação de movimentações.
+
+O detalhe autorizado mostra os metadados operacionais. O cancelamento próprio do Professor continua no fluxo anterior; registros sem metadados não recebem preenchimento presumido. A exportação assistida inclui os dados da reserva do Professor e as reservas canceladas pelo próprio Operador.
 
 ## Devolução
 

@@ -1,4 +1,4 @@
-from movimentacoes.fixtures_testes import criar_retirada_legada
+from movimentacoes.fixtures_testes import criar_retirada_legada, registrar_entrega_conferida
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -11,7 +11,7 @@ from inventario.models import Equipamento
 from legal.services import registrar_aceite_vigente
 
 from .models import Movimentacao
-from .services import registrar_devolucao, registrar_retirada_reserva
+from .services import registrar_devolucao
 from .test_retirada_reserva import criar_reserva_alocada
 from .tests import criar_cenario
 
@@ -32,7 +32,7 @@ class HistoricoTests(TestCase):
         cls.devolucao = registrar_devolucao(operador=cls.cenario["operador"], retirada_id=cls.sem_reserva.pk)
         cls.reserva, _ = criar_reserva_alocada(cls.cenario)
         with patch("movimentacoes.services.timezone.now", return_value=cls.reserva.inicio):
-            cls.com_reserva = registrar_retirada_reserva(operador=cls.cenario["operador"], reserva_id=cls.reserva.pk)
+            cls.com_reserva = registrar_entrega_conferida(operador=cls.cenario["operador"], reserva_id=cls.reserva.pk)
 
     def setUp(self):
         self.url = reverse("movimentacoes:historico_lista")

@@ -1,8 +1,18 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Exists, OuterRef
 
 
 class EquipamentoQuerySet(models.QuerySet):
+    def sem_retirada_aberta(self):
+        from movimentacoes.models import Movimentacao
+
+        retiradas = Movimentacao.objects.filter(
+            equipamento_id=OuterRef("pk"), tipo=Movimentacao.Tipo.RETIRADA,
+            devolucoes__isnull=True,
+        )
+        return self.alias(tem_retirada_aberta=Exists(retiradas)).filter(tem_retirada_aberta=False)
+
     # Preserva a RN-06 também nas exclusões em lote do Django.
     def delete(self):
         total_excluido = 0
@@ -128,6 +138,11 @@ class Equipamento(models.Model):
 
     def clean(self):
         super().clean()
+        if (
+            self.pk and self.situacao == self.Situacao.DISPONIVEL
+            and not Equipamento.objects.filter(pk=self.pk).sem_retirada_aberta().exists()
+        ):
+            raise ValidationError({"situacao": "Registre a devolução física antes de disponibilizar o equipamento."})
         if (
             self.pk and self.situacao != self.Situacao.MANUTENCAO
             and self.manutencoes.exclude(estado="CONCLUIDA").exists()

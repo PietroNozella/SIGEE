@@ -461,7 +461,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const dataIndisponivelNoCalendario = (data) => {
         const dataMinima = dataUtcDoIso(reservationDate?.min) || hojeEmUtc();
-        return data < dataMinima || eFimDeSemana(data);
+        const dataMaxima = dataUtcDoIso(reservationDate?.max);
+        return data < dataMinima || (dataMaxima && data > dataMaxima) || eFimDeSemana(data);
     };
 
     function renderizarCalendario({ focarData = "" } = {}) {
@@ -476,12 +477,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const hoje = isoDaDataUtc(hojeEmUtc());
         const consulta = calendarHolidayCache.get(ano);
         const dataMinima = dataUtcDoIso(reservationDate?.min) || hojeEmUtc();
+        const dataMaxima = dataUtcDoIso(reservationDate?.max);
         const primeiroMesPermitido = new Date(Date.UTC(dataMinima.getUTCFullYear(), dataMinima.getUTCMonth(), 1));
 
         const tituloMes = formatoMes.format(primeiroDia);
         reservationCalendarTitle.textContent = tituloMes.charAt(0).toUpperCase() + tituloMes.slice(1);
         reservationCalendarDays.replaceChildren();
         reservationCalendarPrevious.disabled = primeiroDia <= primeiroMesPermitido;
+        reservationCalendarNext.disabled = Boolean(dataMaxima && ultimoDia >= dataMaxima);
 
         if (reservationCalendarStatus) {
             if (!consulta) {
@@ -507,7 +510,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const feriado = feriadoNaData(data);
             const fimDeSemana = eFimDeSemana(data);
             const passada = data < dataMinima;
-            const indisponivel = fimDeSemana || passada;
+            const foraDoPrazo = dataMaxima && data > dataMaxima;
+            const indisponivel = dataIndisponivelNoCalendario(data);
             const botao = document.createElement("button");
             const descricao = [formatoDataLonga.format(data)];
 
@@ -524,6 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (fimDeSemana) descricao.push("Indisponível: fim de semana");
             if (passada) descricao.push("Indisponível: data passada");
+            if (foraDoPrazo) descricao.push("Indisponível: além da antecedência permitida");
             if (dataIso === hoje) botao.setAttribute("aria-current", "date");
             if (dataIso === selecionada) {
                 botao.classList.add("is-selected");
@@ -553,6 +558,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const exibirMes = (data, { focarData = "" } = {}) => {
+        const dataMinima = dataUtcDoIso(reservationDate?.min) || hojeEmUtc();
+        const dataMaxima = dataUtcDoIso(reservationDate?.max);
+        if (data < dataMinima) data = dataMinima;
+        if (dataMaxima && data > dataMaxima) data = dataMaxima;
         calendarVisibleMonth = new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), 1));
         renderizarCalendario({ focarData });
         carregarFeriadosDoAno(calendarVisibleMonth.getUTCFullYear());
@@ -726,6 +735,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 reservationDate.value = "";
                 atualizarExibicaoDaData();
             }
+            if (focarErro) (reservationCalendarToggle || reservationDate)?.focus();
+            return false;
+        }
+
+        const dataMaxima = dataUtcDoIso(reservationDate?.max);
+        if (data && dataMaxima && data > dataMaxima) {
+            definirErroCliente(reservationDate, "Escolha uma data dentro da antecedência permitida.");
             if (focarErro) (reservationCalendarToggle || reservationDate)?.focus();
             return false;
         }
