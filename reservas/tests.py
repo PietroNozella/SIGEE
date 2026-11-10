@@ -567,6 +567,7 @@ class ReservaFrontendTests(ReservaBaseTests):
             resposta.json(),
             {
                 "disponiveis": 1,
+                "cota": {"limite": None, "comprometidas": 0, "saldo": None},
                 "consulta_feriados": {
                     "completa": True,
                     "feriados": [

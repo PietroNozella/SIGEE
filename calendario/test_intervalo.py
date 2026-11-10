@@ -140,7 +140,7 @@ class IntervaloReservasTests(TestCase):
 
     def test_admin_salva_com_historico_e_auditoria(self):
         resposta = self.client.post(reverse("calendario:intervalo"), {"intervalo_minutos": 12, "motivo": "Conferência do lote", "versao": 1})
-        self.assertRedirects(resposta, reverse("calendario:calendario_escola"))
+        self.assertRedirects(resposta, reverse("calendario:calendario_escola") + "?secao=reservas")
         self.assertEqual(intervalo_vigente(), timedelta(minutes=12))
         alteracao = AlteracaoCalendario.objects.get()
         self.assertEqual(alteracao.anterior["intervalo_minutos"], 5)

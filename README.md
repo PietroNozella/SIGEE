@@ -98,9 +98,11 @@ Consulte a [arquitetura do sistema](docs/tecnica/arquitetura-do-sistema.md) para
 
 ## Execução local
 
-O Administrador configura a semana habitual e as exceções por data em **Administração → Calendário da escola**. Uso dos equipamentos e atendimento do Operador têm horários separados. Inicialmente, segunda a sexta permanecem liberadas durante todo o dia. Novas reservas seguem as faixas; compromissos já confirmados são preservados e sinalizados quando uma mudança exigir decisão. O seletor de datas de exceção também destaca os feriados nacionais consultados na BrasilAPI.
+O Administrador configura a semana habitual e as exceções por data em **Administração → Configurações → Calendário**. Uso dos equipamentos e atendimento do Operador têm horários separados. Inicialmente, segunda a sexta permanecem liberadas durante todo o dia. Novas reservas seguem as faixas; compromissos já confirmados são preservados e sinalizados quando uma mudança exigir decisão. O seletor de datas de exceção também destaca os feriados nacionais consultados na BrasilAPI.
 
-Nessa mesma tela, **Configurar intervalo** define a margem após o uso das mesmas unidades, inicialmente 5 minutos, com opção zero para desativá-la. Cada reserva guarda o intervalo vigente; alterações posteriores não reescrevem compromissos e registros anteriores preservam margem zero. A regra é aplicada na consulta, na confirmação e na substituição por manutenção. O horário não libera um equipamento ainda sob custódia. A mudança do parâmetro exige motivo e fica no histórico do calendário.
+Na seção **Regras de reserva**, **Configurar intervalo** define a margem após o uso das mesmas unidades, inicialmente 5 minutos, com opção zero para desativá-la. Cada reserva guarda o intervalo vigente; alterações posteriores não reescrevem compromissos e registros anteriores preservam margem zero. A regra é aplicada na consulta, na confirmação e na substituição por manutenção. O horário não libera um equipamento ainda sob custódia. A mudança do parâmetro exige motivo e fica no histórico do calendário.
+
+Em **Regras de reserva → Configurar cotas**, o Administrador define um limite opcional de unidades simultâneas por professor e tipo/modelo. Inicialmente não existe cota adicional; deixar o campo vazio a desativa. O cálculo soma reservas ativas do mesmo professor e tipo em todos os locais, considerando o pico de sobreposição no período solicitado. Consulta e confirmação respeitam o saldo; dividir pedidos não amplia a cota. Mudanças exigem motivo e ficam no histórico, preservando as reservas confirmadas. Pedidos acima da cota são bloqueados, sem fluxo de exceção nesta etapa.
 
 Os comandos abaixo utilizam **PowerShell no Windows** e preparam uma instalação nova.
 

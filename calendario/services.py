@@ -9,6 +9,7 @@ from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from usuarios.permissoes import pode_configurar_calendario
+from inventario.models import TipoEquipamento
 
 from .models import AlteracaoCalendario, CalendarioEscolar, RegraCalendario
 
@@ -21,6 +22,34 @@ def bloquear_calendario():
 def intervalo_vigente():
     calendario = CalendarioEscolar.objects.filter(pk=1).first() or CalendarioEscolar()
     return timedelta(minutes=calendario.intervalo_minutos)
+
+
+def salvar_cota(*, usuario, tipo_id, limite, motivo, versao):
+    with transaction.atomic():
+        calendario = bloquear_calendario()
+        atual = get_user_model().objects.filter(pk=usuario.pk).first() if usuario.is_authenticated else None
+        if atual is None or not pode_configurar_calendario(atual):
+            raise PermissionDenied
+        if calendario.versao != versao:
+            raise ValidationError("O calendário foi alterado por outro Administrador. Reabra a página e confira a versão atual.")
+        if not motivo.strip():
+            raise ValidationError("Informe o motivo da alteração da cota.")
+        tipo = TipoEquipamento.objects.select_for_update().select_related("categoria").get(pk=tipo_id)
+        titulo = f"Cota por professor · {tipo}"
+        anterior = {"titulo": titulo, "tipo_id": tipo.pk, "limite": tipo.cota_por_professor,
+                    "resumo": "Sem cota adicional" if tipo.cota_por_professor is None else f"{tipo.cota_por_professor} unidade(s) simultânea(s) por professor"}
+        tipo.cota_por_professor = limite
+        tipo.full_clean()
+        tipo.save(update_fields=["cota_por_professor"])
+        calendario.versao += 1
+        calendario.save(update_fields=["versao"])
+        novo = {"titulo": titulo, "tipo_id": tipo.pk, "limite": limite,
+                "resumo": "Sem cota adicional" if limite is None else f"{limite} unidade(s) simultânea(s) por professor"}
+        alteracao = AlteracaoCalendario.objects.create(usuario=atual, motivo=motivo.strip(), anterior=anterior, novo=novo, versao=calendario.versao)
+        registrar_evento(usuario=atual, acao=AcaoAuditoria.CALENDARIO_ALTERADO,
+                        resultado=RegistroAuditoria.Resultado.SUCESSO,
+                        entidade="calendario.AlteracaoCalendario", entidade_id=alteracao.pk)
+    return alteracao
 
 
 def salvar_intervalo(*, usuario, minutos, motivo, versao):

@@ -215,13 +215,40 @@ class CalendarioTests(TestCase):
 
     def test_get_nao_grava_e_menu_e_exclusivo_admin(self):
         resposta = self.client.get(reverse("calendario:calendario_escola"))
-        self.assertContains(resposta, "Calendário da escola")
+        self.assertContains(resposta, "Configurações da escola")
         self.assertContains(resposta, 'aria-current="page"')
         self.assertFalse(AlteracaoCalendario.objects.exists())
         self.assertFalse(RegraCalendario.objects.exists())
         for perfil in ("professor", "operador"):
             self.client.force_login(self.cenario[perfil])
-            self.assertNotContains(self.client.get(reverse("inventario:equipamento_lista")), 'title="Calendário da escola"')
+            self.assertNotContains(self.client.get(reverse("inventario:equipamento_lista")), 'title="Configurações da escola"')
+
+    def test_secoes_separam_calendario_regras_e_historico(self):
+        url = reverse("calendario:calendario_escola")
+        calendario = self.client.get(url)
+        self.assertContains(calendario, 'id="semana-heading"')
+        self.assertNotContains(calendario, 'id="regras-heading"')
+        regras = self.client.get(url, {"secao": "reservas"})
+        self.assertContains(regras, "Configurar intervalo")
+        self.assertContains(regras, "Configurar cotas")
+        self.assertNotContains(regras, 'id="semana-heading"')
+        self.configurar(data=self.inicio.date())
+        historico = self.client.get(url, {"secao": "historico"})
+        self.assertContains(historico, "Ajuste do funcionamento da escola.")
+        self.assertContains(historico, '?secao=calendario#afetadas-heading')
+        self.assertNotContains(historico, 'id="semana-heading"')
+        self.assertNotContains(historico, 'id="regras-heading"')
+
+    def test_secao_desconhecida_retorna_calendario_sem_alterar_regras(self):
+        resposta = self.client.get(reverse("calendario:calendario_escola"), {"secao": "desconhecida"})
+        self.assertContains(resposta, 'id="semana-heading"')
+        self.assertFalse(AlteracaoCalendario.objects.exists())
+
+    def test_erro_de_funcionamento_aponta_para_grupo_de_radios(self):
+        resposta = self.client.post(reverse("calendario:regra_semanal", args=["USO", 0]), self.dados_form(modo="INVALIDO"))
+        self.assertContains(resposta, 'href="#funcionamento-group"')
+        self.assertContains(resposta, 'aria-describedby="id_funcionamento_error"')
+        self.assertNotContains(resposta, 'href="#"')
 
     def test_comando_perfis_preserva_exclusividade_da_configuracao(self):
         call_command("configurar_perfis", stdout=StringIO())

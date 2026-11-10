@@ -77,6 +77,7 @@ class Reserva(models.Model):
     calendario_confirmado = models.JSONField(default=dict, db_default={}, blank=True, editable=False)
     # Reservas anteriores preservam a política sem margem entre usos.
     intervalo_apos_uso = models.DurationField(default=timedelta, db_default=timedelta(), editable=False)
+    cota_confirmada = models.PositiveIntegerField(null=True, blank=True, default=None, db_default=None, editable=False)
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -99,6 +100,7 @@ class Reserva(models.Model):
             ("cancelar_reserva_operacional", "Pode registrar cancelamento operacional de reserva"),
         ]
         constraints = [
+            models.CheckConstraint(condition=Q(cota_confirmada__isnull=True) | Q(cota_confirmada__gte=1), name="reserva_cota_confirmada_valida"),
             models.CheckConstraint(condition=Q(intervalo_apos_uso__gte=timedelta()), name="reserva_intervalo_nao_negativo"),
             models.CheckConstraint(
                 condition=(Q(turma__isnull=True, disciplina__isnull=True, atividade__isnull=True)

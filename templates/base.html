@@ -107,9 +107,9 @@
 
             <span class="sidebar-section-title">Administração</span>
             {% if pode_configurar_calendario %}
-            <a class="side-nav-item{% if request.resolver_match.namespace == 'calendario' %} is-active{% endif %}" title="Calendário da escola" href="{% url 'calendario:calendario_escola' %}"{% if request.resolver_match.namespace == 'calendario' %} aria-current="page"{% endif %}>
-                <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
-                <span class="side-nav-label">Calendário da escola</span>
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'calendario' %} is-active{% endif %}" title="Configurações da escola" href="{% url 'calendario:calendario_escola' %}"{% if request.resolver_match.namespace == 'calendario' %} aria-current="page"{% endif %}>
+                <img src="{% static 'inventario/icons/settings.svg' %}" alt="" aria-hidden="true">
+                <span class="side-nav-label">Configurações</span>
             </a>
             {% endif %}
             {% if pode_consultar_usuarios %}
@@ -205,7 +205,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="{% static 'inventario/js/sigee.js' %}?v=20261110.2"></script>
+    <script src="{% static 'inventario/js/sigee.js' %}?v=20261110.5"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

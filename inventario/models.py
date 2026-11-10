@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Exists, OuterRef
 
@@ -66,6 +67,10 @@ class TipoEquipamento(models.Model):
     )
     nome = models.CharField("tipo/modelo", max_length=150)
     ativo = models.BooleanField(default=True)
+    cota_por_professor = models.PositiveIntegerField(
+        null=True, blank=True, default=None, db_default=None,
+        validators=[MinValueValidator(1), MaxValueValidator(2147483647)],
+    )
     data_criacao = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -73,6 +78,8 @@ class TipoEquipamento(models.Model):
         verbose_name = "tipo de equipamento"
         verbose_name_plural = "tipos de equipamento"
         constraints = [
+            models.CheckConstraint(condition=models.Q(cota_por_professor__isnull=True)
+                | models.Q(cota_por_professor__gte=1, cota_por_professor__lte=2147483647), name="tipo_cota_professor_valida"),
             models.UniqueConstraint(
                 fields=("categoria", "nome"),
                 name="tipo_equip_categoria_nome_unicos",

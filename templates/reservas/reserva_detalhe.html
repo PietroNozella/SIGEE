@@ -9,6 +9,7 @@
         <p><strong>Situação:</strong> {% if e_professor %}{% include "reservas/_situacao_professor.html" %}{% else %}{% if reserva.etapa == 'AGUARDANDO' %}Aguardando retirada{% elif reserva.etapa == 'EM_USO' %}Em uso{% elif reserva.etapa == 'ENCERRADA' %}Encerrada{% else %}{{ reserva.get_status_display }}{% endif %}{% endif %}</p>
         <p><strong>Período reservado:</strong> {{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }} · {{ reserva.quantidade }} unidade(s)</p>
         <p><strong>Intervalo acordado após o uso:</strong> {{ reserva.intervalo_minutos }} minuto{{ reserva.intervalo_minutos|pluralize:"s" }} para as mesmas unidades.</p>
+        <p><strong>Cota na confirmação:</strong> {% if reserva.cota_confirmada is not None %}{{ reserva.cota_confirmada }} unidade{{ reserva.cota_confirmada|pluralize:"s" }} simultânea{{ reserva.cota_confirmada|pluralize:"s" }} deste tipo por professor.{% else %}Sem cota adicional.{% endif %}</p>
         {% if e_professor %}
         <section class="professor-detail-section" aria-labelledby="professor-context-heading">
             <header class="professor-section-header">

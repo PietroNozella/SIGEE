@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}{% if semanal %}{{ regra.get_dia_semana_display }}{% else %}Exceção por data{% endif %} | Calendário da escola | SIGEE{% endblock %}
-{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.3">{% endblock %}
+{% block title %}{% if semanal %}{{ regra.get_dia_semana_display }}{% else %}Exceção por data{% endif %} | Configurações da escola | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.6">{% endblock %}
 {% block content %}
 <div class="page-content school-calendar calendar-form-page">
-    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'calendario:calendario_escola' %}">Calendário da escola</a><span aria-hidden="true">/</span><span aria-current="page">{% if semanal %}Semana habitual{% else %}Exceção por data{% endif %}</span></nav>
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'calendario:calendario_escola' %}">Configurações da escola</a><span aria-hidden="true">/</span><span aria-current="page">{% if semanal %}Semana habitual{% else %}Exceção por data{% endif %}</span></nav>
     <header class="page-header"><div><h1>{% if semanal %}Horários de {{ regra.get_dia_semana_display|lower }}{% elif regra.pk %}Editar exceção por data{% else %}Adicionar exceção por data{% endif %}</h1><p>{% if semanal %}Configure {{ regra.get_finalidade_display|lower }} para esse dia da semana.{% else %}Defina o que muda no funcionamento da escola em uma data específica.{% endif %}</p></div></header>
     <section class="form-card calendar-editor" aria-labelledby="regra-heading">
         <h2 id="regra-heading" class="visually-hidden">Configuração de funcionamento</h2>
@@ -22,7 +22,7 @@
                 </div>
             </fieldset>
             {% endif %}
-            <fieldset class="calendar-form-section calendar-mode"><legend>Como será o funcionamento?</legend>
+            <fieldset class="calendar-form-section calendar-mode" id="funcionamento-group" tabindex="-1"{% if form.funcionamento.errors %} aria-describedby="{{ form.funcionamento.auto_id }}_error"{% endif %}><legend>Como será o funcionamento?</legend>
                 <div class="calendar-mode-options">{% for opcao in form.funcionamento %}<label for="{{ opcao.id_for_label }}">{{ opcao.tag }}<span><strong>{{ opcao.choice_label }}</strong><small aria-hidden="true">{% if opcao.data.value == 'FECHADO' %}Sem funcionamento{% elif opcao.data.value == 'INTEIRO' %}Sem limite de horário{% else %}Um ou mais turnos{% endif %}</small></span></label>{% endfor %}</div>
                 {% if form.funcionamento.errors %}<div class="field-error" id="{{ form.funcionamento.auto_id }}_error">{% for erro in form.funcionamento.errors %}<span>{{ erro }}</span>{% endfor %}</div>{% endif %}
             </fieldset>
@@ -41,4 +41,4 @@
     </section>
 </div>
 {% endblock %}
-{% block extra_scripts %}<script src="{% static 'calendario/calendario.js' %}?v=20261110.3"></script>{% endblock %}
+{% block extra_scripts %}<script src="{% static 'calendario/calendario.js' %}?v=20261110.6"></script>{% endblock %}

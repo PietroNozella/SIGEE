@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Intervalo entre reservas | SIGEE{% endblock %}
-{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.4">{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.6">{% endblock %}
 {% block content %}
 <div class="page-content school-calendar calendar-form-page calendar-removal-page">
-    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'calendario:calendario_escola' %}">Calendário da escola</a><span aria-hidden="true">/</span><span aria-current="page">Intervalo entre reservas</span></nav>
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'calendario:calendario_escola' %}?secao=reservas">Configurações da escola</a><span aria-hidden="true">/</span><span aria-current="page">Intervalo entre reservas</span></nav>
     <header class="page-header"><div><h1>Intervalo entre reservas</h1><p>Reserve tempo para conferir e preparar as mesmas unidades antes do próximo uso.</p></div></header>
     <section class="form-card calendar-editor" aria-label="Configuração do intervalo">
         {% include "calendario/_erros.html" %}
@@ -14,7 +14,7 @@
             <p class="calendar-interval-example">Exemplo: se uma reserva terminar às 10h e tiver intervalo de 5 minutos, as mesmas unidades poderão ser reservadas a partir das 10h05.</p>
             <fieldset class="calendar-form-section calendar-reason"><legend>Registro da alteração</legend><p class="calendar-section-description">O motivo e o responsável ficam no histórico do calendário.</p>{% include "calendario/_campo.html" with campo=form.motivo %}</fieldset>
             <p class="calendar-save-note">O novo valor será guardado nas novas reservas. As já confirmadas mantêm o intervalo acordado. Passar o horário não libera uma unidade que ainda não foi devolvida e conferida.</p>
-            <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'calendario:calendario_escola' %}">Cancelar</a><button class="btn btn-primary-sigee" type="submit">Salvar intervalo</button></div>
+            <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'calendario:calendario_escola' %}?secao=reservas">Cancelar</a><button class="btn btn-primary-sigee" type="submit">Salvar intervalo</button></div>
         </form>
     </section>
 </div>

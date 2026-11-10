@@ -5,15 +5,17 @@ from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods
 
 from usuarios.permissoes import pode_configurar_calendario
+from inventario.models import TipoEquipamento
 from reservas.brasilapi import feriados_para_calendario
 
-from .forms import FaixaHorarioFormSet, IntervaloReservasForm, RegraCalendarioForm, RemoverExcecaoForm
+from .forms import CotaProfessorForm, FaixaHorarioFormSet, IntervaloReservasForm, RegraCalendarioForm, RemoverExcecaoForm
 from .models import AlteracaoCalendario, CalendarioEscolar, RegraCalendario
-from .services import descrever_regra, intervalo_vigente, regras_vigentes, reservas_afetadas, salvar_intervalo, salvar_regra
+from .services import descrever_regra, intervalo_vigente, regras_vigentes, reservas_afetadas, salvar_cota, salvar_intervalo, salvar_regra
 
 
 def _exigir_administrador(usuario):
@@ -40,6 +42,9 @@ def feriados(request):
 @require_GET
 def calendario_escola(request):
     _exigir_administrador(request.user)
+    secao = request.GET.get("secao", "calendario")
+    if secao not in ("calendario", "reservas", "historico"):
+        secao = "calendario"
     regras = regras_vigentes()
     dias = []
     for dia, nome in RegraCalendario.DIAS:
@@ -60,12 +65,43 @@ def calendario_escola(request):
     excecoes.sort(key=lambda e: (e["data"], e["finalidade"]))
     afetadas = reservas_afetadas(regras=regras)
     return render(request, "calendario/calendario.html", {
-        "dias": dias, "excecoes": excecoes, "versao": _versao(),
+        "dias": dias, "excecoes": excecoes, "versao": _versao(), "secao": secao,
         "intervalo_minutos": int(intervalo_vigente().total_seconds() // 60),
+        "total_cotas": TipoEquipamento.objects.filter(ativo=True, cota_por_professor__isnull=False).count(),
         "afetadas": Paginator(afetadas, 10).get_page(request.GET.get("pagina")),
         "total_afetadas": len(afetadas),
         "alteracoes": AlteracaoCalendario.objects.select_related("usuario")[:15],
     })
+
+
+@login_required
+@require_GET
+def cotas(request):
+    _exigir_administrador(request.user)
+    busca = request.GET.get("busca", "").strip()[:200]
+    tipos = TipoEquipamento.objects.select_related("categoria")
+    if busca:
+        from django.db.models import Q
+        tipos = tipos.filter(Q(nome__icontains=busca) | Q(categoria__nome__icontains=busca))
+    return render(request, "calendario/cotas.html", {"tipos": Paginator(tipos, 20).get_page(request.GET.get("pagina")), "busca": busca})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def cota_form(request, tipo_id):
+    _exigir_administrador(request.user)
+    tipo = get_object_or_404(TipoEquipamento.objects.select_related("categoria"), pk=tipo_id)
+    form = CotaProfessorForm(request.POST if request.method == "POST" else None, instance=tipo, initial={"versao": _versao()})
+    if request.method == "POST" and form.is_valid():
+        try:
+            salvar_cota(usuario=request.user, tipo_id=tipo.pk, limite=form.cleaned_data["cota_por_professor"],
+                motivo=form.cleaned_data["motivo"], versao=form.cleaned_data["versao"])
+        except ValidationError as erro:
+            form.add_error(None, " ".join(erro.messages))
+        else:
+            messages.success(request, "Cota atualizada. Reservas já confirmadas foram preservadas.")
+            return redirect("calendario:cotas")
+    return render(request, "calendario/cota_form.html", {"form": form, "tipo": tipo})
 
 
 @login_required
@@ -83,7 +119,7 @@ def intervalo_form(request):
             form.add_error(None, " ".join(erro.messages))
         else:
             messages.success(request, "Intervalo atualizado. O novo valor vale somente para novas reservas.")
-            return redirect("calendario:calendario_escola")
+            return redirect(reverse("calendario:calendario_escola") + "?secao=reservas")
     return render(request, "calendario/intervalo_form.html", {"form": form})
 
 

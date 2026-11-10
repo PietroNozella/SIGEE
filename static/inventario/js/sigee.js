@@ -834,6 +834,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (availabilityMessage) availabilityMessage.textContent = disponiveis
                 ? `${disponiveis} unidade(s) disponível(is) para o período informado.`
                 : "Nenhuma unidade disponível para o período informado.";
+            if (availabilityMessage && payload.cota?.limite != null) {
+                availabilityMessage.textContent += ` Sua cota é ${payload.cota.limite} unidade(s) simultânea(s) deste tipo em todos os locais. Já comprometidas no período: ${payload.cota.comprometidas}. Saldo da cota: ${payload.cota.saldo}.`;
+            }
             if (disponiveis > 0) {
                 liberarQuantidade(disponiveis);
             } else {

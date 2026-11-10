@@ -13,6 +13,7 @@ from inventario.models import Equipamento, Local, TipoEquipamento
 from usuarios.permissoes import e_professor_funcional
 
 from .models import Reserva, ReservaEquipamento, SubstituicaoReserva
+from .cotas import cota_no_periodo
 
 
 def _substituir_unidades_bloqueadas(reserva, usuario):
@@ -214,6 +215,11 @@ def expirar_reservas_vencidas(agora=None):
 
 
 def consultar_disponibilidade(*, professor, tipo_equipamento, local, inicio, fim):
+    return resumo_disponibilidade(professor=professor, tipo_equipamento=tipo_equipamento,
+        local=local, inicio=inicio, fim=fim)["disponiveis"]
+
+
+def resumo_disponibilidade(*, professor, tipo_equipamento, local, inicio, fim):
     from calendario.services import intervalo_vigente
 
     expirar_reservas_vencidas()
@@ -226,13 +232,16 @@ def consultar_disponibilidade(*, professor, tipo_equipamento, local, inicio, fim
         fim=fim,
     )
     reserva.full_clean()
-    return _equipamentos_disponiveis(
+    fisicas = _equipamentos_disponiveis(
         tipo_equipamento,
         local,
         inicio,
         fim,
         intervalo_apos_uso=intervalo_vigente(),
     ).count()
+    tipo_atual = TipoEquipamento.objects.get(pk=tipo_equipamento.pk)
+    cota = cota_no_periodo(professor=professor, tipo_equipamento=tipo_atual, inicio=inicio, fim=fim)
+    return {"disponiveis": fisicas if cota["saldo"] is None else min(fisicas, cota["saldo"]), "cota": cota}
 
 
 def criar_reserva(
@@ -317,6 +326,13 @@ def criar_reserva(
         reserva.tipo_equipamento = tipo_bloqueado
         reserva.local = local_bloqueado
         reserva.full_clean()
+        cota = cota_no_periodo(professor=professor_atual, tipo_equipamento=tipo_bloqueado, inicio=inicio, fim=fim)
+        if cota["saldo"] is not None and quantidade > cota["saldo"]:
+            raise ValidationError({"quantidade": (
+                f"A cota deste tipo é {cota['limite']} unidade(s) simultânea(s) por Professor. "
+                f"Você já tem até {cota['comprometidas']} comprometida(s) no período e pode solicitar mais {cota['saldo']}."
+            )})
+        reserva.cota_confirmada = cota["limite"]
         equipamentos = list(
             _equipamentos_disponiveis(
                 tipo_bloqueado,

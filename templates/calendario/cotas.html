@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Cotas por professor | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.6">{% endblock %}
+{% block content %}
+<div class="page-content school-calendar calendar-form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'calendario:calendario_escola' %}?secao=reservas">Configurações da escola</a><span aria-hidden="true">/</span><span aria-current="page">Cotas por professor</span></nav>
+    <header class="page-header"><div><h1>Cotas por professor</h1><p>Defina limites opcionais por tipo de equipamento. Sem cota, vale a disponibilidade.</p></div></header>
+    <form method="get" class="calendar-quota-search" role="search" aria-label="Buscar tipo de equipamento">
+        <div class="form-field"><label for="busca-cota">Tipo ou categoria</label><input type="search" class="form-control" id="busca-cota" name="busca" value="{{ busca }}" maxlength="200"></div><button type="submit" class="btn btn-secondary-sigee">Buscar</button>
+    </form>
+    <section class="inventory-card" aria-label="Cotas por tipo de equipamento">
+        <ul class="calendar-quota-list">
+        {% for tipo in tipos %}<li>
+            <div><h2>{{ tipo.nome }}</h2><p>{{ tipo.categoria.nome }}{% if not tipo.ativo %} · Tipo inativo{% endif %}</p><p>{% if tipo.cota_por_professor is not None %}<strong>{{ tipo.cota_por_professor }} unidade{{ tipo.cota_por_professor|pluralize:"s" }} simultânea{{ tipo.cota_por_professor|pluralize:"s" }} por professor</strong>{% else %}Sem cota adicional{% endif %}</p></div>
+            <a class="btn btn-secondary-sigee" href="{% url 'calendario:cota' tipo.pk %}" aria-label="Configurar cota de {{ tipo }}">Configurar</a>
+        </li>{% empty %}<li><p>{% if busca %}Nenhum tipo encontrado para essa busca.{% else %}Nenhum tipo de equipamento cadastrado.{% endif %}</p></li>{% endfor %}
+        </ul>
+        {% if tipos.has_other_pages %}<nav class="calendar-pagination" aria-label="Paginação dos tipos">{% if tipos.has_previous %}<a href="?busca={{ busca|urlencode }}&amp;pagina={{ tipos.previous_page_number }}">Anterior</a>{% endif %}<span>{{ tipos.number }} de {{ tipos.paginator.num_pages }}</span>{% if tipos.has_next %}<a href="?busca={{ busca|urlencode }}&amp;pagina={{ tipos.next_page_number }}">Próxima</a>{% endif %}</nav>{% endif %}
+    </section>
+    <p class="calendar-footnote">O limite soma reservas do mesmo professor em todos os locais, considerando o maior total simultâneo no período. Reservas já confirmadas são preservadas.</p>
+</div>
+{% endblock %}

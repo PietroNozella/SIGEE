@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Configurar cota por professor | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.6">{% endblock %}
+{% block content %}
+<div class="page-content school-calendar calendar-form-page calendar-removal-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'calendario:cotas' %}">Cotas por professor</a><span aria-hidden="true">/</span><span aria-current="page">Configurar cota</span></nav>
+    <header class="page-header"><div><h1>Configurar cota por professor</h1><p>O mesmo limite vale para cada professor ao reservar este tipo de equipamento.</p></div></header>
+    <section class="form-card calendar-editor" aria-label="Configuração da cota">
+        <dl class="calendar-context"><div><dt>Tipo de equipamento</dt><dd>{{ tipo.nome }}</dd></div><div><dt>Categoria</dt><dd>{{ tipo.categoria.nome }}</dd></div></dl>
+        {% include "calendario/_erros.html" %}
+        <form method="post" novalidate>
+            {% csrf_token %}{{ form.versao }}
+            {% include "calendario/_campo.html" with campo=form.cota_por_professor %}
+            <p class="calendar-interval-example">O sistema soma as quantidades em reservas simultâneas do mesmo tipo, mesmo em locais diferentes. Dividir a solicitação em várias reservas não amplia a cota.</p>
+            <fieldset class="calendar-form-section calendar-reason"><legend>Registro da alteração</legend><p class="calendar-section-description">O motivo e o responsável ficam no histórico do calendário.</p>{% include "calendario/_campo.html" with campo=form.motivo %}</fieldset>
+            <p class="calendar-save-note">O novo limite vale para novas reservas. As já confirmadas são preservadas e contam no cálculo de novas solicitações sobrepostas. Solicitações acima da cota são bloqueadas.</p>
+            <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'calendario:cotas' %}">Cancelar</a><button class="btn btn-primary-sigee" type="submit">Salvar cota</button></div>
+        </form>
+    </section>
+</div>
+{% endblock %}

@@ -24,7 +24,7 @@ from .consultas import reservas_visiveis
 from .services import (
     cancelar_reserva,
     cancelar_reserva_operacional,
-    consultar_disponibilidade,
+    resumo_disponibilidade,
     criar_reserva,
     expirar_reservas_vencidas,
     permite_cancelamento_operacional,
@@ -272,7 +272,7 @@ def reserva_disponibilidade(request):
         return JsonResponse({"erro": primeiro_erro}, status=400)
 
     try:
-        disponiveis = consultar_disponibilidade(
+        disponibilidade = resumo_disponibilidade(
             professor=request.user,
             tipo_equipamento=form.cleaned_data["tipo_equipamento"],
             local=form.cleaned_data["local"],
@@ -296,7 +296,8 @@ def reserva_disponibilidade(request):
 
     return JsonResponse(
         {
-            "disponiveis": disponiveis,
+            "disponiveis": disponibilidade["disponiveis"],
+            "cota": disponibilidade["cota"],
             "consulta_feriados": {
                 "completa": consulta_feriados.completa,
                 "feriados": [

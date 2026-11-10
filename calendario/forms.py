@@ -4,6 +4,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.utils import timezone
+from inventario.models import TipoEquipamento
 
 from .models import CalendarioEscolar, FaixaHorario, RegraCalendario
 
@@ -80,3 +81,15 @@ class IntervaloReservasForm(forms.ModelForm):
         labels = {"intervalo_minutos": "Intervalo em minutos"}
         help_texts = {"intervalo_minutos": "Tempo reservado para conferência e preparação após o uso. Informe 0 para permitir reservas sem intervalo."}
         widgets = {"intervalo_minutos": forms.NumberInput(attrs={"class": "form-control", "min": 0, "max": 32767, "step": 1})}
+
+
+class CotaProfessorForm(forms.ModelForm):
+    motivo = forms.CharField(label="Motivo da alteração", widget=forms.Textarea(attrs={"rows": 3, "class": "form-control"}))
+    versao = forms.IntegerField(widget=forms.HiddenInput, min_value=1)
+
+    class Meta:
+        model = TipoEquipamento
+        fields = ["cota_por_professor"]
+        labels = {"cota_por_professor": "Limite de unidades simultâneas por professor"}
+        help_texts = {"cota_por_professor": "Deixe em branco para não aplicar cota adicional. Para ativar, informe uma quantidade inteira a partir de 1."}
+        widgets = {"cota_por_professor": forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 2147483647, "step": 1})}
