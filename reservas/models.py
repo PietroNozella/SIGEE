@@ -10,23 +10,6 @@ from django.utils import timezone
 from usuarios.permissoes import e_professor_funcional
 
 
-def periodo_inclui_fim_de_semana(inicio, fim):
-    inicio_local = timezone.localtime(inicio)
-    fim_local = timezone.localtime(fim)
-    quantidade_dias = (fim_local.date() - inicio_local.date()).days
-
-    # Todo intervalo de sete dias consecutivos necessariamente alcança
-    # sábado ou domingo. Para intervalos menores, no máximo seis datas
-    # precisam ser verificadas.
-    if quantidade_dias >= 6:
-        return True
-
-    return any(
-        (inicio_local.date() + timedelta(days=deslocamento)).weekday() >= 5
-        for deslocamento in range(quantidade_dias + 1)
-    )
-
-
 class ReservaQuerySet(models.QuerySet):
     def com_etapa(self):
         from movimentacoes.models import Movimentacao
@@ -91,6 +74,7 @@ class Reserva(models.Model):
     disciplina = models.ForeignKey("pedagogico.Disciplina", on_delete=models.PROTECT, null=True, blank=True)
     atividade = models.ForeignKey("pedagogico.AtividadePedagogica", on_delete=models.PROTECT, null=True, blank=True)
     observacao_pedagogica = models.TextField(blank=True)
+    calendario_confirmado = models.JSONField(default=dict, db_default={}, blank=True, editable=False)
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -196,11 +180,12 @@ class Reserva(models.Model):
                 f"A reserva pode ser agendada com até {self.ANTECEDENCIA_MAXIMA_DIAS} dias corridos de antecedência."
             )
 
-        if periodo_valido and periodo_inclui_fim_de_semana(self.inicio, self.fim):
-            erros[NON_FIELD_ERRORS] = (
-                "Não é permitido reservar equipamentos para períodos que incluam "
-                "sábado ou domingo."
-            )
+        if periodo_valido and self._state.adding:
+            from calendario.services import validar_periodo_reserva
+            try:
+                validar_periodo_reserva(self.inicio, self.fim)
+            except ValidationError as erro:
+                erros.update(erro.message_dict)
 
         if erros:
             raise ValidationError(erros)

@@ -60,6 +60,7 @@ urlpatterns = [
     path('auditoria/', include('auditoria.urls')),
     path('equipamentos/', include('inventario.urls')),
     path('reservas/', include('reservas.urls')),
+    path('calendario/', include('calendario.urls')),
     path('movimentacoes/', include('movimentacoes.urls')),
     path('manutencoes/', include('manutencoes.urls')),
     path('pedagogico/', include('pedagogico.urls')),

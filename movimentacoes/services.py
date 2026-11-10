@@ -128,6 +128,8 @@ def registrar_retirada_reserva(*, operador, reserva_id, conferencia, observacao=
             raise ValidationError("A retirada só pode ser registrada a partir do início da reserva.")
         if agora >= reserva.fim:
             raise ValidationError("O período reservado terminou. Não é possível complementar a entrega.")
+        from calendario.services import validar_atendimento_retirada
+        validar_atendimento_retirada(reserva, agora)
         if _expirar_reserva_bloqueada(reserva, agora):
             # Como no cancelamento, a expiração legítima persiste com sua auditoria.
             # A tentativa de retirada não grava movimentações nem altera unidades.

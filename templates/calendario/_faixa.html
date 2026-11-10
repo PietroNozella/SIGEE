@@ -1,0 +1,6 @@
+<div class="calendar-time-row" data-time-row>
+    {% for oculto in faixa.hidden_fields %}{{ oculto }}{% endfor %}
+    <div class="form-field"><label for="{{ faixa.inicio.id_for_label }}">Início</label>{{ faixa.inicio }}</div>
+    <div class="form-field"><label for="{{ faixa.fim.id_for_label }}">Término</label>{{ faixa.fim }}</div>
+    <div class="calendar-delete"><label for="{{ faixa.DELETE.id_for_label }}">{{ faixa.DELETE }} Remover faixa</label></div>
+</div>

@@ -115,7 +115,14 @@ def executar_etapa(etapa):
 
     if etapa == "legado":
         executor = MigrationExecutor(connection)
-        executor.migrate([alvo for alvo in executor.loader.graph.leaf_nodes() if alvo[0] != "contas"])
+        # Novos módulos dependem da conversão UUID; o banco legado deve parar
+        # nas últimas migrations que ainda podem anteceder essa conversão.
+        grafo = executor.loader.graph
+        legadas = {alvo for alvo in grafo.nodes if alvo[0] != "contas"
+                   and ("contas", "0002_usuario_uuid") not in grafo.forwards_plan(alvo)}
+        alvos = [alvo for alvo in legadas if not any(filho.key in legadas for filho in grafo.node_map[alvo].children)]
+        executor.migrate(alvos)
+        ReservaLegada = executor.loader.project_state(alvos).apps.get_model("reservas", "Reserva")
         emit_post_migrate_signal(verbosity=0, interactive=False, db="default")
         assert User._meta.label == "auth.User"
         administrador = User.objects.create_superuser(id=11, username="admin-uuid", password="Senha-UUID-2026!")
@@ -129,9 +136,9 @@ def executar_etapa(etapa):
         local = Local.objects.first()
         equipamento = Equipamento.objects.create(numero_patrimonio="UUID-001", tipo=tipo, local=local)
         agora = timezone.now()
-        reserva = Reserva.objects.create(professor=professor, tipo_equipamento=tipo, local=local, inicio=agora, fim=agora + timedelta(hours=1))
-        ReservaEquipamento.objects.create(reserva=reserva, equipamento=equipamento)
-        retirada = Movimentacao.objects.create(equipamento=equipamento, operador=administrador, destinatario=professor, tipo="RETIRADA", reserva=reserva)
+        reserva = ReservaLegada.objects.create(professor_id=professor.pk, tipo_equipamento_id=tipo.pk, local_id=local.pk, inicio=agora, fim=agora + timedelta(hours=1))
+        ReservaEquipamento.objects.create(reserva_id=reserva.pk, equipamento=equipamento)
+        retirada = Movimentacao.objects.create(equipamento=equipamento, operador=administrador, destinatario=professor, tipo="RETIRADA", reserva_id=reserva.pk)
         UtilizacaoPedagogica.objects.create(movimentacao=retirada, professor=professor, turma=Turma.objects.create(nome="UUID"), disciplina=Disciplina.objects.create(nome="UUID"), atividade=AtividadePedagogica.objects.create(nome="UUID"))
         Manutencao.objects.create(equipamento=equipamento, aberto_por=administrador, descricao_problema="Teste UUID")
         AceiteDocumentosLegais.objects.create(usuario=professor, versao_termos="2.0", versao_privacidade="2.0")

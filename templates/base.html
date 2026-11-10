@@ -106,6 +106,12 @@
             {% endif %}
 
             <span class="sidebar-section-title">Administração</span>
+            {% if pode_configurar_calendario %}
+            <a class="side-nav-item{% if request.resolver_match.namespace == 'calendario' %} is-active{% endif %}" title="Calendário da escola" href="{% url 'calendario:calendario_escola' %}"{% if request.resolver_match.namespace == 'calendario' %} aria-current="page"{% endif %}>
+                <img src="{% static 'inventario/icons/reservations.svg' %}" alt="" aria-hidden="true">
+                <span class="side-nav-label">Calendário da escola</span>
+            </a>
+            {% endif %}
             {% if pode_consultar_usuarios %}
                 <a class="side-nav-item{% if request.resolver_match.namespace == 'usuarios' %} is-active{% endif %}" title="Usuários" href="{% url 'usuarios:usuario_lista' %}"{% if request.resolver_match.namespace == 'usuarios' %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/users.svg' %}" alt="" aria-hidden="true">
@@ -199,7 +205,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="{% static 'inventario/js/sigee.js' %}?v=20261109.1"></script>
+    <script src="{% static 'inventario/js/sigee.js' %}?v=20261110.2"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

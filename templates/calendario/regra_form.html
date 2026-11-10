@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Configurar calendário | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}">{% endblock %}
+{% block content %}
+<div class="page-content form-page school-calendar">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'calendario:calendario_escola' %}">Calendário da escola</a><span aria-hidden="true">/</span><span aria-current="page">{% if semanal %}Semana habitual{% else %}Exceção por data{% endif %}</span></nav>
+    <header class="page-header"><div><h1>{% if semanal %}{{ regra.get_dia_semana_display }}{% elif regra.pk %}Editar exceção por data{% else %}Adicionar exceção por data{% endif %}</h1><p>{% if semanal %}Configure {{ regra.get_finalidade_display|lower }} neste dia da semana.{% else %}Esta configuração substitui a semana habitual somente para a data e a finalidade escolhidas.{% endif %}</p></div></header>
+    <section class="form-card" aria-labelledby="regra-heading">
+        <div class="form-card-header"><h2 id="regra-heading">Funcionamento da escola</h2><p>Reservas confirmadas permanecem preservadas. Após salvar, confira as que precisam de decisão.</p></div>
+        {% include "calendario/_erros.html" %}
+        <form method="post" novalidate data-calendar-rule-form>
+            {% csrf_token %}{{ form.versao }}
+            <div class="equipment-form-grid">
+                <div class="form-field"><label for="{{ form.finalidade.id_for_label }}">{{ form.finalidade.label }}</label>{{ form.finalidade }}</div>
+                {% if not semanal %}<div class="form-field"><label for="{{ form.data.id_for_label }}">Data da exceção</label>{% url 'calendario:feriados' as feriados_url %}{% include "includes/seletor_data.html" with field=form.data excecao=True feriados_url=feriados_url %}<p class="form-help">Feriados nacionais são informativos. Você define o funcionamento da escola nesta data.</p></div>{% endif %}
+            </div>
+            <fieldset class="calendar-mode"><legend>Funcionamento</legend>{{ form.funcionamento }}</fieldset>
+            <section class="calendar-time-fields" data-time-fields aria-labelledby="faixas-heading">
+                <h3 id="faixas-heading">Faixas de horário</h3><p>Cadastre cada turno separadamente. Para encerrar à meia-noite, informe 00:00 no término. Não use uma faixa para atravessar a madrugada.</p>
+                {{ formset.management_form }}
+                <div data-time-rows>{% for faixa in formset %}{% include "calendario/_faixa.html" %}{% endfor %}</div>
+                <button type="button" class="btn btn-secondary-sigee" data-add-time hidden>Adicionar horário</button>
+                <template data-time-template>{% include "calendario/_faixa.html" with faixa=formset.empty_form %}</template>
+            </section>
+            <div class="form-field calendar-reason"><label for="{{ form.motivo.id_for_label }}">Motivo da alteração <span class="required-mark" aria-hidden="true">*</span></label>{{ form.motivo }}<p class="form-help">Explique por que o funcionamento está sendo alterado. O motivo e o responsável ficam no histórico.</p></div>
+            <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'calendario:calendario_escola' %}">Cancelar</a><button class="btn btn-primary-sigee" type="submit">Salvar configuração</button></div>
+        </form>
+    </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}<script src="{% static 'calendario/calendario.js' %}"></script>{% endblock %}

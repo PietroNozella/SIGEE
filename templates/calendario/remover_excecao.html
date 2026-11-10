@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Remover exceção | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'calendario:calendario_escola' %}">Calendário da escola</a><span aria-hidden="true">/</span><span aria-current="page">Remover exceção</span></nav>
+    <header class="page-header"><div><h1>Remover exceção por data</h1><p>{{ regra }}. A data voltará a seguir a semana habitual.</p></div></header>
+    <section class="form-card" aria-labelledby="remover-heading"><div class="form-card-header"><h2 id="remover-heading">Confirme a alteração</h2><p>O histórico e as reservas confirmadas serão preservados.</p></div>
+        {% include "calendario/_erros.html" %}
+        <form method="post" novalidate>{% csrf_token %}{{ form.versao }}<div class="form-field"><label for="{{ form.motivo.id_for_label }}">{{ form.motivo.label }}</label>{{ form.motivo }}</div><div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'calendario:calendario_escola' %}">Manter exceção</a><button class="btn btn-danger-sigee" type="submit">Remover exceção</button></div></form>
+    </section>
+</div>
+{% endblock %}

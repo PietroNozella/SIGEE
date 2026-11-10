@@ -8,9 +8,11 @@ Antes de efetivar a reserva, informar ao Professor no diálogo de confirmação 
 
 ## Relação com as validações da reserva
 
-A consulta de feriados não substitui as validações locais previstas para a reserva. Conforme a `RN-19`, períodos que incluam sábado ou domingo e reservas cuja data e hora inicial já tenham passado são bloqueados pelo próprio SIGEE, sem depender da BrasilAPI. A data atual permanece permitida quando o horário inicial ainda não passou.
+A consulta de feriados não substitui as validações locais previstas para a reserva. Conforme a `RN-19`, o SIGEE aplica antecedência, período e calendário institucional de uso e atendimento, sem depender da BrasilAPI. A data atual permanece permitida quando o horário inicial ainda não passou. Sábados e domingos são fechados por padrão e podem ser liberados pelo Administrador no calendário da escola.
 
-Assim, feriado e fim de semana possuem efeitos diferentes: o feriado retornado pela BrasilAPI gera somente aviso informativo, enquanto sábado ou domingo impedem a conclusão da reserva.
+O formulário de exceções do Administrador reutiliza o seletor de datas e a consulta anual de feriados. As datas anteriores a hoje ficam bloqueadas; sábados, domingos e feriados futuros permanecem selecionáveis, pois cabe ao Administrador definir a exceção institucional. O endpoint `/calendario/feriados/?ano=AAAA` exige a permissão de configuração do calendário. A consulta envia à BrasilAPI apenas o ano e sua falha não impede salvar a configuração.
+
+O feriado retornado pela BrasilAPI gera somente aviso informativo. A abertura ou o fechamento da data depende da configuração institucional; uma exceção por data prevalece sobre a semana habitual.
 
 ## Fluxo implementado
 
@@ -19,7 +21,7 @@ Professor abre o calendário da reserva
         ↓
 SIGEE consulta os feriados do ano exibido
         ↓
-Calendário destaca feriados e desativa fins de semana e datas passadas
+Calendário destaca feriados e desativa datas fora do prazo ou fechadas pela escola
         ↓
 Professor informa o período da reserva
         ↓
@@ -61,7 +63,7 @@ Exemplo reduzido do formato observado:
 ## Processamento lógico
 
 1. Ao abrir ou trocar o ano do calendário, receber o ano solicitado e consultar o endpoint com tempo limite explícito.
-2. Devolver ao calendário somente a data e o nome dos feriados. A interface os destaca com legenda e permite selecionar feriados em dias úteis que atendam às regras temporais. Datas passadas, sábados e domingos permanecem desativados, independentemente da ocorrência de feriado.
+2. Devolver ao calendário somente a data e o nome dos feriados. A interface os destaca com legenda e permite selecionar datas que atendam às regras temporais e ao calendário da escola. Um feriado não modifica as regras de abertura, fechamento ou atendimento.
 3. Durante a consulta prévia de disponibilidade, receber o tipo/modelo, o local, a data e os horários inicial e final validados. A quantidade é resolvida pelas unidades físicas do tipo e local escolhidos, independentemente da consulta de feriados.
 4. Identificar todos os anos abrangidos pelo período, sem repetir anos, e consultar o endpoint para cada ano necessário.
 5. Validar cada resposta, converter `date` e selecionar os feriados compreendidos entre o início e o fim, inclusive.

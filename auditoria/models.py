@@ -50,6 +50,7 @@ class RegistroAuditoria(models.Model):
     @property
     def entidade_exibicao(self):
         return {
+            "calendario.AlteracaoCalendario": "Calendário da escola",
             "inventario.Equipamento": "Equipamento",
             "reservas.Reserva": "Reserva",
             "movimentacoes.Movimentacao": "Movimentação",

@@ -33,6 +33,7 @@ PERMISSOES_POR_GRUPO = {
         PERMISSAO_CONSULTAR_AUDITORIA,
         "movimentacoes.view_movimentacao",
         "reservas.view_reserva",
+        "calendario.configurar_calendario",
         "manutencoes.view_manutencao",
         "manutencoes.add_manutencao",
         "manutencoes.change_manutencao",
@@ -101,6 +102,10 @@ def pode_consultar_meus_dados(user):
 
 def pode_registrar_retirada(user):
     return e_operador_funcional(user) and user.has_perm(PERMISSAO_REGISTRAR_RETIRADA)
+
+
+def pode_configurar_calendario(user):
+    return e_administrador_funcional(user) and user.has_perm("calendario.configurar_calendario")
 
 
 def pode_cancelar_reserva_operacional(user):

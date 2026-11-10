@@ -30,6 +30,17 @@ class ConsultaFeriados:
     anos_indisponiveis: tuple[int, ...]
 
 
+def feriados_para_calendario(ano_texto):
+    try:
+        ano = int(ano_texto)
+        inicio, fim = date(ano, 1, 1), date(ano, 12, 31)
+    except (OverflowError, TypeError, ValueError) as erro:
+        raise ValueError("Informe um ano válido.") from erro
+    consulta = consultar_feriados_no_periodo(inicio, fim)
+    return {"completa": consulta.completa,
+            "feriados": [{"data": feriado.data.isoformat(), "nome": feriado.nome} for feriado in consulta.feriados]}
+
+
 def _converter_feriado(item):
     if not isinstance(item, dict):
         raise ConsultaBrasilAPIError("item de feriado não é um objeto")

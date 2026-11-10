@@ -305,9 +305,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const reservationForm = document.querySelector("[data-reservation-form]");
+    const reservationCalendar = document.querySelector("[data-reservation-calendar]");
+    const calendarExceptions = reservationCalendar?.hasAttribute("data-calendar-exceptions");
     const reservationType = reservationForm?.querySelector("[data-reservation-type]");
     const reservationLocation = reservationForm?.querySelector("[data-reservation-location]");
-    const reservationDate = reservationForm?.querySelector("[data-reservation-date]");
+    const reservationDate = reservationForm?.querySelector("[data-reservation-date]") || document.querySelector("[data-calendar-date-input]");
     const reservationStart = reservationForm?.querySelector("[data-reservation-start]");
     const reservationEnd = reservationForm?.querySelector("[data-reservation-end]");
     const reservationQuantity = reservationForm?.querySelector("[data-reservation-quantity]");
@@ -328,7 +330,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const reservationHolidayNotice = reservationConfirmDialog?.querySelector("[data-reservation-holiday-notice]");
     const reservationHolidayTitle = reservationConfirmDialog?.querySelector("[data-reservation-holiday-title]");
     const reservationHolidayMessage = reservationConfirmDialog?.querySelector("[data-reservation-holiday-message]");
-    const reservationCalendar = reservationForm?.querySelector("[data-reservation-calendar]");
     const reservationCalendarToggle = reservationCalendar?.querySelector("[data-reservation-calendar-toggle]");
     const reservationCalendarValue = reservationCalendar?.querySelector("[data-reservation-calendar-value]");
     const reservationCalendarPanel = reservationCalendar?.querySelector("[data-reservation-calendar-panel]");
@@ -337,7 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const reservationCalendarPrevious = reservationCalendar?.querySelector("[data-reservation-calendar-previous]");
     const reservationCalendarNext = reservationCalendar?.querySelector("[data-reservation-calendar-next]");
     const reservationCalendarStatus = reservationCalendar?.querySelector("[data-reservation-calendar-status]");
-    const reservationDateFeedback = reservationForm?.querySelector("[data-reservation-date-feedback]");
+    const reservationDateFeedback = document.querySelector("[data-reservation-date-feedback]");
     let reservationConfirmationInProgress = false;
     let reservationHolidayConsultation = null;
     let availabilityRequest = 0;
@@ -353,7 +354,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return new Date(Date.UTC(ano, mes - 1, dia));
     };
 
-    const eFimDeSemana = (data) => data && (data.getUTCDay() === 0 || data.getUTCDay() === 6);
+    const schoolCalendarData = document.getElementById(reservationCalendar?.dataset.schoolCalendar || "");
+    const schoolCalendarDays = schoolCalendarData ? JSON.parse(schoolCalendarData.textContent) : {};
+    const schoolCalendarHours = document.querySelector("[data-school-calendar-hours]");
+    const escolaFechada = (data) => {
+        if (!data || calendarExceptions) return false;
+        const dia = schoolCalendarDays[isoDaDataUtc(data)];
+        return dia ? !dia.aberto : data.getUTCDay() === 0 || data.getUTCDay() === 6;
+    };
 
     const dataUtcDoIso = (valor) => {
         if (!valor) return null;
@@ -403,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const feriado = data ? feriadoNaData(data) : null;
         reservationDateFeedback.hidden = !feriado;
         reservationDateFeedback.textContent = feriado
-            ? `Feriado nacional: ${feriado}. A data continua disponível para reserva.`
+            ? `Feriado nacional: ${feriado}. ${calendarExceptions ? 'Você define o funcionamento da escola nesta data.' : 'A data continua sujeita ao calendário da escola.'}`
             : "";
     };
 
@@ -414,6 +422,10 @@ document.addEventListener("DOMContentLoaded", () => {
             ? formatoDataCurta.format(data)
             : "Selecione uma data";
         atualizarFeedbackDaData();
+        const dia = data && schoolCalendarDays[isoDaDataUtc(data)];
+        if (schoolCalendarHours) schoolCalendarHours.textContent = dia
+            ? `Uso: ${dia.uso}. Atendimento do Operador: ${dia.atendimento}.`
+            : "Consulte os horários da escola ao selecionar uma data.";
     };
 
     const fecharCalendario = ({ devolverFoco = false } = {}) => {
@@ -462,7 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const dataIndisponivelNoCalendario = (data) => {
         const dataMinima = dataUtcDoIso(reservationDate?.min) || hojeEmUtc();
         const dataMaxima = dataUtcDoIso(reservationDate?.max);
-        return data < dataMinima || (dataMaxima && data > dataMaxima) || eFimDeSemana(data);
+        return data < dataMinima || (dataMaxima && data > dataMaxima) || escolaFechada(data);
     };
 
     function renderizarCalendario({ focarData = "" } = {}) {
@@ -508,7 +520,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = new Date(Date.UTC(ano, mes, dia));
             const dataIso = isoDaDataUtc(data);
             const feriado = feriadoNaData(data);
-            const fimDeSemana = eFimDeSemana(data);
+            const fechada = escolaFechada(data);
             const passada = data < dataMinima;
             const foraDoPrazo = dataMaxima && data > dataMaxima;
             const indisponivel = dataIndisponivelNoCalendario(data);
@@ -526,7 +538,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 botao.classList.add("is-holiday");
                 descricao.push(`Feriado nacional: ${feriado}`);
             }
-            if (fimDeSemana) descricao.push("Indisponível: fim de semana");
+            if (fechada) descricao.push("Indisponível: calendário da escola fechado");
             if (passada) descricao.push("Indisponível: data passada");
             if (foraDoPrazo) descricao.push("Indisponível: além da antecedência permitida");
             if (dataIso === hoje) botao.setAttribute("aria-current", "date");
@@ -595,6 +607,7 @@ document.addEventListener("DOMContentLoaded", () => {
         reservationDate.tabIndex = -1;
         reservationDate.setAttribute("aria-hidden", "true");
         reservationCalendarToggle.hidden = false;
+        reservationCalendarToggle.disabled = reservationDate.disabled;
         const dateLabel = reservationDate.closest(".form-field")?.querySelector("label[for]");
         if (dateLabel) dateLabel.htmlFor = reservationCalendarToggle.id;
         if (reservationDate.classList.contains("is-invalid")) {
@@ -662,6 +675,13 @@ document.addEventListener("DOMContentLoaded", () => {
         document.addEventListener("click", (event) => {
             if (!reservationCalendar.contains(event.target)) fecharCalendario();
         });
+        reservationDate.addEventListener("change", () => {
+            atualizarExibicaoDaData();
+            const data = dataSelecionada();
+            if (data) carregarFeriadosDoAno(data.getUTCFullYear());
+        });
+        const dataInicial = dataSelecionada();
+        if (dataInicial) carregarFeriadosDoAno(dataInicial.getUTCFullYear());
     }
 
     const bloquearQuantidade = ({ limpar = false } = {}) => {
@@ -729,8 +749,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return false;
         }
 
-        if (eFimDeSemana(data)) {
-            definirErroCliente(reservationDate, "Sábados e domingos não estão disponíveis para reserva.");
+        if (escolaFechada(data)) {
+            definirErroCliente(reservationDate, "Esta data está fechada no calendário da escola.");
             if (limparDiaInvalido) {
                 reservationDate.value = "";
                 atualizarExibicaoDaData();
@@ -892,6 +912,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     [reservationType, reservationLocation, reservationDate, reservationStart, reservationEnd].forEach((field) => {
         field?.addEventListener("change", () => {
+            if (!reservationForm) return;
             if (validarPeriodoDaReserva()) {
                 consultarDisponibilidade({ limparQuantidade: true });
             } else {

@@ -63,61 +63,10 @@
                             {% endif %}
                         </label>
                         {% if field.name == 'data_reserva' %}
-                            <div
-                                class="reservation-date-picker"
-                                data-reservation-calendar
-                                data-holidays-url="{% url 'reservas:reserva_feriados' %}"
-                            >
-                                {{ field }}
-                                <button
-                                    class="reservation-date-toggle"
-                                    id="{{ field.id_for_label }}_calendar_toggle"
-                                    type="button"
-                                    aria-haspopup="dialog"
-                                    aria-expanded="false"
-                                    aria-controls="reservation-calendar-panel"
-                                    data-reservation-calendar-toggle
-                                    hidden
-                                >
-                                    <span data-reservation-calendar-value>Selecione uma data</span>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <rect x="3" y="5" width="18" height="16" rx="2"></rect>
-                                        <path d="M16 3v4M8 3v4M3 10h18"></path>
-                                    </svg>
-                                </button>
-
-                                <div
-                                    class="reservation-calendar-panel"
-                                    id="reservation-calendar-panel"
-                                    role="dialog"
-                                    aria-label="Escolher data da reserva"
-                                    data-reservation-calendar-panel
-                                    hidden
-                                >
-                                    <div class="reservation-calendar-header">
-                                        <button type="button" aria-label="Mês anterior" data-reservation-calendar-previous>‹</button>
-                                        <strong data-reservation-calendar-title aria-live="polite"></strong>
-                                        <button type="button" aria-label="Próximo mês" data-reservation-calendar-next>›</button>
-                                    </div>
-
-                                    <div class="reservation-calendar-weekdays" aria-hidden="true">
-                                        <span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span>
-                                    </div>
-                                    <div
-                                        class="reservation-calendar-days"
-                                        role="grid"
-                                        aria-label="Dias do mês"
-                                        data-reservation-calendar-days
-                                    ></div>
-
-                                    <p class="reservation-calendar-status" role="status" aria-live="polite" data-reservation-calendar-status></p>
-                                    <div class="reservation-calendar-legend" aria-label="Legenda do calendário">
-                                        <span><i class="is-holiday" aria-hidden="true"></i>Feriado nacional</span>
-                                        <span><i class="is-unavailable" aria-hidden="true"></i>Indisponível</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="reservation-date-feedback" data-reservation-date-feedback hidden></p>
+                            {% url 'reservas:reserva_feriados' as feriados_url %}
+                            {% include "includes/seletor_data.html" with field=field feriados_url=feriados_url excecao=False %}
+                            <p class="form-help" data-school-calendar-hours aria-live="polite"></p>
+                            {{ dias_calendario_escolar|json_script:"school-calendar-data" }}
                         {% else %}
                             {{ field }}
                         {% endif %}

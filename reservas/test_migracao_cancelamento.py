@@ -54,6 +54,7 @@ class MigracaoCancelamentoTests(TransactionTestCase):
                 self.assertEqual(atual.motivo_cancelamento, "")
                 self.assertIsNone(atual.cancelada_por_id)
                 self.assertIsNone(atual.data_cancelamento)
+                self.assertEqual(atual.calendario_confirmado, {})
             grupo = GrupoAtual.objects.get(pk=grupo.pk)
             self.assertTrue(anteriores_ids.issubset(set(grupo.permissions.values_list("pk", flat=True))))
             self.assertTrue(grupo.permissions.filter(codename="cancelar_reserva_operacional").exists())

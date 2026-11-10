@@ -10,8 +10,9 @@ class MigracaoAdministradorPrincipalTests(TransactionTestCase):
     def test_migracao_e_reversao_preservam_contas_grupos_auditoria_e_email_unico(self):
         anterior = [("contas", "0002_usuario_uuid")]
         atual = [("contas", "0003_administrador_principal")]
+        executor = MigrationExecutor(connection)
+        finais = executor.loader.graph.leaf_nodes()
         try:
-            executor = MigrationExecutor(connection)
             executor.migrate(anterior)
             UserAnterior = executor.loader.project_state(anterior).apps.get_model("contas", "User")
             grupo, _ = Group.objects.get_or_create(name="Administrador")
@@ -47,4 +48,5 @@ class MigracaoAdministradorPrincipalTests(TransactionTestCase):
             with self.assertRaises(IntegrityError), transaction.atomic():
                 UserAnterior.objects.create(username="duplicado", email="RESERVA@example.com")
         finally:
-            MigrationExecutor(connection).migrate(atual)
+            # Restaurar também os módulos que passaram a depender desta migration.
+            MigrationExecutor(connection).migrate(finais)

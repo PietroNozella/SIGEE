@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'manutencoes',
     'pedagogico',
     'reservas',
+    'calendario',
     'usuarios',
 ]
 

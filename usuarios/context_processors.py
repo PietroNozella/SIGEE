@@ -2,6 +2,7 @@ from .permissoes import (
     e_operador_funcional,
     e_professor_funcional,
     pode_cadastrar_usuario,
+    pode_configurar_calendario,
     pode_gerenciar_usuarios,
     pode_consultar_auditoria,
     pode_registrar_retirada,
@@ -21,6 +22,7 @@ from .permissoes import (
 def permissoes_funcionais(request):
     return {
         "e_operador": e_operador_funcional(request.user),
+        "pode_configurar_calendario": pode_configurar_calendario(request.user),
         "e_professor": e_professor_funcional(request.user),
         "pode_consultar_meus_dados": pode_consultar_meus_dados(request.user),
         "pode_consultar_utilizacoes": pode_gerenciar_utilizacao_pedagogica(request.user),

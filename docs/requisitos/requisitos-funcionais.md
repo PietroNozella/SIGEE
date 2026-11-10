@@ -76,7 +76,7 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 
 <b>Fluxo principal:</b> O Professor seleciona o tipo/modelo, o local de retirada, a data, os horários e a quantidade desejada. No mesmo preenchimento, o Professor informa a turma, a disciplina e a atividade pedagógica previstas para a utilização dos equipamentos. Essas informações ficam vinculadas à reserva e são preservadas no registro da utilização correspondente. O sistema consulta as unidades disponíveis, verifica conflitos com outras reservas e valida o período. Havendo unidades suficientes, registra uma única reserva vinculada ao Professor autenticado e associa a ela os equipamentos físicos alocados.
 
-<b>Regras de negócio:</b> Somente equipamentos ativos e disponíveis do tipo/modelo e local selecionados podem ser alocados (RN-02). Reservas com períodos sobrepostos não podem utilizar a mesma unidade física; períodos apenas adjacentes são permitidos (RN-03). A reserva pertence ao Professor que a criou (RN-07). Uma reserva ativa sem retirada vence ao completar 30 minutos do horário inicial; os fluxos que sincronizam expiração persistem a mudança e liberam a disponibilidade (RN-11). O Professor pode cancelar sua reserva ativa, sem retirada e antes do limite de tolerância (RN-12). O planejamento pedagógico é obrigatório na nova reserva e cria utilizações por unidade somente na entrega (RN-15). O início não pode estar no passado, e o período não pode incluir sábado ou domingo (RN-19).
+<b>Regras de negócio:</b> Somente equipamentos ativos e disponíveis do tipo/modelo e local selecionados podem ser alocados (RN-02). Reservas com períodos sobrepostos não podem utilizar a mesma unidade física; períodos apenas adjacentes são permitidos (RN-03). A reserva pertence ao Professor que a criou (RN-07). Uma reserva ativa sem retirada vence ao completar 30 minutos do horário inicial; os fluxos que sincronizam expiração persistem a mudança e liberam a disponibilidade (RN-11). O Professor pode cancelar sua reserva ativa, sem retirada e antes do limite de tolerância (RN-12). O planejamento pedagógico é obrigatório na nova reserva e cria utilizações por unidade somente na entrega (RN-15). O início não pode estar no passado; a antecedência máxima e o calendário de uso e atendimento configurado pelo Administrador devem ser respeitados (RN-19).
 
 <b>Pós-condições:</b> A reserva válida é registrada com a quantidade solicitada e com as unidades físicas correspondentes. Solicitações inválidas não geram reserva.
 
@@ -85,7 +85,7 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 - <b>CA-01:</b> Dadas unidades suficientes do mesmo tipo/modelo e local, quando o Professor solicitar um período válido, então o sistema deve registrar uma única reserva com a quantidade e as unidades correspondentes.
 - <b>CA-02:</b> Dada uma quantidade superior à disponibilidade do período, quando o Professor tentar confirmar a reserva, então o sistema deve recusá-la.
 - <b>CA-03:</b> Dada uma unidade já alocada em reserva com período sobreposto, quando houver nova solicitação para o mesmo período, então essa unidade não deve ser alocada novamente.
-- <b>CA-04: </b>Dado um horário inicial no passado, uma data inicial além de 15 dias corridos após a data local atual ou um período que inclua sábado ou domingo, quando o Professor tentar reservar, então o sistema deve impedir o registro.
+- <b>CA-04: </b>Dado um horário inicial no passado, uma data inicial além de 15 dias corridos após a data local atual ou um período fora do calendário escolar, quando o Professor tentar reservar, então o sistema deve impedir o registro, inclusive por envio direto de dados.
 - <b>CA-05:</b> Dada uma reserva própria ativa, sem retirada e antes de completar os 30 minutos de tolerância, quando o Professor solicitar seu cancelamento, então o sistema deve cancelá-la. Após o limite, a reserva deve expirar, sem receber cancelamento.
 - <b>CA-06:</b> Dada uma reserva ativa sem retirada e com 30 minutos ou mais decorridos do horário inicial, quando um fluxo sincronizar as reservas vencidas, então a reserva deve expirar integralmente e deixar de bloquear a disponibilidade.
 - <b>CA-07:</b> Dada uma reserva com contexto pedagógico completo, quando o Operador confirmar a entrega, então o sistema deve criar uma utilização por unidade retirada com turma, disciplina e atividade vinculadas à reserva.
@@ -93,6 +93,11 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 - <b>CA-09:</b> Dada uma reserva ativa, no prazo e sem retirada, quando um Operador com permissão específica informar o motivo e confirmar a desistência comunicada pelo Professor, então toda a reserva deve ser cancelada, liberando somente seu compromisso de disponibilidade e preservando patrimônios, responsável, motivo, data e auditoria.
 - <b>CA-10:</b> Dada uma entrega registrada após a abertura da tela de cancelamento operacional, quando o Operador confirmar o cancelamento, então o servidor deve recusá-lo sem alterar a entrega. No limite dos 30 minutos sem retirada, deve persistir somente a expiração.
 - <b>CA-11:</b> Dado um cancelamento operacional concluído, quando um usuário autorizado consultar o detalhe da reserva, então deve visualizar motivo, responsável e data. Reenvios não devem sobrescrever esses dados nem duplicar a auditoria de sucesso.
+- <b>CA-12:</b> Dado um Administrador com a permissão de calendário, quando configurar uma semana habitual ou exceção por data, então deve informar motivo, com registro do responsável e dos valores anteriores e novos. Professor e Operador não podem alterar essas regras.
+- <b>CA-13:</b> Dado um sábado liberado para uso e atendimento, quando o Professor solicitar um agendamento válido, então o sistema deve permitir a reserva. Uma exceção de fechamento deve impedir novos agendamentos na finalidade afetada.
+- <b>CA-14:</b> Dadas faixas distintas de uso e atendimento, quando o período atravessar uma pausa de uso ou os horários previstos de retirada e devolução estiverem fora do atendimento, então a nova reserva deve ser recusada.
+- <b>CA-15:</b> Dada uma mudança de calendário que afete compromissos existentes, quando o Administrador consultar o calendário, então as reservas incompatíveis devem ser identificadas sem cancelamento ou remarcação automática e com preservação das condições acordadas.
+- <b>CA-16:</b> Dado um fechamento ou horário de atendimento encerrado, quando um Operador autorizado registrar uma devolução física válida, então o calendário não deve impedir a regularização.
 
 ## RF05 - Registrar retirada e devolução
 
@@ -198,7 +203,7 @@ O Operador acessa um início próprio com situação atual dos equipamentos, ent
 
 ## RF09 - Consultar feriados nacionais durante a reserva
 
-<b>Descrição:</b> O sistema deve informar ao Professor os feriados nacionais durante a escolha do período de reserva, com aviso antes da confirmação. Um feriado em dia útil permanece selecionável quando atende às demais regras temporais. Sábados, domingos e datas passadas permanecem bloqueados, independentemente da ocorrência de feriado.
+<b>Descrição:</b> O sistema deve informar ao Professor os feriados nacionais durante a escolha do período de reserva, com aviso antes da confirmação. Um feriado permanece selecionável quando atende às regras temporais e ao calendário da escola. Sábados e domingos dependem de liberação nesse calendário; a BrasilAPI não determina o funcionamento institucional.
 
 <b>Ator: </b>Professor.
 
@@ -206,13 +211,13 @@ O Operador acessa um início próprio com situação atual dos equipamentos, ent
 
 <b>Fluxo principal:</b> Ao consultar o calendário, o Professor visualiza os feriados nacionais destacados e identificados por legenda. Se o período escolhido coincidir com um feriado nacional, o sistema informa essa condição no diálogo de confirmação. O Professor pode prosseguir com a reserva se as demais condições de disponibilidade e validade do período forem atendidas.
 
-<b>Regras de negócio:</b> A ocorrência de feriado nacional não impede a reserva. A indisponibilidade da BrasilAPI também não deve bloquear sua conclusão. Datas passadas e períodos que incluam sábado ou domingo continuam sujeitos às restrições temporais da reserva (RN-19).
+<b>Regras de negócio:</b> A ocorrência de feriado nacional não impede a reserva. A indisponibilidade da BrasilAPI também não deve bloquear sua conclusão. Datas passadas, antecedência e funcionamento institucional continuam sujeitos às validações locais da reserva (RN-19).
 
 <b>Pós-condições:</b> O Professor recebe a informação sobre o feriado quando disponível e pode confirmar uma reserva válida.
 
 <b>Critérios de aceite:</b>
 
-- <b>CA-01:</b> Dado um feriado nacional obtido na consulta, quando o Professor visualizar o calendário, então a data deve estar destacada e identificada pela legenda. A seleção deve respeitar as regras temporais da reserva; sábados, domingos e datas passadas permanecem bloqueados, mesmo quando são feriados.
+- <b>CA-01:</b> Dado um feriado nacional obtido na consulta, quando o Professor visualizar o calendário, então a data deve estar destacada e identificada pela legenda. A seleção deve respeitar o prazo e o calendário escolar, inclusive eventuais liberações de sábado ou domingo; o destaque de feriado não altera essas regras.
 - <b>CA-02:</b> Dado um período válido que coincida com feriado nacional, quando o Professor avançar para a confirmação, então o sistema deve apresentar o aviso sem impedir a reserva.
 - <b>CA-03:</b> Dada uma falha na consulta à BrasilAPI, quando o Professor solicitar uma reserva válida, então a falha não deve impedir sua conclusão.
 

@@ -497,7 +497,7 @@ class ReservaFrontendTests(ReservaBaseTests):
         self.assertContains(resposta, "Indisponível")
         self.assertContains(resposta, "Confira os dados antes de confirmar a reserva.")
 
-    @patch("reservas.views.consultar_feriados_no_periodo")
+    @patch("reservas.brasilapi.consultar_feriados_no_periodo")
     def test_endpoint_lista_feriados_do_ano_para_o_calendario(self, consultar_feriados):
         consultar_feriados.return_value = ConsultaFeriados(
             feriados=(Feriado(data=date(2026, 9, 7), nome="Independência do Brasil"),),
@@ -519,7 +519,7 @@ class ReservaFrontendTests(ReservaBaseTests):
         )
         consultar_feriados.assert_called_once_with(date(2026, 1, 1), date(2026, 12, 31))
 
-    @patch("reservas.views.consultar_feriados_no_periodo")
+    @patch("reservas.brasilapi.consultar_feriados_no_periodo")
     def test_endpoint_do_calendario_mantem_datas_disponiveis_se_api_falhar(self, consultar_feriados):
         consultar_feriados.return_value = ConsultaFeriados(
             feriados=(),
@@ -532,7 +532,7 @@ class ReservaFrontendTests(ReservaBaseTests):
         self.assertEqual(resposta.status_code, 200)
         self.assertEqual(resposta.json(), {"completa": False, "feriados": []})
 
-    @patch("reservas.views.consultar_feriados_no_periodo")
+    @patch("reservas.brasilapi.consultar_feriados_no_periodo")
     def test_endpoint_do_calendario_rejeita_ano_invalido_sem_consultar_api(self, consultar_feriados):
         resposta = self.client.get(reverse("reservas:reserva_feriados"), {"ano": "ano-invalido"})
 

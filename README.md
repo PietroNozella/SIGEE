@@ -98,6 +98,8 @@ Consulte a [arquitetura do sistema](docs/tecnica/arquitetura-do-sistema.md) para
 
 ## Execução local
 
+O Administrador configura a semana habitual e as exceções por data em **Administração → Calendário da escola**. Uso dos equipamentos e atendimento do Operador têm horários separados. Inicialmente, segunda a sexta permanecem liberadas durante todo o dia. Novas reservas seguem as faixas; compromissos já confirmados são preservados e sinalizados quando uma mudança exigir decisão. O seletor de datas de exceção também destaca os feriados nacionais consultados na BrasilAPI.
+
 Os comandos abaixo utilizam **PowerShell no Windows** e preparam uma instalação nova.
 
 ### Pré-requisitos

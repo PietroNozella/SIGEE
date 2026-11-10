@@ -265,6 +265,8 @@ def criar_reserva(
     reserva.full_clean()
 
     with transaction.atomic():
+        from calendario.services import bloquear_calendario, validar_periodo_reserva
+        calendario = bloquear_calendario()
         # A desativação bloqueia esta mesma conta antes de conferir suas reservas.
         professor_atual = get_user_model().objects.select_for_update(no_key=True).get(pk=professor.pk)
         if not e_professor_funcional(professor_atual):
@@ -322,6 +324,10 @@ def criar_reserva(
                 }
             )
 
+        reserva.calendario_confirmado = {
+            "versao": calendario.versao,
+            **validar_periodo_reserva(inicio, fim),
+        }
         reserva.save()
         ReservaEquipamento.objects.bulk_create(
             ReservaEquipamento(reserva=reserva, equipamento=equipamento)

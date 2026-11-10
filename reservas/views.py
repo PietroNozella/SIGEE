@@ -1,5 +1,3 @@
-from datetime import date
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -19,7 +17,7 @@ from usuarios.permissoes import (
     pode_consultar_reservas_administrativas, pode_registrar_retirada,
 )
 
-from .brasilapi import consultar_feriados_no_periodo
+from .brasilapi import consultar_feriados_no_periodo, feriados_para_calendario
 from .forms import CancelamentoOperacionalForm, DisponibilidadeReservaForm, ReservaForm
 from .models import Reserva
 from .consultas import reservas_visiveis
@@ -251,7 +249,8 @@ def reserva_nova(request):
             messages.success(request, "Reserva criada com sucesso.", extra_tags="reserva")
             return redirect("reservas:reserva_lista")
 
-    return render(request, "reservas/reserva_form.html", {"form": form})
+    from calendario.services import dias_para_agendamento
+    return render(request, "reservas/reserva_form.html", {"form": form, "dias_calendario_escolar": dias_para_agendamento()})
 
 
 @login_required
@@ -316,27 +315,11 @@ def reserva_disponibilidade(request):
 @require_GET
 def reserva_feriados(request):
     _exigir_professor_funcional(request.user)
-
     try:
-        ano = int(request.GET.get("ano", ""))
-        inicio_ano = date(ano, 1, 1)
-        fim_ano = date(ano, 12, 31)
-    except (OverflowError, TypeError, ValueError):
-        return JsonResponse({"erro": "Informe um ano válido."}, status=400)
-
-    consulta = consultar_feriados_no_periodo(inicio_ano, fim_ano)
-    return JsonResponse(
-        {
-            "completa": consulta.completa,
-            "feriados": [
-                {
-                    "data": feriado.data.isoformat(),
-                    "nome": feriado.nome,
-                }
-                for feriado in consulta.feriados
-            ],
-        }
-    )
+        resultado = feriados_para_calendario(request.GET.get("ano", ""))
+    except ValueError as erro:
+        return JsonResponse({"erro": str(erro)}, status=400)
+    return JsonResponse(resultado)
 
 
 @login_required
