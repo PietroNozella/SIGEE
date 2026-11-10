@@ -1,38 +1,75 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Calendário da escola | SIGEE{% endblock %}
-{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}">{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.3">{% endblock %}
 {% block content %}
 <div class="page-content school-calendar">
-    <header class="page-header">
-        <div><h1>Calendário da escola</h1><p>Defina quando os equipamentos podem ser usados e quando o Operador atende.</p></div>
+    <header class="page-header calendar-page-header">
+        <div><h1>Calendário da escola</h1><p>Organize os horários de uso dos equipamentos e de atendimento do Operador.</p></div>
         <a class="btn btn-primary-sigee" href="{% url 'calendario:excecao_nova' %}">Adicionar exceção por data</a>
     </header>
-    <p class="calendar-intro">Novas reservas seguem este calendário. Compromissos já confirmados mantêm as condições acordadas e aparecem abaixo quando precisam de decisão. Devoluções físicas podem ser registradas fora da agenda.</p>
-    <section class="inventory-card" aria-labelledby="semana-heading">
-        <div class="calendar-section-heading"><h2 id="semana-heading">Funcionamento habitual</h2><p>As exceções por data têm prioridade. O padrão inicial é segunda a sexta, durante todo o dia.</p></div>
-        <div class="table-responsive" tabindex="0" aria-label="Horários semanais; role horizontalmente em telas pequenas">
-            <table class="table inventory-table mb-0 calendar-week-table">
-                <caption class="visually-hidden">Uso dos equipamentos e atendimento por dia da semana</caption>
-                <thead><tr><th scope="col">Dia</th><th scope="col">Uso dos equipamentos</th><th scope="col">Atendimento do Operador</th></tr></thead>
-                <tbody>{% for dia in dias %}<tr><th scope="row">{{ dia.nome }}</th>{% for faixa in dia.faixas %}<td><span>{{ faixa.resumo }}</span>{% if faixa.padrao %}<small>Padrão inicial</small>{% endif %}<a href="{% url 'calendario:regra_semanal' faixa.finalidade dia.numero %}" aria-label="Editar {{ faixa.titulo|lower }} de {{ dia.nome }}">Editar</a></td>{% endfor %}</tr>{% endfor %}</tbody>
+    {% if total_afetadas %}
+    <div class="calendar-attention" role="status">
+        <div><strong>{{ total_afetadas }} reserva{{ total_afetadas|pluralize:"s" }} precisa{{ total_afetadas|pluralize:"m" }} de decisão</strong><p>O calendário mudou. Os compromissos existentes foram preservados.</p></div>
+        <a href="#afetadas-heading">Conferir reservas <span aria-hidden="true">→</span></a>
+    </div>
+    {% endif %}
+    <div class="calendar-settings-layout">
+        <section class="inventory-card calendar-week" aria-labelledby="semana-heading">
+            <header class="calendar-section-heading"><h2 id="semana-heading">Semana habitual</h2><p>Defina cada dia. As exceções por data têm prioridade.</p></header>
+            <table class="table calendar-week-table mb-0" role="table">
+                <caption class="visually-hidden">Uso dos equipamentos e atendimento do Operador por dia da semana</caption>
+                <thead role="rowgroup"><tr role="row"><th scope="col" id="calendar-heading-day">Dia</th><th scope="col" id="calendar-heading-USO">Uso dos equipamentos</th><th scope="col" id="calendar-heading-ATENDIMENTO">Atendimento do Operador</th></tr></thead>
+                <tbody role="rowgroup">{% for dia in dias %}
+                    <tr role="row">
+                        <th role="rowheader" scope="row" id="calendar-day-{{ dia.numero }}">{{ dia.nome }}</th>
+                        {% for faixa in dia.faixas %}
+                        <td role="cell" headers="calendar-day-{{ dia.numero }} calendar-heading-{{ faixa.finalidade }}">
+                            <div class="calendar-week-slot">
+                                <div><span class="calendar-mobile-label" aria-hidden="true">{{ faixa.titulo }}</span><span class="calendar-periods{% if faixa.resumo == 'Fechado' %} is-closed{% endif %}">{% for periodo in faixa.periodos %}<span>{{ periodo }}</span>{% endfor %}</span></div>
+                                <a class="calendar-edit-link" href="{% url 'calendario:regra_semanal' faixa.finalidade dia.numero %}" aria-label="Editar {{ faixa.titulo|lower }} de {{ dia.nome }}">Editar</a>
+                            </div>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}</tbody>
             </table>
+            <p class="calendar-section-note">Padrão inicial: segunda a sexta, dia inteiro; sábado e domingo, fechado.</p>
+        </section>
+        <section class="inventory-card calendar-exceptions" aria-labelledby="excecoes-heading">
+            <header class="calendar-section-heading"><h2 id="excecoes-heading">Exceções por data</h2><p>Horários especiais, sábados letivos ou fechamentos.</p></header>
+            {% if excecoes %}
+            <ul class="calendar-exception-list">
+                {% for excecao in excecoes %}
+                <li>
+                    <div class="calendar-exception-date"><time datetime="{{ excecao.data }}">{{ excecao.data_excecao|date:"d/m/Y" }}</time><span>{{ excecao.data_excecao|date:"l" }}</span></div>
+                    <div class="calendar-exception-schedule"><strong>{{ excecao.finalidade_nome }}</strong><span class="calendar-periods{% if excecao.resumo == 'Fechado' %} is-closed{% endif %}">{% for periodo in excecao.periodos %}<span>{{ periodo }}</span>{% endfor %}</span></div>
+                    <div class="calendar-exception-actions"><a href="{% url 'calendario:excecao_editar' excecao.pk %}" aria-label="Editar {{ excecao.titulo }}">Editar</a><a class="calendar-remove-link" href="{% url 'calendario:excecao_remover' excecao.pk %}" aria-label="Remover {{ excecao.titulo }}">Remover</a></div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="calendar-empty"><h3>Nenhuma exceção cadastrada</h3><p>As datas seguem a semana habitual. Adicione uma exceção quando a escola tiver um dia diferente.</p><a href="{% url 'calendario:excecao_nova' %}">Adicionar exceção por data</a></div>
+            {% endif %}
+            <p class="calendar-section-note">Uso e atendimento são configurados separadamente para cada data.</p>
+        </section>
+    </div>
+    {% if total_afetadas %}
+    <section class="inventory-card calendar-affected" aria-labelledby="afetadas-heading">
+        <header class="calendar-section-heading"><h2 id="afetadas-heading" tabindex="-1">Reservas que precisam de decisão <span class="calendar-count">{{ total_afetadas }}</span></h2><p>Confira os compromissos que ficaram fora do calendário atual. Não houve cancelamento ou remarcação automática.</p></header>
+        <ul class="calendar-affected-list">{% for reserva in afetadas %}<li>
+            <div><strong>Reserva #{{ reserva.pk }} · {{ reserva.professor.get_full_name|default:reserva.professor.username }}</strong><p>{{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }} · {{ reserva.quantidade }} × {{ reserva.tipo_equipamento.nome }}</p><p class="calendar-impact">{{ reserva.impacto_calendario }}</p></div>
+            <a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Consultar reserva</a>
+        </li>{% endfor %}</ul>
+        {% if afetadas.has_other_pages %}<nav class="calendar-pagination" aria-label="Paginação das reservas afetadas">{% if afetadas.has_previous %}<a href="?pagina={{ afetadas.previous_page_number }}#afetadas-heading">Anterior</a>{% endif %}<span>{{ afetadas.number }} de {{ afetadas.paginator.num_pages }}</span>{% if afetadas.has_next %}<a href="?pagina={{ afetadas.next_page_number }}#afetadas-heading">Próxima</a>{% endif %}</nav>{% endif %}
+    </section>
+    {% else %}<p class="calendar-no-impact">Nenhuma reserva futura precisa de decisão pelo calendário atual.</p>{% endif %}
+    <details class="calendar-history inventory-card">
+        <summary><span><strong>Histórico de alterações</strong><span>Consulte responsáveis, motivos e os horários anteriores e novos.</span></span><span class="calendar-history-action" aria-hidden="true">Consultar</span></summary>
+        <div class="calendar-history-content">
+        {% for alteracao in alteracoes %}<details class="calendar-change"><summary><span>{{ alteracao.novo.titulo }}</span><small>{{ alteracao.data_hora|date:"d/m/Y H:i" }} · {{ alteracao.usuario.get_full_name|default:alteracao.usuario.username }}</small></summary><dl><div><dt>Motivo</dt><dd>{{ alteracao.motivo|linebreaksbr }}</dd></div><div><dt>Antes</dt><dd>{{ alteracao.anterior.resumo }}</dd></div><div><dt>Depois</dt><dd>{{ alteracao.novo.resumo }}</dd></div></dl></details>{% empty %}<p class="calendar-empty-note">Nenhuma alteração registrada.</p>{% endfor %}
         </div>
-    </section>
-    <section class="inventory-card" aria-labelledby="excecoes-heading">
-        <div class="calendar-section-heading"><h2 id="excecoes-heading">Exceções por data</h2><p>Libere um sábado letivo, ajuste um horário ou registre um fechamento. Uso e atendimento são configurados separadamente.</p></div>
-        {% if excecoes %}<div class="table-responsive" tabindex="0" aria-label="Exceções por data; role horizontalmente em telas pequenas"><table class="table inventory-table mb-0"><caption class="visually-hidden">Exceções vigentes e futuras</caption><thead><tr><th scope="col">Data e finalidade</th><th scope="col">Funcionamento</th><th scope="col">Ações</th></tr></thead><tbody>{% for excecao in excecoes %}<tr><th scope="row">{{ excecao.titulo }}</th><td>{{ excecao.resumo }}</td><td><div class="calendar-actions"><a href="{% url 'calendario:excecao_editar' excecao.pk %}" aria-label="Editar {{ excecao.titulo }}">Editar</a><a href="{% url 'calendario:excecao_remover' excecao.pk %}" aria-label="Remover {{ excecao.titulo }}">Remover</a></div></td></tr>{% endfor %}</tbody></table></div>
-        {% else %}<p class="calendar-empty">Nenhuma exceção vigente ou futura. Todas as datas seguem a semana habitual.</p>{% endif %}
-    </section>
-    <section class="inventory-card" aria-labelledby="afetadas-heading">
-        <div class="calendar-section-heading"><h2 id="afetadas-heading">Reservas que precisam de decisão{% if total_afetadas %} ({{ total_afetadas }}){% endif %}</h2><p>Estas reservas não se enquadram no calendário atual. Nenhuma foi cancelada ou remarcada automaticamente.</p></div>
-        {% if total_afetadas %}<ul class="calendar-affected-list">{% for reserva in afetadas %}<li><div><strong>Reserva #{{ reserva.pk }} · {{ reserva.professor.get_full_name|default:reserva.professor.username }}</strong><p>{{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }} · {{ reserva.quantidade }} × {{ reserva.tipo_equipamento.nome }}</p><p>{{ reserva.impacto_calendario }}</p></div><a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Consultar reserva</a></li>{% endfor %}</ul>
-        {% if afetadas.has_other_pages %}<nav class="calendar-actions" aria-label="Paginação das reservas afetadas">{% if afetadas.has_previous %}<a href="?pagina={{ afetadas.previous_page_number }}#afetadas-heading">Anterior</a>{% endif %}<span>{{ afetadas.number }} de {{ afetadas.paginator.num_pages }}</span>{% if afetadas.has_next %}<a href="?pagina={{ afetadas.next_page_number }}#afetadas-heading">Próxima</a>{% endif %}</nav>{% endif %}
-        {% else %}<p class="calendar-empty">Nenhuma reserva futura precisa de decisão pelo calendário atual.</p>{% endif %}
-    </section>
-    <section class="inventory-card" aria-labelledby="alteracoes-heading">
-        <div class="calendar-section-heading"><h2 id="alteracoes-heading">Últimas alterações</h2><p>Responsável, motivo e funcionamento anterior e novo ficam preservados.</p></div>
-        {% for alteracao in alteracoes %}<details class="calendar-change"><summary>{{ alteracao.data_hora|date:"d/m/Y H:i" }} · {{ alteracao.novo.titulo }} · {{ alteracao.usuario.get_full_name|default:alteracao.usuario.username }}</summary><dl><dt>Motivo</dt><dd>{{ alteracao.motivo|linebreaksbr }}</dd><dt>Antes</dt><dd>{{ alteracao.anterior.resumo }}</dd><dt>Depois</dt><dd>{{ alteracao.novo.resumo }}</dd></dl></details>{% empty %}<p class="calendar-empty">Nenhuma alteração registrada.</p>{% endfor %}
-    </section>
+    </details>
+    <p class="calendar-footnote">Reservas confirmadas mantêm as condições acordadas. Devoluções físicas continuam permitidas fora da agenda.</p>
 </div>
 {% endblock %}

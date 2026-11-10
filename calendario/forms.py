@@ -18,7 +18,7 @@ class RegraCalendarioForm(forms.ModelForm):
     class Meta:
         model = RegraCalendario
         fields = ["finalidade", "data"]
-        labels = {"finalidade": "Aplicar a", "data": "Data da exceção"}
+        labels = {"finalidade": "Horário afetado", "data": "Data da exceção"}
         widgets = {"finalidade": forms.Select(attrs={"class": "form-select"}),
                    "data": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date", "class": "form-control"})}
 

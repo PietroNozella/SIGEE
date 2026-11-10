@@ -1,6 +1,10 @@
-<div class="calendar-time-row" data-time-row>
+<fieldset class="calendar-time-row" data-time-row>
+    <legend>Horário <span data-time-number>{{ forloop.counter|default:"" }}</span></legend>
     {% for oculto in faixa.hidden_fields %}{{ oculto }}{% endfor %}
-    <div class="form-field"><label for="{{ faixa.inicio.id_for_label }}">Início</label>{{ faixa.inicio }}</div>
-    <div class="form-field"><label for="{{ faixa.fim.id_for_label }}">Término</label>{{ faixa.fim }}</div>
-    <div class="calendar-delete"><label for="{{ faixa.DELETE.id_for_label }}">{{ faixa.DELETE }} Remover faixa</label></div>
-</div>
+    <div class="calendar-time-inputs">
+        {% include "calendario/_campo.html" with campo=faixa.inicio %}
+        {% include "calendario/_campo.html" with campo=faixa.fim %}
+        <div class="calendar-delete"><label for="{{ faixa.DELETE.id_for_label }}">{{ faixa.DELETE }} Remover horário</label></div>
+        <button class="btn btn-secondary-sigee calendar-remove-time" type="button" data-remove-time hidden>Remover</button>
+    </div>
+</fieldset>

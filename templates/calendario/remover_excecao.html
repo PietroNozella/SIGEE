@@ -1,12 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Remover exceção | SIGEE{% endblock %}
+{% load static %}
+{% block title %}Remover exceção | Calendário da escola | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.3">{% endblock %}
 {% block content %}
-<div class="page-content form-page">
+<div class="page-content school-calendar calendar-form-page calendar-removal-page">
     <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'calendario:calendario_escola' %}">Calendário da escola</a><span aria-hidden="true">/</span><span aria-current="page">Remover exceção</span></nav>
-    <header class="page-header"><div><h1>Remover exceção por data</h1><p>{{ regra }}. A data voltará a seguir a semana habitual.</p></div></header>
-    <section class="form-card" aria-labelledby="remover-heading"><div class="form-card-header"><h2 id="remover-heading">Confirme a alteração</h2><p>O histórico e as reservas confirmadas serão preservados.</p></div>
+    <header class="page-header"><div><h1>Remover exceção por data</h1><p>Confira a data e a finalidade antes de continuar.</p></div></header>
+    <section class="form-card calendar-editor" aria-labelledby="remover-heading">
+        <h2 id="remover-heading">A data voltará à semana habitual</h2>
+        <p class="calendar-section-description">Esta ação remove o horário especial. As reservas confirmadas e o histórico serão preservados.</p>
+        <dl class="calendar-context"><div><dt>Data da exceção</dt><dd>{{ regra.data|date:"d/m/Y" }} <small>{{ regra.data|date:"l" }}</small></dd></div><div><dt>Horário afetado</dt><dd>{{ regra.get_finalidade_display }}</dd></div></dl>
         {% include "calendario/_erros.html" %}
-        <form method="post" novalidate>{% csrf_token %}{{ form.versao }}<div class="form-field"><label for="{{ form.motivo.id_for_label }}">{{ form.motivo.label }}</label>{{ form.motivo }}</div><div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'calendario:calendario_escola' %}">Manter exceção</a><button class="btn btn-danger-sigee" type="submit">Remover exceção</button></div></form>
+        <form method="post" novalidate>{% csrf_token %}{{ form.versao }}{% include "calendario/_campo.html" with campo=form.motivo %}<div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'calendario:calendario_escola' %}">Manter exceção</a><button class="btn btn-danger-sigee" type="submit">Remover exceção</button></div></form>
     </section>
 </div>
 {% endblock %}

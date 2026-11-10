@@ -46,11 +46,17 @@ def calendario_escola(request):
         faixas = []
         for finalidade, titulo in RegraCalendario.Finalidade.choices:
             regra = regras.get((finalidade, dia))
+            resumo = descrever_regra(regra)["resumo"] if regra else ("Dia inteiro" if dia < 5 else "Fechado")
             faixas.append({"finalidade": finalidade, "titulo": titulo,
-                           "resumo": descrever_regra(regra)["resumo"] if regra else ("Dia inteiro" if dia < 5 else "Fechado"),
+                           "resumo": resumo, "periodos": resumo.split("; "),
                            "padrao": regra is None})
         dias.append({"numero": dia, "nome": nome, "faixas": faixas})
-    excecoes = [descrever_regra(r) | {"pk": r.pk} for r in regras.values() if r.data and r.data >= timezone.localdate()]
+    excecoes = []
+    for regra in regras.values():
+        if regra.data and regra.data >= timezone.localdate():
+            descricao = descrever_regra(regra)
+            excecoes.append(descricao | {"pk": regra.pk, "data_excecao": regra.data,
+                "finalidade_nome": regra.get_finalidade_display(), "periodos": descricao["resumo"].split("; ")})
     excecoes.sort(key=lambda e: (e["data"], e["finalidade"]))
     afetadas = reservas_afetadas(regras=regras)
     return render(request, "calendario/calendario.html", {

@@ -1,10 +1,11 @@
 {% if form.errors or formset.errors or formset.non_form_errors %}
-<div class="validation-summary" role="alert" tabindex="-1" data-focus-on-load>
-    <h2>Revise a configuração</h2><ul>
-    {% for erro in form.non_field_errors %}<li>{{ erro }}</li>{% endfor %}
-    {% for campo in form %}{% for erro in campo.errors %}<li>{{ campo.label }}: {{ erro }}</li>{% endfor %}{% endfor %}
-    {% for erro in formset.non_form_errors %}<li>{{ erro }}</li>{% endfor %}
-    {% for faixa in formset %}{% for erro in faixa.non_field_errors %}<li>Faixa {{ forloop.parentloop.counter }}: {{ erro }}</li>{% endfor %}{% for campo in faixa %}{% for erro in campo.errors %}<li>Faixa {{ forloop.parentloop.parentloop.counter }} · {{ campo.label }}: {{ erro }}</li>{% endfor %}{% endfor %}{% endfor %}
+<div class="validation-summary" id="calendar-form-errors" role="alert" tabindex="-1" data-focus-on-load>
+    <h2>Revise a configuração</h2>
+    <ul>
+        {% for erro in form.non_field_errors %}<li>{{ erro }}</li>{% endfor %}
+        {% for campo in form %}{% for erro in campo.errors %}<li>{% if not campo.is_hidden %}<a href="#{{ campo.id_for_label }}">{{ campo.label }}: {{ erro }}</a>{% else %}{{ erro }}{% endif %}</li>{% endfor %}{% endfor %}
+        {% for erro in formset.non_form_errors %}<li><a href="#faixas-heading">{{ erro }}</a></li>{% endfor %}
+        {% for faixa in formset %}{% if not faixa.cleaned_data.DELETE %}{% for erro in faixa.non_field_errors %}<li>Horários de funcionamento: {{ erro }}</li>{% endfor %}{% for campo in faixa %}{% for erro in campo.errors %}<li>{% if not campo.is_hidden %}<a href="#{{ campo.id_for_label }}">Horários de funcionamento · {{ campo.label }}: {{ erro }}</a>{% else %}{{ erro }}{% endif %}</li>{% endfor %}{% endfor %}{% endif %}{% endfor %}
     </ul>
 </div>
 {% endif %}

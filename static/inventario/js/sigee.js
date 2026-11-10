@@ -411,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const feriado = data ? feriadoNaData(data) : null;
         reservationDateFeedback.hidden = !feriado;
         reservationDateFeedback.textContent = feriado
-            ? `Feriado nacional: ${feriado}. ${calendarExceptions ? 'Você define o funcionamento da escola nesta data.' : 'A data continua sujeita ao calendário da escola.'}`
+            ? `Feriado nacional: ${feriado}.${calendarExceptions ? '' : ' A data continua sujeita ao calendário da escola.'}`
             : "";
     };
 
