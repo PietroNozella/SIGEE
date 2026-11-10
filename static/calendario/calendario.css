@@ -9,6 +9,11 @@
 .school-calendar :is(th, td, dt, strong, legend) { font-weight: 600; }
 .school-calendar :is(summary, [id]) { scroll-margin-top: 96px; }
 .calendar-page-header > .btn { flex-shrink: 0; }
+.calendar-interval-setting { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 24px; }
+.calendar-interval-setting h2 { font-size: 16px; margin: 0 0 6px; }
+.calendar-interval-setting p { margin: 0; color: var(--sigee-muted); font-size: 13px; max-width: 80ch; }
+.calendar-interval-setting .btn { flex-shrink: 0; }
+.calendar-interval-example { margin: 20px 0 0; font-size: 13px; color: var(--sigee-muted); }
 .calendar-attention { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 16px 20px; border: 1px solid #dfc27d; border-radius: 8px; background: #fff8e7; color: #654d00; }
 .calendar-attention p { margin: 4px 0 0; }
 .calendar-attention > a { display: inline-flex; align-items: center; gap: 12px; min-height: 40px; flex-shrink: 0; color: inherit; font-weight: 600; text-underline-offset: 3px; }
@@ -123,6 +128,7 @@
     .calendar-exception-actions { grid-column: auto; }
 }
 @media (max-width: 767px) {
+    .calendar-interval-setting { flex-direction: column; align-items: start; padding: 20px 16px; gap: 12px; }
     .school-calendar { gap: 20px; }
     .school-calendar .calendar-page-header { align-items: stretch; flex-direction: column; gap: 16px; }
     .calendar-page-header > .btn { align-self: flex-start; }

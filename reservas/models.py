@@ -75,6 +75,8 @@ class Reserva(models.Model):
     atividade = models.ForeignKey("pedagogico.AtividadePedagogica", on_delete=models.PROTECT, null=True, blank=True)
     observacao_pedagogica = models.TextField(blank=True)
     calendario_confirmado = models.JSONField(default=dict, db_default={}, blank=True, editable=False)
+    # Reservas anteriores preservam a política sem margem entre usos.
+    intervalo_apos_uso = models.DurationField(default=timedelta, db_default=timedelta(), editable=False)
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -97,6 +99,7 @@ class Reserva(models.Model):
             ("cancelar_reserva_operacional", "Pode registrar cancelamento operacional de reserva"),
         ]
         constraints = [
+            models.CheckConstraint(condition=Q(intervalo_apos_uso__gte=timedelta()), name="reserva_intervalo_nao_negativo"),
             models.CheckConstraint(
                 condition=(Q(turma__isnull=True, disciplina__isnull=True, atividade__isnull=True)
                            | Q(turma__isnull=False, disciplina__isnull=False, atividade__isnull=False)),
@@ -131,6 +134,10 @@ class Reserva(models.Model):
     @classmethod
     def data_limite_agendamento(cls):
         return timezone.localdate() + timedelta(days=cls.ANTECEDENCIA_MAXIMA_DIAS)
+
+    @property
+    def intervalo_minutos(self):
+        return int(self.intervalo_apos_uso.total_seconds() // 60)
 
     def clean(self):
         super().clean()

@@ -1,7 +1,9 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Exists, OuterRef
+from django.db.models import DateTimeField, Exists, ExpressionWrapper, F, OuterRef, Q
 from django.utils import timezone
 
 from auditoria.eventos import AcaoAuditoria
@@ -32,7 +34,8 @@ def _substituir_unidades_bloqueadas(reserva, usuario):
         if manutencao is None:
             continue
         substituto = _equipamentos_disponiveis(
-            reserva.tipo_equipamento, reserva.local, reserva.inicio, reserva.fim, bloquear=True,
+            reserva.tipo_equipamento, reserva.local, reserva.inicio, reserva.fim,
+            intervalo_apos_uso=reserva.intervalo_apos_uso, bloquear=True,
         ).exclude(pk__in=entregues).exclude(pk__in=reserva.itens.values("equipamento_id")).first()
         if substituto is None:
             continue
@@ -113,14 +116,19 @@ def _equipamentos_disponiveis(
     inicio,
     fim,
     *,
+    intervalo_apos_uso,
     bloquear=False,
 ):
-    conflitos = ReservaEquipamento.objects.filter(
+    conflitos = ReservaEquipamento.objects.annotate(
+        fim_com_intervalo=ExpressionWrapper(F("reserva__fim") + F("reserva__intervalo_apos_uso"), output_field=DateTimeField()),
+    ).filter(
+        # A margem acordada continua protegida após uma devolução antecipada.
+        Q(reserva_id__in=Reserva.objects.com_etapa().filter(etapa__in=("AGUARDANDO", "EM_USO")))
+        | Q(reserva__intervalo_apos_uso__gt=timedelta()),
         equipamento_id=OuterRef("pk"),
         reserva__status=Reserva.Status.ATIVA,
-        reserva_id__in=Reserva.objects.com_etapa().filter(etapa__in=("AGUARDANDO", "EM_USO")),
-        reserva__inicio__lt=fim,
-        reserva__fim__gt=inicio,
+        reserva__inicio__lt=fim + intervalo_apos_uso,
+        fim_com_intervalo__gt=inicio,
     )
     equipamentos = (
         Equipamento.objects.filter(
@@ -206,6 +214,8 @@ def expirar_reservas_vencidas(agora=None):
 
 
 def consultar_disponibilidade(*, professor, tipo_equipamento, local, inicio, fim):
+    from calendario.services import intervalo_vigente
+
     expirar_reservas_vencidas()
     reserva = Reserva(
         professor=professor,
@@ -221,6 +231,7 @@ def consultar_disponibilidade(*, professor, tipo_equipamento, local, inicio, fim
         local,
         inicio,
         fim,
+        intervalo_apos_uso=intervalo_vigente(),
     ).count()
 
 
@@ -267,6 +278,7 @@ def criar_reserva(
     with transaction.atomic():
         from calendario.services import bloquear_calendario, validar_periodo_reserva
         calendario = bloquear_calendario()
+        reserva.intervalo_apos_uso = timedelta(minutes=calendario.intervalo_minutos)
         # A desativação bloqueia esta mesma conta antes de conferir suas reservas.
         professor_atual = get_user_model().objects.select_for_update(no_key=True).get(pk=professor.pk)
         if not e_professor_funcional(professor_atual):
@@ -311,6 +323,7 @@ def criar_reserva(
                 local_bloqueado,
                 inicio,
                 fim,
+                intervalo_apos_uso=reserva.intervalo_apos_uso,
                 bloquear=True,
             )[:quantidade]
         )

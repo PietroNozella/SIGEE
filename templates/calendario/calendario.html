@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Calendário da escola | SIGEE{% endblock %}
-{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.3">{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.4">{% endblock %}
 {% block content %}
 <div class="page-content school-calendar">
     <header class="page-header calendar-page-header">
@@ -14,6 +14,10 @@
         <a href="#afetadas-heading">Conferir reservas <span aria-hidden="true">→</span></a>
     </div>
     {% endif %}
+    <section class="inventory-card calendar-interval-setting" aria-labelledby="intervalo-heading">
+        <div><h2 id="intervalo-heading">Intervalo entre reservas</h2><p><strong>{{ intervalo_minutos }} minuto{{ intervalo_minutos|pluralize:"s" }}</strong> após o uso das mesmas unidades. O valor vigente é guardado em cada nova reserva.</p></div>
+        <a class="btn btn-secondary-sigee" href="{% url 'calendario:intervalo' %}">Configurar intervalo</a>
+    </section>
     <div class="calendar-settings-layout">
         <section class="inventory-card calendar-week" aria-labelledby="semana-heading">
             <header class="calendar-section-heading"><h2 id="semana-heading">Semana habitual</h2><p>Defina cada dia. As exceções por data têm prioridade.</p></header>

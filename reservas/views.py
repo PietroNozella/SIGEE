@@ -249,8 +249,9 @@ def reserva_nova(request):
             messages.success(request, "Reserva criada com sucesso.", extra_tags="reserva")
             return redirect("reservas:reserva_lista")
 
-    from calendario.services import dias_para_agendamento
-    return render(request, "reservas/reserva_form.html", {"form": form, "dias_calendario_escolar": dias_para_agendamento()})
+    from calendario.services import dias_para_agendamento, intervalo_vigente
+    return render(request, "reservas/reserva_form.html", {"form": form, "dias_calendario_escolar": dias_para_agendamento(),
+        "intervalo_minutos": int(intervalo_vigente().total_seconds() // 60)})
 
 
 @login_required

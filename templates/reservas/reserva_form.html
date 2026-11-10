@@ -23,6 +23,7 @@
         <div class="form-card-header">
             <h2 id="reservation-form-title">Dados da reserva</h2>
             <p>Informe também o contexto pedagógico. Apenas a observação é opcional.</p>
+            <p>Intervalo atual após o uso das mesmas unidades: {{ intervalo_minutos }} minuto{{ intervalo_minutos|pluralize:"s" }}. A disponibilidade já considera essa margem.</p>
         </div>
 
         {% if form.errors %}

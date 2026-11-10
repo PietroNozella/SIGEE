@@ -60,7 +60,7 @@ Nenhum grupo recebe exclusão de usuários, movimentações, manutenção ou uti
 |---|---|---|
 | Usuários | `/usuarios/`, `/usuarios/novo/`, `/usuarios/<uuid>/desativar/`, `/usuarios/<uuid>/reativar/` | Administrador com view/add/change conforme a ação; alterações de situação por POST com CSRF e autoridade sobre a conta alvo. |
 | Auditoria | `/auditoria/` | Administrador com `view_registroauditoria`; somente consulta. |
-| Calendário da escola | `/calendario/`, `/calendario/semana/<finalidade>/<dia>/`, `/calendario/excecoes/` | Somente Administrador funcional com `configurar_calendario`. Alterações por POST com CSRF, motivo, revalidação da autorização atual, controle de versão e auditoria transacional. |
+| Calendário da escola | `/calendario/`, `/calendario/intervalo/`, `/calendario/semana/<finalidade>/<dia>/`, `/calendario/excecoes/` | Somente Administrador funcional com `configurar_calendario`. Alterações por POST com CSRF, motivo, revalidação da autorização atual, controle de versão e auditoria transacional. |
 | Reservas próprias | `/reservas/`, `/reservas/nova/`, `/reservas/<id>/cancelar/` | Professor proprietário; view/add/change conforme a ação; cancelamento por POST. |
 | Cancelamento operacional | `/reservas/<id>/cancelamento-operacional/` | Operador com `cancelar_reserva_operacional`; GET de conferência e POST com motivo e confirmação da desistência do Professor. Estado, prazo, ausência de retirada e autorização atual são revalidados no serviço. |
 | Detalhe da reserva | `/reservas/<id>/` | Administrador/Operador com `view_movimentacao`; Professor com `view_reserva`, restrito à própria reserva. Somente GET. |

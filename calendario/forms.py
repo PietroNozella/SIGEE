@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.utils import timezone
 
-from .models import FaixaHorario, RegraCalendario
+from .models import CalendarioEscolar, FaixaHorario, RegraCalendario
 
 
 class RegraCalendarioForm(forms.ModelForm):
@@ -68,3 +68,15 @@ FaixaHorarioFormSet = inlineformset_factory(RegraCalendario, FaixaHorario, form=
 class RemoverExcecaoForm(forms.Form):
     motivo = forms.CharField(label="Motivo da remoção", widget=forms.Textarea(attrs={"rows": 3, "class": "form-control"}))
     versao = forms.IntegerField(widget=forms.HiddenInput, min_value=1)
+
+
+class IntervaloReservasForm(forms.ModelForm):
+    motivo = forms.CharField(label="Motivo da alteração", widget=forms.Textarea(attrs={"rows": 3, "class": "form-control"}))
+    versao = forms.IntegerField(widget=forms.HiddenInput, min_value=1)
+
+    class Meta:
+        model = CalendarioEscolar
+        fields = ["intervalo_minutos"]
+        labels = {"intervalo_minutos": "Intervalo em minutos"}
+        help_texts = {"intervalo_minutos": "Tempo reservado para conferência e preparação após o uso. Informe 0 para permitir reservas sem intervalo."}
+        widgets = {"intervalo_minutos": forms.NumberInput(attrs={"class": "form-control", "min": 0, "max": 32767, "step": 1})}

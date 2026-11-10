@@ -221,6 +221,7 @@ class ManutencaoTests(TestCase):
         self.abrir()
         self.assertFalse(_equipamentos_disponiveis(
             self.equipamento.tipo, self.equipamento.local, timezone.now(), timezone.now() + timedelta(hours=1),
+            intervalo_apos_uso=timedelta(),
         ).exists())
         self.assertEqual(self.equipamento.__class__.objects.get(pk=self.equipamento.pk).situacao, "MANUTENCAO")
 

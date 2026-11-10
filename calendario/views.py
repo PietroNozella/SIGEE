@@ -11,9 +11,9 @@ from django.views.decorators.http import require_GET, require_http_methods
 from usuarios.permissoes import pode_configurar_calendario
 from reservas.brasilapi import feriados_para_calendario
 
-from .forms import FaixaHorarioFormSet, RegraCalendarioForm, RemoverExcecaoForm
+from .forms import FaixaHorarioFormSet, IntervaloReservasForm, RegraCalendarioForm, RemoverExcecaoForm
 from .models import AlteracaoCalendario, CalendarioEscolar, RegraCalendario
-from .services import descrever_regra, regras_vigentes, reservas_afetadas, salvar_regra
+from .services import descrever_regra, intervalo_vigente, regras_vigentes, reservas_afetadas, salvar_intervalo, salvar_regra
 
 
 def _exigir_administrador(usuario):
@@ -61,10 +61,30 @@ def calendario_escola(request):
     afetadas = reservas_afetadas(regras=regras)
     return render(request, "calendario/calendario.html", {
         "dias": dias, "excecoes": excecoes, "versao": _versao(),
+        "intervalo_minutos": int(intervalo_vigente().total_seconds() // 60),
         "afetadas": Paginator(afetadas, 10).get_page(request.GET.get("pagina")),
         "total_afetadas": len(afetadas),
         "alteracoes": AlteracaoCalendario.objects.select_related("usuario")[:15],
     })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def intervalo_form(request):
+    _exigir_administrador(request.user)
+    calendario = CalendarioEscolar.objects.filter(pk=1).first() or CalendarioEscolar()
+    form = IntervaloReservasForm(request.POST if request.method == "POST" else None,
+        instance=calendario, initial={"versao": calendario.versao})
+    if request.method == "POST" and form.is_valid():
+        try:
+            salvar_intervalo(usuario=request.user, minutos=form.cleaned_data["intervalo_minutos"],
+                motivo=form.cleaned_data["motivo"], versao=form.cleaned_data["versao"])
+        except ValidationError as erro:
+            form.add_error(None, " ".join(erro.messages))
+        else:
+            messages.success(request, "Intervalo atualizado. O novo valor vale somente para novas reservas.")
+            return redirect("calendario:calendario_escola")
+    return render(request, "calendario/intervalo_form.html", {"form": form})
 
 
 @login_required

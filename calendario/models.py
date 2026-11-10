@@ -2,6 +2,7 @@ from datetime import time
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator
 from django.db import models
 from django.db.models import F, Q
 from django.utils import timezone
@@ -10,11 +11,15 @@ from django.utils import timezone
 class CalendarioEscolar(models.Model):
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     versao = models.PositiveIntegerField(default=1)
+    intervalo_minutos = models.PositiveSmallIntegerField(default=5, validators=[MaxValueValidator(32767)])
 
     class Meta:
         verbose_name = "calendário da escola"
         permissions = [("configurar_calendario", "Pode configurar o calendário da escola")]
-        constraints = [models.CheckConstraint(condition=Q(id=1), name="calendario_unico_escola")]
+        constraints = [
+            models.CheckConstraint(condition=Q(id=1), name="calendario_unico_escola"),
+            models.CheckConstraint(condition=Q(intervalo_minutos__lte=32767), name="calendario_intervalo_limite"),
+        ]
 
 
 class RegraCalendario(models.Model):

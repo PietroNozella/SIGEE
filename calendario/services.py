@@ -18,6 +18,36 @@ def bloquear_calendario():
     return CalendarioEscolar.objects.select_for_update().get(pk=1)
 
 
+def intervalo_vigente():
+    calendario = CalendarioEscolar.objects.filter(pk=1).first() or CalendarioEscolar()
+    return timedelta(minutes=calendario.intervalo_minutos)
+
+
+def salvar_intervalo(*, usuario, minutos, motivo, versao):
+    with transaction.atomic():
+        calendario = bloquear_calendario()
+        atual = get_user_model().objects.filter(pk=usuario.pk).first() if usuario.is_authenticated else None
+        if atual is None or not pode_configurar_calendario(atual):
+            raise PermissionDenied
+        if calendario.versao != versao:
+            raise ValidationError("O calendário foi alterado por outro Administrador. Reabra a página e confira a versão atual.")
+        if not motivo.strip():
+            raise ValidationError("Informe o motivo da alteração do intervalo.")
+        anterior = {"titulo": "Intervalo entre reservas", "intervalo_minutos": calendario.intervalo_minutos,
+                    "resumo": f"{calendario.intervalo_minutos} minuto(s) após o uso"}
+        calendario.intervalo_minutos = minutos
+        calendario.versao += 1
+        calendario.full_clean()
+        calendario.save(update_fields=["intervalo_minutos", "versao"])
+        novo = {"titulo": "Intervalo entre reservas", "intervalo_minutos": minutos,
+                "resumo": f"{minutos} minuto(s) após o uso"}
+        alteracao = AlteracaoCalendario.objects.create(usuario=atual, motivo=motivo.strip(), anterior=anterior, novo=novo, versao=calendario.versao)
+        registrar_evento(usuario=atual, acao=AcaoAuditoria.CALENDARIO_ALTERADO,
+                        resultado=RegistroAuditoria.Resultado.SUCESSO,
+                        entidade="calendario.AlteracaoCalendario", entidade_id=alteracao.pk)
+    return alteracao
+
+
 def regras_vigentes():
     regras = list(RegraCalendario.objects.prefetch_related("faixas"))
     return {(r.finalidade, r.data if r.data else r.dia_semana): r for r in regras}
