@@ -13,4 +13,9 @@ urlpatterns = [
     path("excecoes/nova/", views.regra_form, name="excecao_nova"),
     path("excecoes/<int:regra_id>/", views.regra_form, name="excecao_editar"),
     path("excecoes/<int:regra_id>/remover/", views.remover_excecao, name="excecao_remover"),
+    path("fechamentos/novo/", views.fechamento_form, name="fechamento_novo"),
+    path("fechamentos/politica/", views.politica_fechamento, name="politica_fechamento"),
+    path("fechamentos/<int:fechamento_id>/", views.fechamento_detalhe, name="fechamento_detalhe"),
+    path("fechamentos/<int:fechamento_id>/reabrir/", views.reabertura_form, name="fechamento_reabrir"),
+    path("fechamentos/reservas/<int:impacto_id>/", views.decisao_fechamento, name="decisao_fechamento"),
 ]

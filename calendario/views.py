@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError
+from django.db.models import Exists, OuterRef, Prefetch, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -12,9 +13,17 @@ from django.views.decorators.http import require_GET, require_http_methods
 from usuarios.permissoes import pode_configurar_calendario
 from inventario.models import TipoEquipamento
 from reservas.brasilapi import feriados_para_calendario
+from reservas.models import Reserva
 
-from .forms import CotaProfessorForm, FaixaHorarioFormSet, IntervaloReservasForm, RegraCalendarioForm, RemoverExcecaoForm
-from .models import AlteracaoCalendario, CalendarioEscolar, RegraCalendario
+from .fechamentos import (
+    configurar_excecao_fechamento, decidir_reserva_afetada, pendencias_de_fechamento,
+    reabrir_fechamento, registrar_fechamento,
+)
+from .forms import (
+    AlteracaoFechamentoForm, CotaProfessorForm, DecisaoFechamentoForm, FaixaHorarioFormSet, FechamentoEscolarForm,
+    IntervaloReservasForm, PoliticaFechamentoForm, RegraCalendarioForm, RemoverExcecaoForm,
+)
+from .models import AlteracaoCalendario, CalendarioEscolar, FechamentoEscolar, RegraCalendario, ReservaAfetadaFechamento
 from .services import descrever_regra, intervalo_vigente, regras_vigentes, reservas_afetadas, salvar_cota, salvar_intervalo, salvar_regra
 
 
@@ -64,13 +73,148 @@ def calendario_escola(request):
                 "finalidade_nome": regra.get_finalidade_display(), "periodos": descricao["resumo"].split("; ")})
     excecoes.sort(key=lambda e: (e["data"], e["finalidade"]))
     afetadas = reservas_afetadas(regras=regras)
+    reservas_que_exigem_decisao = Reserva.objects.com_etapa().filter(status=Reserva.Status.ATIVA).filter(
+        Q(tem_retirada=False) | Q(tem_entrega_pendente=True),
+    )
+    pendencias = pendencias_de_fechamento().filter(
+        fechamento_id=OuterRef("pk"), reserva_id__in=reservas_que_exigem_decisao.values("pk"),
+    )
+    fechamentos = FechamentoEscolar.objects.filter(reabertura__isnull=True).alias(
+        tem_pendencias=Exists(pendencias),
+    ).filter(Q(data__gte=timezone.localdate()) | Q(tem_pendencias=True)).select_related("abertura")
     return render(request, "calendario/calendario.html", {
         "dias": dias, "excecoes": excecoes, "versao": _versao(), "secao": secao,
         "intervalo_minutos": int(intervalo_vigente().total_seconds() // 60),
         "total_cotas": TipoEquipamento.objects.filter(ativo=True, cota_por_professor__isnull=False).count(),
         "afetadas": Paginator(afetadas, 10).get_page(request.GET.get("pagina")),
         "total_afetadas": len(afetadas),
-        "alteracoes": AlteracaoCalendario.objects.select_related("usuario")[:15],
+        "alteracoes": AlteracaoCalendario.objects.select_related("usuario", "fechamento_registrado")[:15],
+        "fechamentos": fechamentos,
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def fechamento_form(request):
+    _exigir_administrador(request.user)
+    voltar = reverse("calendario:calendario_escola")
+    form = FechamentoEscolarForm(
+        request.POST if request.method == "POST" else None, initial={"versao": _versao(), "data": timezone.localdate()},
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            fechamento = registrar_fechamento(usuario=request.user, **form.cleaned_data)
+        except ValidationError as erro:
+            form.add_error(None, erro)
+        else:
+            messages.success(request, "Fechamento registrado. Confira as reservas afetadas.")
+            return redirect("calendario:fechamento_detalhe", fechamento_id=fechamento.pk)
+    return render(request, "calendario/fechamento_form.html", {
+        "form": form, "voltar": voltar, "titulo": "Registrar fechamento", "acao": "Registrar fechamento",
+        "descricao": "A data ficará fechada para novos agendamentos e as entregas afetadas serão suspensas. Devoluções físicas continuam disponíveis.",
+    })
+
+
+@login_required
+@require_GET
+def fechamento_detalhe(request, fechamento_id):
+    _exigir_administrador(request.user)
+    fechamento = get_object_or_404(
+        FechamentoEscolar.objects.select_related("abertura__usuario", "reabertura__usuario"), pk=fechamento_id,
+    )
+    reservas = Reserva.objects.com_etapa().select_related("professor", "tipo_equipamento")
+    impactos = fechamento.reservas_afetadas.select_related("decidido_por").prefetch_related(
+        Prefetch("reserva", queryset=reservas),
+    ).order_by("reserva__inicio", "reserva_id")
+    return render(request, "calendario/fechamento_detalhe.html", {
+        "fechamento": fechamento, "impactos": Paginator(impactos, 15).get_page(request.GET.get("pagina")),
+        "pode_reabrir": not fechamento.reabertura_id and fechamento.data >= timezone.localdate(),
+        "agora": timezone.now(),
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def reabertura_form(request, fechamento_id):
+    _exigir_administrador(request.user)
+    fechamento = get_object_or_404(FechamentoEscolar, pk=fechamento_id)
+    voltar = reverse("calendario:fechamento_detalhe", args=[fechamento.pk])
+    form = AlteracaoFechamentoForm(
+        request.POST if request.method == "POST" else None, initial={"versao": _versao()},
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            reabrir_fechamento(usuario=request.user, fechamento_id=fechamento.pk, **form.cleaned_data)
+        except ValidationError as erro:
+            form.add_error(None, erro)
+        else:
+            messages.success(request, "Fechamento retirado. A data volta a seguir o calendário.")
+            return redirect(voltar)
+    return render(request, "calendario/fechamento_form.html", {
+        "form": form, "voltar": voltar, "titulo": f"Reabrir {fechamento.data:%d/%m/%Y}", "acao": "Confirmar reabertura",
+        "descricao": "A data volta a seguir o calendário. As decisões já registradas ficam no histórico.",
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def politica_fechamento(request):
+    _exigir_administrador(request.user)
+    calendario = CalendarioEscolar.objects.filter(pk=1).first() or CalendarioEscolar()
+    voltar = reverse("calendario:calendario_escola") + "?secao=reservas"
+    form = PoliticaFechamentoForm(request.POST if request.method == "POST" else None, initial={
+        "versao": calendario.versao, "permite_manter": calendario.permite_manter_em_fechamento,
+    })
+    if request.method == "POST" and form.is_valid():
+        try:
+            configurar_excecao_fechamento(usuario=request.user, **form.cleaned_data)
+        except ValidationError as erro:
+            form.add_error(None, erro)
+        else:
+            messages.success(request, "Política de fechamento atualizada.")
+            return redirect(voltar)
+    return render(request, "calendario/fechamento_form.html", {
+        "form": form, "voltar": voltar, "titulo": "Política de fechamento", "acao": "Salvar política",
+        "descricao": "A política vale para novas decisões. As autorizações já registradas continuam vinculadas à reserva.",
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def decisao_fechamento(request, impacto_id):
+    _exigir_administrador(request.user)
+    impacto = get_object_or_404(
+        ReservaAfetadaFechamento.objects.select_related("fechamento", "reserva__professor", "reserva__tipo_equipamento"),
+        pk=impacto_id,
+    )
+    reserva = impacto.reserva
+    tem_retirada = reserva.movimentacoes.filter(tipo="RETIRADA").exists()
+    pode_decidir = (
+        impacto.decisao == ReservaAfetadaFechamento.Decisao.PENDENTE
+        and not impacto.fechamento.reabertura_id and reserva.status == Reserva.Status.ATIVA
+    )
+    limite = reserva.fim if tem_retirada else min(reserva.fim, reserva.inicio + Reserva.TOLERANCIA_RETIRADA)
+    pode_manter = pode_decidir and timezone.now() < limite and CalendarioEscolar.objects.filter(
+        pk=1, permite_manter_em_fechamento=True,
+    ).exists()
+    pode_cancelar = pode_decidir and not tem_retirada
+    voltar = reverse("calendario:fechamento_detalhe", args=[impacto.fechamento_id])
+    form = DecisaoFechamentoForm(
+        request.POST if request.method == "POST" else None, pode_cancelar=pode_cancelar, pode_manter=pode_manter,
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            decidir_reserva_afetada(usuario=request.user, impacto_id=impacto.pk, **form.cleaned_data)
+        except ValidationError as erro:
+            form.add_error(None, erro)
+        else:
+            messages.success(request, "Decisão registrada na reserva.")
+            return redirect(voltar)
+    return render(request, "calendario/fechamento_form.html", {
+        "form": form, "voltar": voltar, "reserva": reserva,
+        "titulo": f"Decidir sobre a reserva #{reserva.pk}", "acao": "Registrar decisão",
+        "descricao": "A decisão e o motivo aparecem no histórico da reserva.",
+        "acao_indisponivel": not (pode_cancelar or pode_manter),
     })
 
 

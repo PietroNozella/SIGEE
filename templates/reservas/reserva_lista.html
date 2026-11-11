@@ -50,7 +50,7 @@
                                 </td>
                                 <td>
                                     <span class="status-badge reservation-status-{{ reserva.status|lower }}">
-                                        {% if reserva.tem_retirada %}Entrega complementar pendente{% else %}Aguardando retirada{% endif %}
+                                        {% if reserva.fechamento_pendente and reserva.status == 'ATIVA' %}Entrega suspensa por fechamento{% elif reserva.tem_retirada %}Entrega complementar pendente{% else %}Aguardando retirada{% endif %}
                                     </span>
                                 </td>
                                 <td>

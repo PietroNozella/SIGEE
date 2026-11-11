@@ -3,12 +3,13 @@ import json
 from axes.models import AccessAttempt, AccessLog
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
+from calendario.models import ReservaAfetadaFechamento
 from manutencoes.models import Manutencao
 from reservas.models import SubstituicaoReserva
 
@@ -61,6 +62,10 @@ class Command(BaseCommand):
                         "motivo": reserva.motivo_cancelamento,
                         "responsavel_id": str(reserva.cancelada_por_id) if reserva.cancelada_por_id else None,
                         "data_hora": _data_hora(reserva.data_cancelamento),
+                        "origem": (
+                            "FECHAMENTO_ESCOLA" if reserva.cancelada_por_fechamento
+                            else "DESISTENCIA_COMUNICADA" if reserva.cancelada_por_id else None
+                        ),
                     },
                     "contexto_pedagogico": {
                         "turma": reserva.turma.nome if reserva.turma_id else None,
@@ -75,7 +80,11 @@ class Command(BaseCommand):
                 }
                 for reserva in usuario.reservas.select_related(
                     "tipo_equipamento", "local", "turma", "disciplina", "atividade"
-                ).prefetch_related("itens__equipamento")
+                ).prefetch_related("itens__equipamento").annotate(cancelada_por_fechamento=Exists(
+                    ReservaAfetadaFechamento.objects.filter(
+                        reserva_id=OuterRef("pk"), decisao=ReservaAfetadaFechamento.Decisao.CANCELADA,
+                    ),
+                ))
             ],
             "reservas_canceladas_como_operador": [
                 {
@@ -83,7 +92,19 @@ class Command(BaseCommand):
                     "motivo": reserva.motivo_cancelamento,
                     "data_hora": _data_hora(reserva.data_cancelamento),
                 }
-                for reserva in usuario.reservas_canceladas.order_by("data_cancelamento", "pk")
+                for reserva in usuario.reservas_canceladas.exclude(
+                    impactos_fechamento__decisao=ReservaAfetadaFechamento.Decisao.CANCELADA,
+                ).order_by("data_cancelamento", "pk")
+            ],
+            "decisoes_sobre_fechamentos": [
+                {
+                    "reserva_id": impacto.reserva_id,
+                    "fechamento_id": impacto.fechamento_id,
+                    "decisao": impacto.decisao,
+                    "motivo": impacto.motivo,
+                    "data_hora": _data_hora(impacto.decidido_em),
+                }
+                for impacto in ReservaAfetadaFechamento.objects.filter(decidido_por=usuario).order_by("decidido_em", "pk")
             ],
             "movimentacoes_como_operador": [
                 {

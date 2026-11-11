@@ -15,7 +15,19 @@
             {% include "inventario/_situacao_por_categoria.html" %}
             <section class="inventory-card operator-work-section" aria-labelledby="pending-heading">
             <div class="operator-section-heading"><div><h2 id="pending-heading">Pendências de entrega</h2><p>Faltas de equipamentos e entregas para complementar</p></div><span class="operator-count" aria-label="{{ total_pendencias }} reserva{{ total_pendencias|pluralize:"s" }} pendente{{ total_pendencias|pluralize:"s" }}">{{ total_pendencias }}</span></div>
-            <ul class="operator-work-list">{% for reserva in pendencias %}<li><div class="operator-work-content"><h3>Reserva #{{ reserva.pk }} · {{ reserva.professor.get_full_name|default:reserva.professor.username }}</h3><p>{{ reserva.tipo_equipamento.nome }} · {{ reserva.local.nome }}</p><span class="table-metadata">{{ reserva.quantidade_entregue }} de {{ reserva.quantidade }} entregue(s) · Período até {{ reserva.fim|date:"d/m H:i" }}</span></div><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_registrar' reserva.pk %}">Conferir pendência</a></li>{% empty %}<li class="operator-empty"><h3>Nenhuma pendência de entrega</h3><p>Reservas afetadas por manutenção e entregas parciais aparecerão aqui.</p></li>{% endfor %}</ul>
+            <ul class="operator-work-list">
+                {% for reserva in pendencias %}
+                <li>
+                    <div class="operator-work-content">
+                        <h3>Reserva #{{ reserva.pk }} · {{ reserva.professor.get_full_name|default:reserva.professor.username }}</h3>
+                        <p>{{ reserva.tipo_equipamento.nome }} · {{ reserva.local.nome }}</p>
+                        <span class="table-metadata">{{ reserva.quantidade_entregue }} de {{ reserva.quantidade }} entregue(s) · Período até {{ reserva.fim|date:"d/m H:i" }}</span>
+                        {% if reserva.tem_devolucao_anterior_vencida %}<p><strong>Há patrimônio reservado com devolução anterior vencida.</strong></p>{% endif %}
+                    </div>
+                    <a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_registrar' reserva.pk %}">Conferir pendência</a>
+                </li>
+                {% empty %}<li class="operator-empty"><h3>Nenhuma pendência de entrega</h3><p>Reservas afetadas por manutenção ou atraso e entregas parciais aparecerão aqui.</p></li>{% endfor %}
+            </ul>
             {% if total_pendencias > 5 %}<p class="operator-list-note">Exibindo as 5 primeiras de {{ total_pendencias }} pendências. <a href="{% url 'movimentacoes:retirada_reserva_lista' %}">Consultar todas as reservas</a></p>{% endif %}
         </section>
         </div>

@@ -1,14 +1,39 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Uso pedagógico | SIGEE{% endblock %}
-{% block extra_styles %}<link rel="stylesheet" href="{% static 'pedagogico/css/indicadores.css' %}?v=20261106.1">{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'pedagogico/css/indicadores.css' %}?v=20261110.1">{% endblock %}
 {% block content %}
 <div class="page-content pedagogical-indicators">
     <header class="page-header">
-        <div><h1>Uso pedagógico</h1><p>Consulte a utilização dos equipamentos por turma, disciplina e atividade pedagógica.</p><p class="pedagogical-scope">Histórico completo · inclui cadastros hoje inativos · somente retiradas com contexto pedagógico.</p></div>
+        <div><h1>Uso pedagógico</h1><p>Consulte a utilização dos equipamentos por turma, disciplina e atividade pedagógica.</p><p class="pedagogical-scope">Inclui cadastros hoje inativos e considera somente retiradas com contexto pedagógico.</p></div>
         {% if pode_consultar_painel %}<a class="btn btn-secondary-sigee" href="{% url 'inventario:painel' %}">Voltar à visão geral</a>{% endif %}
     </header>
 
+    <form method="get" class="inventory-card pedagogical-filter" aria-label="Filtrar indicadores pedagógicos">
+        <div class="pedagogical-filter-fields">
+            {% for campo in periodo %}
+            <div>
+                <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                {{ campo }}
+                {{ campo.errors }}
+            </div>
+            {% endfor %}
+            <div>
+                <label for="dimensao">Comparar por</label>
+                <select id="dimensao" name="dimensao" class="form-select">
+                    {% for valor, titulo in dimensoes %}<option value="{{ valor }}"{% if dimensao == valor %} selected{% endif %}>{{ titulo }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="pedagogical-filter-actions">
+                <button class="btn btn-primary-sigee" type="submit">Aplicar</button>
+                {% if inicio or fim or periodo.errors %}<a class="btn btn-secondary-sigee" href="?dimensao={{ dimensao }}">Limpar datas</a>{% endif %}
+            </div>
+        </div>
+        {% if periodo.errors %}<p class="pedagogical-scope" role="alert">Corrija as datas para consultar os indicadores.</p>
+        {% else %}<p class="pedagogical-scope">{% if inicio and fim %}Retiradas de {{ inicio|date:"d/m/Y" }} a {{ fim|date:"d/m/Y" }}{% elif inicio %}Retiradas a partir de {{ inicio|date:"d/m/Y" }}{% elif fim %}Retiradas até {{ fim|date:"d/m/Y" }}{% else %}Histórico completo{% endif %}</p>{% endif %}
+    </form>
+
+    {% if not periodo.errors %}
     <section class="kpi-grid pedagogical-kpis" aria-label="Resumo da utilização pedagógica">
         <article class="kpi-card"><span class="kpi-label">Utilizações pedagógicas</span><strong class="kpi-value">{{ totais.utilizacoes }}</strong><span class="pedagogical-note">Uma utilização por reserva ou lote retirado com contexto</span></article>
         <article class="kpi-card"><span class="kpi-label">Retiradas de equipamentos</span><strong class="kpi-value">{{ totais.retiradas }}</strong><span class="pedagogical-note">Unidades retiradas com contexto pedagógico</span></article>
@@ -17,9 +42,7 @@
 
     {% if totais.retiradas %}
     <section class="inventory-card pedagogical-ranking" aria-labelledby="pedagogical-ranking-heading">
-        <header class="pedagogical-section-header"><div><h2 id="pedagogical-ranking-heading">Onde os equipamentos são utilizados</h2><p>Cinco maiores quantidades de utilizações pedagógicas · histórico completo.</p></div>
-            <form method="get" class="pedagogical-dimension-form"><label for="dimensao">Comparar por</label><select id="dimensao" name="dimensao" class="form-select">{% for valor, titulo in dimensoes %}<option value="{{ valor }}"{% if dimensao == valor %} selected{% endif %}>{{ titulo }}</option>{% endfor %}</select><button class="btn btn-secondary-sigee" type="submit">Comparar</button></form>
-        </header>
+        <header class="pedagogical-section-header"><h2 id="pedagogical-ranking-heading">Onde os equipamentos são utilizados</h2><p>Cinco maiores quantidades de utilizações pedagógicas.</p></header>
         <ol class="pedagogical-ranking-list" aria-label="{{ titulo_dimensao }} por utilizações pedagógicas">{% for registro in ranking %}<li><div><strong>{{ registro.nome }}</strong><span>{{ registro.utilizacoes }} utilizaç{{ registro.utilizacoes|pluralize:"ão,ões" }}</span></div><span class="pedagogical-ranking-track" aria-hidden="true"><span style="width: {{ registro.percentual|floatformat:'2u' }}%"></span></span>{% if not registro.ativo %}<small>Cadastro inativo</small>{% endif %}</li>{% endfor %}</ol>
         <p class="pedagogical-ranking-note">Uma utilização representa uma reserva ou lote retirado com contexto. Consulte abaixo também as unidades retiradas e os patrimônios distintos; estes últimos não devem ser somados entre grupos.</p>
     </section>
@@ -31,7 +54,7 @@
             <p class="pedagogical-scroll-hint">Deslize para comparar uma métrica por vez. O nome permanece visível durante a rolagem.</p>
             <div class="table-responsive inventory-table-wrapper" tabindex="0" role="region" aria-label="Indicadores por {{ grupo.titulo|lower }}; use rolagem horizontal em telas pequenas">
                 <table class="table inventory-table mb-0">
-                    <caption class="visually-hidden">{{ grupo.titulo }} com utilizações pedagógicas, retiradas de equipamentos e equipamentos distintos no histórico completo</caption>
+                    <caption class="visually-hidden">{{ grupo.titulo }} com utilizações pedagógicas, retiradas de equipamentos e equipamentos distintos no período exibido</caption>
                     <thead><tr><th scope="col">Nome</th><th scope="col" class="pedagogical-number">Utilizações pedagógicas</th><th scope="col" class="pedagogical-number">Retiradas de equipamentos</th><th scope="col" class="pedagogical-number">Equipamentos distintos</th></tr></thead>
                     <tbody>{% for registro in grupo.pagina %}<tr>
                         <th scope="row" class="pedagogical-name">{{ registro.nome }}{% if not registro.ativo %}<span class="pedagogical-note d-block">Cadastro inativo</span>{% endif %}</th>
@@ -52,7 +75,8 @@
         {% endfor %}
     </div>
     {% else %}
-    <section class="inventory-card inventory-empty" role="status"><h2>Nenhuma utilização pedagógica registrada</h2><p>Os indicadores aparecerão quando o Professor vincular turma, disciplina e atividade às unidades retiradas.</p></section>
+    <section class="inventory-card inventory-empty" role="status"><h2>{% if inicio or fim %}Nenhuma utilização pedagógica no período{% else %}Nenhuma utilização pedagógica registrada{% endif %}</h2><p>{% if inicio or fim %}Selecione outras datas ou consulte o histórico completo.{% else %}Os indicadores aparecerão quando o Professor vincular turma, disciplina e atividade às unidades retiradas.{% endif %}</p></section>
+    {% endif %}
     {% endif %}
 </div>
 {% endblock %}

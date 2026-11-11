@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError
+from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods
@@ -10,6 +11,8 @@ from django.views.decorators.http import require_GET, require_http_methods
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
+from calendario.fechamentos import historico_fechamentos_reserva, pendencias_de_fechamento
+from calendario.models import ReservaAfetadaFechamento
 from inventario.models import Equipamento
 from usuarios.permissoes import pode_cancelar_reserva_operacional, pode_consultar_historico, pode_registrar_devolucao, pode_registrar_retirada
 from reservas.models import Reserva
@@ -21,6 +24,7 @@ from .models import Movimentacao
 from .services import (
     grupos_devolucao,
     grupos_legados_encerrados,
+    itens_com_devolucao_anterior_vencida,
     registrar_devolucoes,
     retiradas_do_grupo,
     consultar_historico,
@@ -78,7 +82,10 @@ def retirada_reserva_lista(request):
     status = request.GET.get("status", Reserva.Status.ATIVA)
     if status not in ["", *Reserva.Status.values]:
         status = Reserva.Status.ATIVA
-    pagina = Paginator(reservas_para_retirada(busca=busca, status=status), 15).get_page(request.GET.get("pagina"))
+    reservas = reservas_para_retirada(busca=busca, status=status).annotate(
+        fechamento_pendente=Exists(pendencias_de_fechamento().filter(reserva_id=OuterRef("pk"))),
+    )
+    pagina = Paginator(reservas, 15).get_page(request.GET.get("pagina"))
     parametros = request.GET.copy()
     parametros.pop("pagina", None)
     return render(request, "movimentacoes/retirada_reserva_lista.html", {
@@ -128,8 +135,18 @@ def retirada_reserva_registrar(request, reserva_id):
     else:
         form.initial["conferencia"] = conferencia
     retirada = Movimentacao.objects.filter(reserva=reserva, tipo=Movimentacao.Tipo.RETIRADA).order_by("pk").first()
+    patrimonios_atrasados = set(itens_com_devolucao_anterior_vencida(timezone.now()).filter(
+        reserva=reserva,
+    ).values_list("equipamento_id", flat=True))
+    impactos_fechamento = list(historico_fechamentos_reserva(reserva))
     return render(request, "movimentacoes/retirada_reserva_form.html", {
         "reserva": reserva, "unidades": resumo["unidades"], "resumo": resumo, "form": form, "retirada": retirada,
+        "patrimonios_atrasados": patrimonios_atrasados,
+        "impactos_fechamento": impactos_fechamento,
+        "entrega_suspensa": any(
+            impacto.decisao == ReservaAfetadaFechamento.Decisao.PENDENTE and not impacto.fechamento.reabertura_id
+            for impacto in impactos_fechamento
+        ),
         "pode_cancelar_operacional": (
             pode_cancelar_reserva_operacional(request.user) and permite_cancelamento_operacional(reserva)
         ),

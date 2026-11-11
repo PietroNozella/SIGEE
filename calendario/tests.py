@@ -127,6 +127,22 @@ class CalendarioTests(TestCase):
             devolucoes = registrar_devolucoes(operador=self.cenario["operador"], retirada_id=entregas[0].pk, retiradas_ids=[entregas[0].pk])
         self.assertEqual(len(devolucoes), 1)
 
+    def test_confirmacao_apos_tolerancia_expira_mesmo_durante_pausa_de_atendimento(self):
+        self.configurar(finalidade="ATENDIMENTO", faixas=[("09:00", "09:10"), ("10:00", "11:00")])
+        reserva = self.criar_agendamento()
+        self.client.force_login(self.cenario["operador"])
+        url = reverse("movimentacoes:retirada_reserva_registrar", args=[reserva.pk])
+        conferencia = self.client.get(url).context["form"].initial["conferencia"]
+
+        with patch("django.utils.timezone.now", return_value=self.inicio + Reserva.TOLERANCIA_RETIRADA):
+            resposta = self.client.post(url, {"conferencia": conferencia})
+
+        self.assertContains(resposta, "expirou após os 30 minutos")
+        reserva.refresh_from_db()
+        self.assertEqual(reserva.status, Reserva.Status.EXPIRADA)
+        self.assertFalse(Movimentacao.objects.filter(reserva=reserva).exists())
+        self.assertEqual(RegistroAuditoria.objects.filter(acao=AcaoAuditoria.RESERVA_EXPIRADA).count(), 1)
+
     def test_meia_noite_e_faixas_adjacentes(self):
         self.configurar(faixas=[("00:00", "12:00"), ("12:00", "00:00")])
         validar_periodo_reserva(self.inicio.replace(hour=11), self.inicio.replace(hour=13))

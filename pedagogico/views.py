@@ -20,7 +20,7 @@ from usuarios.permissoes import (
     pode_gerenciar_utilizacao_pedagogica,
 )
 
-from .forms import AtividadePedagogicaForm, DisciplinaForm, TurmaForm, UtilizacaoPedagogicaForm
+from .forms import AtividadePedagogicaForm, DisciplinaForm, PeriodoIndicadoresForm, TurmaForm, UtilizacaoPedagogicaForm
 from .models import AtividadePedagogica, Disciplina, Turma
 from .services import (
     chave_grupo_utilizacao, grupos_utilizacao, retiradas_com_contexto, retiradas_sem_reserva_com_contexto,
@@ -44,6 +44,17 @@ def indicadores(request):
     utilizacoes = Movimentacao.objects.filter(
         tipo=Movimentacao.Tipo.RETIRADA, utilizacao_pedagogica__isnull=False,
     ).annotate(chave_grupo=chave_grupo_utilizacao())
+    periodo = PeriodoIndicadoresForm(request.GET)
+    inicio = fim = None
+    if periodo.is_valid():
+        inicio, fim = periodo.cleaned_data["inicio"], periodo.cleaned_data["fim"]
+        if inicio:
+            utilizacoes = utilizacoes.filter(data_hora__date__gte=inicio)
+        if fim:
+            utilizacoes = utilizacoes.filter(data_hora__date__lte=fim)
+    else:
+        utilizacoes = utilizacoes.none()
+
     totais = utilizacoes.aggregate(
         utilizacoes=Count("chave_grupo", distinct=True),
         retiradas=Count("pk"),
@@ -82,6 +93,7 @@ def indicadores(request):
     return render(request, "pedagogico/indicadores.html", {
         "totais": totais, "grupos": grupos, "ranking": ranking,
         "dimensoes": dimensoes, "dimensao": dimensao, "titulo_dimensao": dict(dimensoes)[dimensao],
+        "periodo": periodo, "inicio": inicio, "fim": fim,
     })
 
 

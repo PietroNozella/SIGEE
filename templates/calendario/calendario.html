@@ -20,6 +20,21 @@
         <a href="?secao=historico"{% if secao == 'historico' %} aria-current="page"{% endif %}>Histórico</a>
     </nav>
     {% if secao == 'calendario' %}
+    <section class="inventory-card calendar-affected" aria-labelledby="fechamentos-heading">
+        <header class="calendar-section-heading">
+            <h2 id="fechamentos-heading">Fechamentos da escola</h2>
+            <p>Registre um fechamento inesperado para suspender entregas afetadas e decidir sobre as reservas.</p>
+            <a class="btn btn-secondary-sigee" href="{% url 'calendario:fechamento_novo' %}">Registrar fechamento</a>
+        </header>
+        {% if fechamentos %}<ul class="calendar-affected-list">
+            {% for fechamento in fechamentos %}
+            <li>
+                <div><strong>{{ fechamento.data|date:"d/m/Y" }}</strong><p>{{ fechamento.abertura.motivo|truncatechars:160 }}</p></div>
+                <a class="btn btn-secondary-sigee" href="{% url 'calendario:fechamento_detalhe' fechamento.pk %}">Conferir fechamento</a>
+            </li>
+            {% endfor %}
+        </ul>{% endif %}
+    </section>
     <div class="calendar-settings-layout">
         <section class="inventory-card calendar-week" aria-labelledby="semana-heading">
             <header class="calendar-section-heading"><h2 id="semana-heading">Semana habitual</h2><p>Defina cada dia. As exceções por data têm prioridade.</p></header>
@@ -77,6 +92,7 @@
         <ul class="school-settings-rules">
             <li><div><h3>Intervalo entre reservas</h3><p>Tempo para conferir e preparar as mesmas unidades antes do próximo uso.</p></div><span class="school-settings-value">{{ intervalo_minutos }} minuto{{ intervalo_minutos|pluralize:"s" }}</span><a class="btn btn-secondary-sigee" href="{% url 'calendario:intervalo' %}">Configurar intervalo</a></li>
             <li><div><h3>Cotas por professor</h3><p>Limite opcional de unidades simultâneas por tipo de equipamento.</p></div><span class="school-settings-value">{% if total_cotas %}{{ total_cotas }} tipo{{ total_cotas|pluralize:"s" }} ativo{{ total_cotas|pluralize:"s" }} com cota{% else %}Nenhuma cota ativa{% endif %}</span><a class="btn btn-secondary-sigee" href="{% url 'calendario:cotas' %}">Configurar cotas</a></li>
+            <li><div><h3>Política de fechamento</h3><p>Defina se é possível manter uma reserva com atendimento excepcional confirmado.</p></div><a class="btn btn-secondary-sigee" href="{% url 'calendario:politica_fechamento' %}">Configurar política</a></li>
         </ul>
         <p class="calendar-section-note">O valor vigente é guardado em cada nova reserva. Alterações posteriores preservam os compromissos já confirmados.</p>
     </section>
@@ -84,7 +100,7 @@
     <section class="calendar-history inventory-card" aria-labelledby="historico-heading">
         <header class="calendar-section-heading"><h2 id="historico-heading">Últimas alterações</h2><p>Consulte responsáveis, motivos e os valores anteriores e novos do calendário, do intervalo e das cotas.</p></header>
         <div class="calendar-history-content">
-        {% for alteracao in alteracoes %}<details class="calendar-change"><summary><span>{{ alteracao.novo.titulo }}</span><small>{{ alteracao.data_hora|date:"d/m/Y H:i" }} · {{ alteracao.usuario.get_full_name|default:alteracao.usuario.username }}</small></summary><dl><div><dt>Motivo</dt><dd>{{ alteracao.motivo|linebreaksbr }}</dd></div><div><dt>Antes</dt><dd>{{ alteracao.anterior.resumo }}</dd></div><div><dt>Depois</dt><dd>{{ alteracao.novo.resumo }}</dd></div></dl></details>{% empty %}<p class="calendar-empty-note">Nenhuma alteração registrada.</p>{% endfor %}
+        {% for alteracao in alteracoes %}<details class="calendar-change"><summary><span>{{ alteracao.novo.titulo }}</span><small>{{ alteracao.data_hora|date:"d/m/Y H:i" }} · {{ alteracao.usuario.get_full_name|default:alteracao.usuario.username }}</small></summary><dl><div><dt>Motivo</dt><dd>{{ alteracao.motivo|linebreaksbr }}</dd></div><div><dt>Antes</dt><dd>{{ alteracao.anterior.resumo }}</dd></div><div><dt>Depois</dt><dd>{{ alteracao.novo.resumo }}</dd></div></dl>{% if alteracao.fechamento_registrado %}<p><a href="{% url 'calendario:fechamento_detalhe' alteracao.fechamento_registrado.pk %}">Conferir reservas e decisões</a></p>{% endif %}</details>{% empty %}<p class="calendar-empty-note">Nenhuma alteração registrada.</p>{% endfor %}
         </div>
     </section>
     {% endif %}

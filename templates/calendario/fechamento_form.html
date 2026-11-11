@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ titulo }} | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.6">{% endblock %}
+{% block content %}
+<div class="page-content school-calendar calendar-form-page calendar-removal-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{{ voltar }}">Voltar</a><span aria-hidden="true">/</span><span aria-current="page">{{ titulo }}</span></nav>
+    <header class="page-header"><div><h1>{{ titulo }}</h1><p>{{ descricao }}</p></div></header>
+    <section class="form-card calendar-editor" aria-label="{{ titulo }}">
+        {% if reserva %}
+        <dl class="calendar-context">
+            <div><dt>Professor</dt><dd>{{ reserva.professor.get_full_name|default:reserva.professor.username }}</dd></div>
+            <div><dt>Reserva</dt><dd>{{ reserva.tipo_equipamento.nome }} · {{ reserva.inicio|date:"d/m/Y H:i" }} a {{ reserva.fim|date:"d/m/Y H:i" }}</dd></div>
+        </dl>
+        {% endif %}
+        {% include "calendario/_erros.html" %}
+        {% if acao_indisponivel %}
+        <p>Esta reserva está sem ação disponível. Se houver unidades em uso, a devolução física continua permitida.</p>
+        <div class="form-actions"><a class="btn btn-secondary-sigee" href="{{ voltar }}">Voltar</a></div>
+        {% else %}
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% for campo in form %}
+                {% if campo.is_hidden %}{{ campo }}
+                {% elif campo.widget_type == 'checkbox' %}
+                <div class="form-field">
+                    <div class="form-check">{{ campo }} <label class="form-check-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label></div>
+                    {% if campo.help_text %}<p class="form-help" id="{{ campo.auto_id }}_helptext">{{ campo.help_text }}</p>{% endif %}
+                </div>
+                {% else %}{% include "calendario/_campo.html" with campo=campo %}{% endif %}
+            {% endfor %}
+            <div class="form-actions"><a class="btn btn-secondary-sigee" href="{{ voltar }}">Voltar</a><button class="btn btn-primary-sigee" type="submit">{{ acao }}</button></div>
+        </form>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

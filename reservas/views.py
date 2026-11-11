@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Case, DateTimeField, Value, When
+from django.db.models import Case, DateTimeField, Exists, OuterRef, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from inventario.models import Categoria, Local, TipoEquipamento
+from calendario.fechamentos import historico_fechamentos_reserva, pendencias_de_fechamento
+from calendario.models import ReservaAfetadaFechamento
 from movimentacoes.models import Movimentacao
 from movimentacoes.services import reservas_para_retirada
 from usuarios.permissoes import (
@@ -55,6 +57,7 @@ def reserva_detalhe(request, reserva_id):
     else:
         rota = "movimentacoes:devolucao_lista" if reserva.etapa == "EM_USO" else "movimentacoes:historico_lista"
         rotulo = "Em uso" if reserva.etapa == "EM_USO" else "Histórico"
+    impactos_fechamento = list(historico_fechamentos_reserva(reserva))
     return render(request, "reservas/reserva_detalhe.html", {
         "reserva": reserva, "registros": registros,
         "resumo": resumo_entrega(reserva),
@@ -62,12 +65,17 @@ def reserva_detalhe(request, reserva_id):
             e_professor_funcional(request.user)
             and reserva.status == Reserva.Status.ATIVA
             and not reserva.tem_retirada
+            and timezone.now() < reserva.inicio + Reserva.TOLERANCIA_RETIRADA
         ),
         "pode_cancelar_operacional": (
             pode_cancelar_reserva_operacional(request.user) and permite_cancelamento_operacional(reserva)
         ),
         "substituicoes": reserva.substituicoes.select_related("equipamento_anterior", "equipamento_substituto"),
         "unidades": reserva.itens.select_related("equipamento__tipo"),
+        "impactos_fechamento": impactos_fechamento,
+        "cancelamento_por_fechamento": any(
+            impacto.decisao == ReservaAfetadaFechamento.Decisao.CANCELADA for impacto in impactos_fechamento
+        ),
         "url_voltar": reverse(rota), "rotulo_voltar": rotulo,
         "aba_fluxo": "reservas" if reserva.etapa == "AGUARDANDO" else ("em_uso" if reserva.etapa == "EM_USO" else "historico"),
     })
@@ -165,6 +173,7 @@ def reserva_lista(request):
         .select_related("tipo_equipamento", "tipo_equipamento__categoria", "local")
         .prefetch_related("itens__equipamento", "itens__equipamento__local")
         .annotate(
+            fechamento_pendente=Exists(pendencias_de_fechamento().filter(reserva_id=OuterRef("pk"))),
             grupo_temporal=Case(
                 When(inicio__gte=agora, then=Value(0)),
                 default=Value(1),

@@ -4,6 +4,24 @@ from django.db.models import Q
 from .models import AtividadePedagogica, Disciplina, Turma
 
 
+class PeriodoIndicadoresForm(forms.Form):
+    inicio = forms.DateField(
+        label="De", required=False,
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"class": "form-control", "type": "date"}),
+    )
+    fim = forms.DateField(
+        label="Até", required=False,
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"class": "form-control", "type": "date"}),
+    )
+
+    def clean(self):
+        dados = super().clean()
+        inicio, fim = dados.get("inicio"), dados.get("fim")
+        if inicio and fim and fim < inicio:
+            self.add_error("fim", "A data final deve ser igual ou posterior à inicial.")
+        return dados
+
+
 class CadastroPedagogicoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

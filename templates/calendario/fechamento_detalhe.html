@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Fechamento de {{ fechamento.data|date:"d/m/Y" }} | SIGEE{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.6">{% endblock %}
+{% block content %}
+<div class="page-content school-calendar">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'calendario:calendario_escola' %}">Configurações da escola</a><span aria-hidden="true">/</span><span aria-current="page">Fechamento</span></nav>
+    <header class="page-header">
+        <div><h1>Fechamento de {{ fechamento.data|date:"d/m/Y" }}</h1><p>{{ fechamento.abertura.motivo|linebreaksbr }}</p></div>
+        {% if pode_reabrir %}<a class="btn btn-secondary-sigee" href="{% url 'calendario:fechamento_reabrir' fechamento.pk %}">Reabrir data</a>{% endif %}
+    </header>
+    {% if fechamento.reabertura_id %}<p class="operator-notice" role="status">Data reaberta. {{ fechamento.reabertura.motivo|linebreaksbr }}</p>{% endif %}
+    <section class="inventory-card calendar-affected" aria-labelledby="impactos-heading">
+        <header class="calendar-section-heading"><h2 id="impactos-heading">Reservas afetadas</h2><p>A devolução de equipamentos que já saíram continua disponível.</p></header>
+        <ul class="calendar-affected-list">
+            {% for impacto in impactos %}
+            {% with reserva=impacto.reserva %}
+            <li>
+                <div>
+                    <strong>Reserva #{{ reserva.pk }} · {{ reserva.professor.get_full_name|default:reserva.professor.username }}</strong>
+                    <p>{{ reserva.inicio|date:"d/m/Y H:i" }} a {{ reserva.fim|date:"d/m/Y H:i" }} · {{ reserva.quantidade }} × {{ reserva.tipo_equipamento.nome }}</p>
+                    {% if impacto.decisao != 'PENDENTE' %}
+                    <p class="calendar-impact">{{ impacto.get_decisao_display }} · {{ impacto.decidido_por.get_full_name|default:impacto.decidido_por.username }} · {{ impacto.decidido_em|date:"d/m/Y H:i" }}</p>
+                    <p>{{ impacto.motivo|linebreaksbr }}</p>
+                    {% elif fechamento.reabertura_id %}<p>Suspensão retirada com a reabertura.</p>
+                    {% elif reserva.status != 'ATIVA' %}<p>{{ reserva.get_status_display }}</p>
+                    {% elif reserva.tem_retirada %}<p class="calendar-impact">Entrega complementar suspensa. {{ reserva.quantidade_entregue }} unidade(s) já entregue(s).</p>
+                    {% else %}<p class="calendar-impact">Aguardando decisão do Administrador.</p>{% endif %}
+                </div>
+                {% if impacto.decisao == 'PENDENTE' and not fechamento.reabertura_id and reserva.status == 'ATIVA' %}
+                    {% if not reserva.tem_retirada or reserva.fim > agora %}
+                    <a class="btn btn-secondary-sigee" href="{% url 'calendario:decisao_fechamento' impacto.pk %}">Decidir reserva</a>
+                    {% endif %}
+                {% endif %}
+                <a href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Consultar reserva</a>
+            </li>
+            {% endwith %}
+            {% empty %}<li>Nenhuma reserva com entrega pendente foi afetada.</li>{% endfor %}
+        </ul>
+        {% if impactos.has_other_pages %}
+        <nav class="calendar-pagination" aria-label="Paginação das reservas afetadas">
+            {% if impactos.has_previous %}<a href="?pagina={{ impactos.previous_page_number }}">Anterior</a>{% endif %}
+            <span>{{ impactos.number }} de {{ impactos.paginator.num_pages }}</span>
+            {% if impactos.has_next %}<a href="?pagina={{ impactos.next_page_number }}">Próxima</a>{% endif %}
+        </nav>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

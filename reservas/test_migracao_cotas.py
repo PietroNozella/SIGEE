@@ -10,7 +10,8 @@ class MigracaoCotasTests(TransactionTestCase):
     def test_tipos_e_reservas_existentes_permanecem_sem_cota_inferida(self):
         executor = MigrationExecutor(connection)
         finais = executor.loader.graph.leaf_nodes()
-        anteriores = [alvo for alvo in finais if alvo[0] not in ("reservas", "inventario")] + [
+        anteriores = [alvo for alvo in finais if alvo[0] not in ("calendario", "reservas", "inventario")] + [
+            ("calendario", "0002_calendarioescolar_intervalo_minutos_and_more"),
             ("reservas", "0010_reserva_intervalo_apos_uso_and_more"), ("inventario", "0005_tipo_equipamento"),
         ]
         try:

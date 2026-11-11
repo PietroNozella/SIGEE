@@ -21,7 +21,7 @@
                     <td><strong>Reserva #{{ reserva.pk }}</strong><span class="table-metadata">{{ reserva.professor.get_full_name|default:reserva.professor.username }} ({{ reserva.professor.username }})</span></td>
                     <td>{{ reserva.tipo_equipamento.nome }}<span class="table-metadata">{{ reserva.local.nome }}</span></td>
                     <td>{{ reserva.inicio|date:"d/m/Y H:i" }}<span class="table-metadata">Até {{ reserva.fim|date:"d/m/Y H:i" }}</span></td>
-                    <td>{{ reserva.quantidade }} solicitada(s)<span class="table-metadata">{{ reserva.quantidade_entregue }} entregue(s)</span></td><td>{% if reserva.retirada_registrada %}Entrega complementar pendente{% else %}Aguardando retirada{% endif %}</td>
+                    <td>{{ reserva.quantidade }} solicitada(s)<span class="table-metadata">{{ reserva.quantidade_entregue }} entregue(s)</span></td><td>{% if reserva.fechamento_pendente and reserva.status == 'ATIVA' %}Entrega suspensa por fechamento{% elif reserva.retirada_registrada %}Entrega complementar pendente{% else %}Aguardando retirada{% endif %}</td>
                     <td><a class="btn btn-secondary-sigee" href="{% url 'movimentacoes:retirada_reserva_registrar' reserva.pk %}">Conferir reserva</a></td>
                 </tr>{% endfor %}</tbody>
             </table>

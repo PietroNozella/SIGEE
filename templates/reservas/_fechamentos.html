@@ -1,0 +1,21 @@
+{% if impactos_fechamento %}
+<section aria-labelledby="fechamento-reserva-heading">
+    <h2 id="fechamento-reserva-heading">Fechamentos da escola</h2>
+    {% for impacto in impactos_fechamento %}
+    <dl class="equipment-form-grid operator-reservation-facts">
+        <div><dt>Data do fechamento</dt><dd>{{ impacto.fechamento.data|date:"d/m/Y" }}</dd></div>
+        <div><dt>Situação da reserva</dt><dd>
+            {% if impacto.decisao != 'PENDENTE' %}{{ impacto.get_decisao_display }}
+            {% elif impacto.fechamento.reabertura_id %}Suspensão retirada com a reabertura
+            {% elif reserva.status == 'ATIVA' %}Entrega suspensa por fechamento
+            {% else %}{{ reserva.get_status_display }}{% endif %}
+        </dd></div>
+        {% if impacto.decidido_em %}
+        <div><dt>Decisão registrada por</dt><dd>{{ impacto.decidido_por.get_full_name|default:impacto.decidido_por.username }} · {{ impacto.decidido_em|date:"d/m/Y H:i" }}</dd></div>
+        <div><dt>Motivo da decisão</dt><dd>{{ impacto.motivo|linebreaksbr }}</dd></div>
+        {% endif %}
+    </dl>
+    {% endfor %}
+    {% if cancelamento_por_fechamento and e_professor %}<a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_nova' %}">Fazer nova reserva</a>{% endif %}
+</section>
+{% endif %}

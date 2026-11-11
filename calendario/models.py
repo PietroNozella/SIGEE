@@ -12,6 +12,7 @@ class CalendarioEscolar(models.Model):
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     versao = models.PositiveIntegerField(default=1)
     intervalo_minutos = models.PositiveSmallIntegerField(default=5, validators=[MaxValueValidator(32767)])
+    permite_manter_em_fechamento = models.BooleanField(default=False, db_default=False)
 
     class Meta:
         verbose_name = "calendário da escola"
@@ -82,3 +83,45 @@ class AlteracaoCalendario(models.Model):
 
     class Meta:
         ordering = ["-data_hora", "-pk"]
+
+
+class FechamentoEscolar(models.Model):
+    data = models.DateField()
+    abertura = models.OneToOneField(AlteracaoCalendario, on_delete=models.PROTECT, related_name="fechamento_registrado")
+    reabertura = models.OneToOneField(
+        AlteracaoCalendario, on_delete=models.PROTECT, null=True, blank=True, related_name="fechamento_revogado",
+    )
+
+    class Meta:
+        ordering = ["-data", "-pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["data"], condition=Q(reabertura__isnull=True), name="calendario_fechamento_ativo_unico",
+            ),
+        ]
+
+
+class ReservaAfetadaFechamento(models.Model):
+    class Decisao(models.TextChoices):
+        PENDENTE = "PENDENTE", "Pendente de decisão"
+        MANTIDA = "MANTIDA", "Mantida com atendimento excepcional"
+        CANCELADA = "CANCELADA", "Cancelada por fechamento da escola"
+
+    fechamento = models.ForeignKey(FechamentoEscolar, on_delete=models.PROTECT, related_name="reservas_afetadas")
+    reserva = models.ForeignKey("reservas.Reserva", on_delete=models.PROTECT, related_name="impactos_fechamento")
+    decisao = models.CharField(max_length=10, choices=Decisao.choices, default=Decisao.PENDENTE)
+    motivo = models.TextField(blank=True)
+    decidido_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True)
+    decidido_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["fechamento", "reserva"], name="calendario_impacto_fechamento_unico"),
+            models.CheckConstraint(
+                condition=(
+                    Q(decisao="PENDENTE", motivo="", decidido_por__isnull=True, decidido_em__isnull=True)
+                    | (Q(decisao__in=["MANTIDA", "CANCELADA"], decidido_por__isnull=False, decidido_em__isnull=False) & ~Q(motivo=""))
+                ),
+                name="calendario_decisao_fechamento_completa",
+            ),
+        ]

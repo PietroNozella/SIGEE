@@ -157,11 +157,15 @@ def _possui_retirada_vinculada(reserva):
 
 
 def _expirar_reserva_bloqueada(reserva, agora):
+    from calendario.fechamentos import pendencias_de_fechamento
+
     if reserva.status != Reserva.Status.ATIVA:
         return False
     if reserva.inicio + Reserva.TOLERANCIA_RETIRADA > agora:
         return False
     if _possui_retirada_vinculada(reserva):
+        return False
+    if pendencias_de_fechamento().filter(reserva=reserva).exists():
         return False
 
     reserva.status = Reserva.Status.EXPIRADA
@@ -184,6 +188,7 @@ def _expirar_reserva_bloqueada(reserva, agora):
 
 
 def expirar_reservas_vencidas(agora=None):
+    from calendario.fechamentos import pendencias_de_fechamento
     from movimentacoes.models import Movimentacao
 
     agora = agora or timezone.now()
@@ -195,7 +200,9 @@ def expirar_reservas_vencidas(agora=None):
         Reserva.objects.filter(
             status=Reserva.Status.ATIVA,
             inicio__lte=limite,
-        ).filter(~Exists(retiradas)).values_list("pk", flat=True)
+        ).filter(
+            ~Exists(retiradas), ~Exists(pendencias_de_fechamento().filter(reserva_id=OuterRef("pk"))),
+        ).values_list("pk", flat=True)
     )
 
     expiradas = 0
@@ -393,6 +400,8 @@ def _validar_cancelamento_bloqueado(reserva, agora):
         return False
     if _possui_retirada_vinculada(reserva):
         raise ValidationError("Esta reserva já possui retirada registrada e não pode ser cancelada.")
+    if agora >= reserva.inicio + Reserva.TOLERANCIA_RETIRADA:
+        raise ValidationError("O prazo de cancelamento comum terminou. A reserva aguarda decisão por fechamento da escola.")
     return True
 
 

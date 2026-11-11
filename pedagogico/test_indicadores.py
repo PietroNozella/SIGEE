@@ -1,5 +1,5 @@
 from movimentacoes.fixtures_testes import criar_retirada_legada, registrar_entrega_conferida
-from datetime import timedelta
+from datetime import datetime, timedelta
 from importlib import import_module
 from unittest.mock import patch
 
@@ -9,6 +9,7 @@ from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.db import connection
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from inventario.models import Equipamento
 from legal.services import registrar_aceite_vigente
@@ -89,6 +90,38 @@ class IndicadoresPedagogicosTests(TestCase):
             self.assertEqual(linhas[0]["retiradas"], 3)
             self.assertEqual(linhas[0]["equipamentos"], 3)
             self.assertContains(resposta, self.escolhas[grupo["campo"]].nome)
+
+    def test_periodo_filtra_totais_ranking_e_agrupamentos_pela_data_local_da_retirada(self):
+        self.salvar()
+        meia_noite = timezone.make_aware(datetime(2026, 11, 10))
+        instantes = (
+            meia_noite - timedelta(seconds=1),
+            meia_noite + timedelta(hours=23, minutes=59),
+            meia_noite + timedelta(days=1),
+        )
+        for retirada, instante in zip(self.retiradas, instantes):
+            Movimentacao.objects.filter(pk=retirada.pk).update(data_hora=instante)
+
+        resposta = self.client.get(self.url, {"inicio": "2026-11-10", "fim": "2026-11-10", "dimensao": "atividade"})
+        self.assertEqual(resposta.context["totais"], {"utilizacoes": 1, "retiradas": 1, "equipamentos": 1})
+        self.assertEqual(resposta.context["ranking"][0]["retiradas"], 1)
+        for grupo in resposta.context["grupos"]:
+            self.assertEqual(list(grupo["pagina"])[0]["retiradas"], 1)
+            self.assertIn("inicio=2026-11-10", grupo["parametros"])
+            self.assertIn("fim=2026-11-10", grupo["parametros"])
+        self.assertContains(resposta, "Retiradas de 10/11/2026 a 10/11/2026")
+
+        resposta = self.client.get(self.url, {"fim": "2026-11-10"})
+        self.assertEqual(resposta.context["totais"]["retiradas"], 2)
+        resposta = self.client.get(self.url, {"inicio": "2026-11-12"})
+        self.assertContains(resposta, "Nenhuma utilização pedagógica no período")
+
+    def test_datas_invalidas_exibem_erro_e_nao_mostram_indicadores(self):
+        for parametros in ({"inicio": "inválida"}, {"inicio": "2026-11-11", "fim": "2026-11-10"}):
+            with self.subTest(parametros=parametros):
+                resposta = self.client.get(self.url, parametros)
+                self.assertContains(resposta, "Corrija as datas para consultar os indicadores.")
+                self.assertNotContains(resposta, "Resumo da utilização pedagógica")
 
     def test_ranking_compara_dimensao_sem_mudar_denominadores(self):
         self.salvar()

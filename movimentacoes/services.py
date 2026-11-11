@@ -13,7 +13,7 @@ from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
 from inventario.models import Equipamento, TipoEquipamento
 from manutencoes.services import _abrir_manutencao_bloqueada
-from reservas.models import Reserva
+from reservas.models import Reserva, ReservaEquipamento
 from reservas.services import _expirar_reserva_bloqueada, resumo_entrega
 from usuarios.permissoes import pode_registrar_devolucao, pode_registrar_retirada, usuarios_funcionais_ativos
 
@@ -91,6 +91,9 @@ def reservas_para_retirada(*, busca="", status=Reserva.Status.ATIVA):
 
 
 def registrar_retirada_reserva(*, operador, reserva_id, conferencia, observacao="", professor_informado=False):
+    from calendario.fechamentos import validar_entrega_em_fechamento
+    from calendario.services import validar_atendimento_retirada
+
     if not operador.is_authenticated:
         raise PermissionDenied
     operador_atual = get_user_model().objects.filter(pk=operador.pk).first()
@@ -100,7 +103,7 @@ def registrar_retirada_reserva(*, operador, reserva_id, conferencia, observacao=
     expirou = False
     movimentacoes = []
     with transaction.atomic():
-        # O cancelamento e a expiração bloqueiam esta mesma linha antes de agir.
+        # Fechamento, cancelamento e expiração bloqueiam a mesma reserva.
         try:
             tipo_id = Reserva.objects.values_list("tipo_equipamento_id", flat=True).get(pk=reserva_id)
             TipoEquipamento.objects.select_for_update().get(pk=tipo_id)
@@ -128,8 +131,6 @@ def registrar_retirada_reserva(*, operador, reserva_id, conferencia, observacao=
             raise ValidationError("A retirada só pode ser registrada a partir do início da reserva.")
         if agora >= reserva.fim:
             raise ValidationError("O período reservado terminou. Não é possível complementar a entrega.")
-        from calendario.services import validar_atendimento_retirada
-        validar_atendimento_retirada(reserva, agora)
         if _expirar_reserva_bloqueada(reserva, agora):
             # Como no cancelamento, a expiração legítima persiste com sua auditoria.
             # A tentativa de retirada não grava movimentações nem altera unidades.
@@ -138,6 +139,8 @@ def registrar_retirada_reserva(*, operador, reserva_id, conferencia, observacao=
             from pedagogico.models import UtilizacaoPedagogica
             from pedagogico.services import validar_contexto_pedagogico
 
+            validar_entrega_em_fechamento(reserva)
+            validar_atendimento_retirada(reserva, agora)
             if not all((reserva.turma_id, reserva.disciplina_id, reserva.atividade_id)):
                 raise ValidationError("O Professor precisa completar o contexto pedagógico da reserva antes da retirada.")
             escolhas = validar_contexto_pedagogico(
@@ -303,6 +306,17 @@ def _retiradas_com_devolucao():
 
 def retiradas_abertas():
     return _retiradas_com_devolucao().filter(devolvida=False)
+
+
+def itens_com_devolucao_anterior_vencida(agora):
+    vencidas = retiradas_abertas().filter(
+        equipamento_id=OuterRef("equipamento_id"), reserva__fim__lt=agora,
+    ).exclude(reserva_id=OuterRef("reserva_id"))
+    entregues = Movimentacao.objects.filter(
+        tipo=Movimentacao.Tipo.RETIRADA, equipamento_id=OuterRef("equipamento_id"),
+        reserva_id=OuterRef("reserva_id"),
+    )
+    return ReservaEquipamento.objects.filter(Exists(vencidas), ~Exists(entregues))
 
 
 def retiradas_do_grupo(retirada):

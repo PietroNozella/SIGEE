@@ -6,7 +6,7 @@ from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.utils import timezone
 from inventario.models import TipoEquipamento
 
-from .models import CalendarioEscolar, FaixaHorario, RegraCalendario
+from .models import CalendarioEscolar, FaixaHorario, RegraCalendario, ReservaAfetadaFechamento
 
 
 class RegraCalendarioForm(forms.ModelForm):
@@ -93,3 +93,53 @@ class CotaProfessorForm(forms.ModelForm):
         labels = {"cota_por_professor": "Limite de unidades simultâneas por professor"}
         help_texts = {"cota_por_professor": "Deixe em branco para não aplicar cota adicional. Para ativar, informe uma quantidade inteira a partir de 1."}
         widgets = {"cota_por_professor": forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 2147483647, "step": 1})}
+
+
+class MotivoFechamentoForm(forms.Form):
+    motivo = forms.CharField(label="Motivo", widget=forms.Textarea(attrs={"rows": 3, "class": "form-control"}))
+
+
+class AlteracaoFechamentoForm(MotivoFechamentoForm):
+    versao = forms.IntegerField(widget=forms.HiddenInput, min_value=1)
+
+
+class FechamentoEscolarForm(AlteracaoFechamentoForm):
+    data = forms.DateField(
+        label="Data do fechamento",
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date", "class": "form-control"}),
+    )
+    field_order = ("data", "motivo", "versao")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["data"].widget.attrs["min"] = timezone.localdate().isoformat()
+
+
+class PoliticaFechamentoForm(AlteracaoFechamentoForm):
+    permite_manter = forms.BooleanField(
+        label="Permitir manter reservas em caso de fechamento", required=False,
+        help_text="O Administrador precisa confirmar que haverá atendimento para a reserva.",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    field_order = ("permite_manter", "motivo", "versao")
+
+
+class DecisaoFechamentoForm(MotivoFechamentoForm):
+    decisao = forms.ChoiceField(label="Decisão", widget=forms.Select(attrs={"class": "form-select"}))
+    atendimento_confirmado = forms.BooleanField(
+        label="Confirmo que haverá atendimento do Operador no horário acordado", required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    field_order = ("decisao", "atendimento_confirmado", "motivo")
+
+    def __init__(self, *args, pode_cancelar, pode_manter, **kwargs):
+        super().__init__(*args, **kwargs)
+        opcoes = ReservaAfetadaFechamento.Decisao
+        escolhas = [("", "Selecione")]
+        if pode_cancelar:
+            escolhas.append((opcoes.CANCELADA, "Cancelar por fechamento"))
+        if pode_manter:
+            escolhas.append((opcoes.MANTIDA, "Manter com atendimento excepcional"))
+        else:
+            self.fields.pop("atendimento_confirmado")
+        self.fields["decisao"].choices = escolhas

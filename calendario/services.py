@@ -11,7 +11,7 @@ from auditoria.services import registrar_evento
 from usuarios.permissoes import pode_configurar_calendario
 from inventario.models import TipoEquipamento
 
-from .models import AlteracaoCalendario, CalendarioEscolar, RegraCalendario
+from .models import AlteracaoCalendario, CalendarioEscolar, FechamentoEscolar, RegraCalendario
 
 
 def bloquear_calendario():
@@ -99,11 +99,18 @@ def intervalos_do_dia(data, finalidade, regras):
     ) for inicio, fim in faixas_do_dia(data, finalidade, regras)]
 
 
-def validar_periodo_reserva(inicio, fim, *, regras=None):
-    regras = regras_vigentes() if regras is None else regras
+def validar_periodo_reserva(inicio, fim, *, regras=None, considerar_fechamentos=True):
     inicio, fim = timezone.localtime(inicio), timezone.localtime(fim)
     dia = inicio.date()
     ultimo_dia = fim.date() - timedelta(days=fim.time() == time.min)
+    if considerar_fechamentos:
+        fechamento = FechamentoEscolar.objects.filter(
+            reabertura__isnull=True, data__range=(dia, ultimo_dia),
+        ).order_by("data").first()
+        if fechamento:
+            raise ValidationError({NON_FIELD_ERRORS: f"A escola está fechada em {fechamento.data:%d/%m/%Y}."})
+
+    regras = regras_vigentes() if regras is None else regras
     uso, atendimento = [], []
     while dia <= ultimo_dia:
         faixas = intervalos_do_dia(dia, RegraCalendario.Finalidade.USO, regras)
@@ -148,7 +155,7 @@ def reservas_afetadas(*, regras=None):
     candidatas = Reserva.objects.filter(status=Reserva.Status.ATIVA, fim__gt=timezone.now()).select_related("professor", "tipo_equipamento", "local")
     for reserva in candidatas.order_by("inicio", "pk"):
         try:
-            validar_periodo_reserva(reserva.inicio, reserva.fim, regras=regras)
+            validar_periodo_reserva(reserva.inicio, reserva.fim, regras=regras, considerar_fechamentos=False)
         except ValidationError as erro:
             reserva.impacto_calendario = erro.messages[0]
             afetadas.append(reserva)
@@ -173,9 +180,15 @@ def dias_para_agendamento():
 
     regras = regras_vigentes()
     hoje = timezone.localdate()
+    fechamentos = set(FechamentoEscolar.objects.filter(
+        reabertura__isnull=True, data__range=(hoje, Reserva.data_limite_agendamento()),
+    ).values_list("data", flat=True))
     dias = {}
     for deslocamento in range(Reserva.ANTECEDENCIA_MAXIMA_DIAS + 1):
         data = hoje + timedelta(days=deslocamento)
+        if data in fechamentos:
+            dias[data.isoformat()] = {"aberto": False, "uso": "Fechado", "atendimento": "Fechado"}
+            continue
         uso = intervalos_do_dia(data, RegraCalendario.Finalidade.USO, regras)
         atendimento = intervalos_do_dia(data, RegraCalendario.Finalidade.ATENDIMENTO, regras)
         aberto = any(max(a, c) < min(b, d) for a, b in uso for c, d in atendimento)

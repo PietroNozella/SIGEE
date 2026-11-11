@@ -36,27 +36,34 @@ from .models import Categoria, Equipamento, Local
 def inicio_operador(request):
     if not pode_consultar_inicio_operador(request.user):
         raise PermissionDenied
-    from movimentacoes.services import retiradas_abertas, reservas_para_retirada
+    from movimentacoes.services import itens_com_devolucao_anterior_vencida, retiradas_abertas, reservas_para_retirada
     from reservas.services import expirar_reservas_vencidas
 
     agora = timezone.now()
     hoje = timezone.localdate(agora)
     expirar_reservas_vencidas(agora)
     resumo_acervo = resumo_situacao_equipamentos(Equipamento.objects.all())
-    reservas = reservas_para_retirada().filter(inicio__date=hoje)
-    pendencias = reservas_para_retirada().filter(tem_entrega_pendente=True).filter(
-        Q(tem_retirada=True) | Q(itens__equipamento__situacao="MANUTENCAO"),
-    ).distinct()
+    reservas = reservas_para_retirada()
     retornos = retiradas_abertas().filter(reserva__fim__date__lte=hoje)
+    vencidas = retornos.filter(reserva__fim__lt=agora)
+    itens_atrasados = itens_com_devolucao_anterior_vencida(agora).filter(reserva_id=OuterRef("pk"))
+    pendencias = reservas.filter(tem_entrega_pendente=True).annotate(
+        tem_devolucao_anterior_vencida=Exists(itens_atrasados),
+    ).filter(
+        Q(tem_retirada=True)
+        | Q(itens__equipamento__situacao=Equipamento.Situacao.MANUTENCAO)
+        | Q(tem_devolucao_anterior_vencida=True),
+    ).distinct()
+    reservas_hoje = reservas.filter(inicio__date=hoje)
     devolucoes = retornos.order_by().values(
         "reserva_id", "reserva__fim", "destinatario__first_name", "destinatario__last_name", "destinatario__username",
     ).annotate(unidades=Count("pk"), retirada_id=Min("pk")).order_by("reserva__fim", "reserva_id")
     return render(request, "inventario/inicio_operador.html", {
         **resumo_acervo, "agora": agora, "hoje": hoje, "estoque": resumo_acervo["indicadores"],
-        "reservas_hoje": reservas[:5], "total_reservas_hoje": reservas.count(),
+        "reservas_hoje": reservas_hoje[:5], "total_reservas_hoje": reservas_hoje.count(),
         "pendencias": pendencias[:5], "total_pendencias": pendencias.count(),
         "devolucoes": devolucoes[:5], "total_devolucoes": devolucoes.count(),
-        "unidades_vencidas": retornos.filter(reserva__fim__lt=agora).count(),
+        "unidades_vencidas": vencidas.count(),
     })
 
 
@@ -141,13 +148,18 @@ def painel(request):
     atrasadas = Movimentacao.objects.none()
     total_atrasadas = 0
     if pode_ver_reservas:
+        from calendario.fechamentos import pendencias_de_fechamento
+
         reservas = Reserva.objects.filter(inicio__gte=inicio, inicio__lt=fim)
         if categoria:
             reservas = reservas.filter(tipo_equipamento__categoria=categoria)
         # Aplica a tolerância já definida pelo domínio sem alterar reservas durante a consulta.
         contagens_reservas = dict(
-            reservas.com_etapa().annotate(etapa_painel=Case(
-                When(etapa="AGUARDANDO", tem_retirada=False, inicio__lte=agora - Reserva.TOLERANCIA_RETIRADA,
+            reservas.com_etapa().alias(
+                fechamento_pendente=Exists(pendencias_de_fechamento().filter(reserva_id=OuterRef("pk"))),
+            ).annotate(etapa_painel=Case(
+                When(etapa="AGUARDANDO", tem_retirada=False, fechamento_pendente=False,
+                     inicio__lte=agora - Reserva.TOLERANCIA_RETIRADA,
                      then=Value("EXPIRADA")),
                 default=F("etapa"), output_field=CharField(),
             )).order_by().values("etapa_painel").annotate(total=Count("pk"))

@@ -17,14 +17,36 @@
         </dl>
         {% include "reservas/_contexto.html" %}
         {% include "reservas/_resumo_entrega.html" %}
+        {% include "reservas/_fechamentos.html" %}
         {% if not reserva.turma_id %}<p class="operator-notice" role="status">O Professor precisa completar o contexto pedagógico antes da entrega.</p>{% endif %}
         <div class="table-responsive inventory-table-wrapper" tabindex="0" role="region" aria-label="Conferência dos patrimônios">
-            <table class="table inventory-table"><caption class="visually-hidden">Unidades alocadas e condições para entrega</caption><thead><tr><th scope="col">Patrimônio</th><th scope="col">Equipamento e local</th><th scope="col">Conferência</th></tr></thead><tbody>{% for item in unidades %}<tr><td><strong>{{ item.equipamento.numero_patrimonio }}</strong></td><td>{{ item.equipamento.tipo.nome }}<span class="table-metadata">{{ item.equipamento.local.nome }}</span></td><td>{% if item.ja_entregue %}<span class="table-metadata">Entrega já registrada</span>{% elif item.apta_para_entrega %}<span class="status-badge status-disponivel">Apto para entrega</span>{% else %}{% include "inventario/_situacao.html" with equipamento=item.equipamento %}<span class="table-metadata">Pendente de substituição</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="3">Nenhuma unidade alocada. A retirada não poderá ser confirmada.</td></tr>{% endfor %}</tbody></table>
+            <table class="table inventory-table">
+                <caption class="visually-hidden">Unidades alocadas e condições para entrega</caption>
+                <thead><tr><th scope="col">Patrimônio</th><th scope="col">Equipamento e local</th><th scope="col">Conferência</th></tr></thead>
+                <tbody>
+                {% for item in unidades %}
+                <tr>
+                    <td><strong>{{ item.equipamento.numero_patrimonio }}</strong></td>
+                    <td>{{ item.equipamento.tipo.nome }}<span class="table-metadata">{{ item.equipamento.local.nome }}</span></td>
+                    <td>
+                        {% if item.ja_entregue %}<span class="table-metadata">Entrega já registrada</span>
+                        {% elif item.equipamento_id in patrimonios_atrasados %}<span class="table-metadata">Aguardando devolução anterior vencida</span>
+                        {% elif item.apta_para_entrega %}<span class="status-badge status-disponivel">Apto para entrega</span>
+                        {% else %}
+                            {% include "inventario/_situacao.html" with equipamento=item.equipamento %}
+                            <span class="table-metadata">{% if item.equipamento.situacao == 'MANUTENCAO' %}Pendente de substituição{% else %}Indisponível para entrega{% endif %}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}<tr><td colspan="3">Nenhuma unidade alocada. A retirada não poderá ser confirmada.</td></tr>{% endfor %}
+                </tbody>
+            </table>
         </div>
         {% include "reservas/_substituicoes.html" %}
         {% if reserva.status != 'ATIVA' %}<p class="operator-notice" role="status">Reservas canceladas ou expiradas não podem ser retiradas.</p>
         {% elif resumo.prazo_encerrado %}<p role="status">O prazo para entrega desta reserva terminou.</p>
         {% elif not resumo.saldo %}<p role="status">Todos os equipamentos desta reserva já foram entregues.</p>
+        {% elif entrega_suspensa %}<p>Confira novamente a reserva após a decisão do Administrador.</p>
         {% elif not resumo.aptas %}<p role="status">Nenhuma unidade está apta para entrega. A pendência será mantida.</p>
         {% else %}
         <form method="post" novalidate>{% csrf_token %}

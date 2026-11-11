@@ -10,7 +10,8 @@ class MigracaoCancelamentoTests(TransactionTestCase):
     def test_preserva_reservas_existentes_e_acrescenta_somente_a_permissao_necessaria(self):
         executor = MigrationExecutor(connection)
         finais = executor.loader.graph.leaf_nodes()
-        anteriores = [alvo for alvo in finais if alvo[0] not in ("reservas", "usuarios")] + [
+        anteriores = [alvo for alvo in finais if alvo[0] not in ("calendario", "reservas", "usuarios")] + [
+            ("calendario", "0002_calendarioescolar_intervalo_minutos_and_more"),
             ("reservas", "0007_substituicao_por_manutencao"), ("usuarios", "0004_manutencao_operador"),
         ]
         try:

@@ -23,11 +23,14 @@
 }
 
 .pedagogical-scope { color: var(--sigee-muted); font-size: 12px; }
+.pedagogical-filter { margin-bottom: 24px; padding: 16px; }
+.pedagogical-filter-fields { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+.pedagogical-filter-fields > div { flex: 0 1 auto; min-width: 0; }
+.pedagogical-filter label { display: block; margin-bottom: 4px; font-size: 12px; color: var(--sigee-muted); }
+.pedagogical-filter :is(input, select, .btn) { min-height: 44px; }
+.pedagogical-filter .pedagogical-filter-actions { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; padding-top: 22px; }
+.pedagogical-filter .pedagogical-scope { margin: 12px 0 0; }
 .pedagogical-ranking { margin-bottom: 24px; }
-.pedagogical-ranking .pedagogical-section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
-.pedagogical-dimension-form { display: grid; grid-template-columns: minmax(150px, 1fr) auto; gap: 8px; }
-.pedagogical-dimension-form label { grid-column: 1 / -1; font-size: 12px; color: var(--sigee-muted); }
-.pedagogical-dimension-form :is(select, button) { min-height: 44px; }
 .pedagogical-ranking-list { margin: 0; padding: 0 24px; list-style: none; }
 .pedagogical-ranking-list li { margin-bottom: 20px; }
 .pedagogical-ranking-list li > div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 8px; }
@@ -47,8 +50,9 @@
     .pedagogical-kpis .kpi-label { font-size: 11px; line-height: 16px; }
     .pedagogical-kpis .kpi-value { margin: 0; }
     .pedagogical-kpis .kpi-card:first-child { grid-column: 1 / -1; }
-    .pedagogical-ranking .pedagogical-section-header { display: block; padding: 16px; }
-    .pedagogical-dimension-form { margin-top: 16px; }
+    .pedagogical-filter-fields > div { flex: 1 1 130px; }
+    .pedagogical-filter .pedagogical-filter-actions { flex-basis: 100%; padding-top: 0; }
+    .pedagogical-ranking .pedagogical-section-header { padding: 16px; }
     .pedagogical-ranking-list { padding: 0 16px; }
     .pedagogical-ranking-note { padding: 16px; }
     .pedagogical-scroll-hint { display: block; margin: 0; padding: 0 16px 12px; color: var(--sigee-muted); font-size: 12px; }
