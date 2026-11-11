@@ -34,6 +34,7 @@ Quando a instituição adotar o consentimento como hipótese legal para uma fina
 ## Medidas implementadas
 
 - autenticação e hash de senha pelos recursos nativos do Django;
+- limites de sessão de 30 minutos de inatividade e 8 horas desde o login, configuráveis no ambiente, validados antes das operações e sem renovação por consultas automáticas;
 - bloqueio temporário após tentativas repetidas de login, por nome de usuário e sem persistência do endereço IP pelo SIGEE;
 - autorização no servidor com grupos e permissões;
 - proteção CSRF nos formulários `POST`;

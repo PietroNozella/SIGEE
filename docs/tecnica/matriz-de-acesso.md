@@ -25,6 +25,8 @@ O SIGEE aplica autenticação por sessão e autorização por grupos e permissõ
 | Manter turmas, disciplinas e atividades | Sim | Não | Não |
 | Consultar auditoria | Sim | Não | Não |
 | Consultar painel e indicadores pedagógicos | Sim | Não | Não |
+| Configurar calendário, intervalo entre usos e cotas por tipo | Sim, com `configurar_calendario` | Não | Não |
+| Registrar/reabrir fechamento e decidir sobre reservas afetadas | Sim, com `configurar_calendario` e motivo | Não | Não |
 | Criar, acompanhar e cancelar reserva própria | Não | Não | Sim |
 | Registrar desistência confirmada do Professor e cancelar reserva sem retirada | Não | Sim, com permissão específica e motivo | Não; mantém o cancelamento próprio |
 | Consultar reservas para acompanhamento | Sim, todas | Sim, para entrega | Somente próprias |
@@ -38,7 +40,7 @@ O SIGEE aplica autenticação por sessão e autorização por grupos e permissõ
 | Consultar Histórico | Todos os registros encerrados | Todos os registros encerrados | Somente próprios |
 | Gravar contexto pedagógico da reserva ou de retirada legada | Não | Não | Somente próprios, até a devolução integral |
 
-O cancelamento exige ausência de retirada e reserva ativa no prazo válido. A edição do contexto sem retirada exige reserva ativa antes do limite de tolerância. A consulta não concede ações de entrega, devolução ou manutenção.
+O cancelamento comum exige ausência de retirada e reserva ativa no prazo válido. O cancelamento institucional de reserva afetada por fechamento é administrativo e pode ocorrer após a tolerância enquanto houver decisão pendente, sempre sem retirada. A edição do contexto sem retirada exige reserva ativa antes do limite de tolerância. A consulta não concede ações de entrega, devolução ou manutenção.
 
 A matriz descreve os acessos concedidos pela configuração oficial de perfis. As rotas de listagem, cadastro, edição, importação e exclusão do inventário verificam autenticação e permissões do Django, sem exigir diretamente um grupo funcional. Por isso, uma permissão individual correspondente também autoriza essas operações, e o Superuser técnico pode acessá-las. As demais áreas aplicam as verificações de perfil indicadas abaixo; o acesso técnico ao inventário não representa um quarto perfil funcional.
 
@@ -60,7 +62,9 @@ Nenhum grupo recebe exclusão de usuários, movimentações, manutenção ou uti
 |---|---|---|
 | Usuários | `/usuarios/`, `/usuarios/novo/`, `/usuarios/<uuid>/desativar/`, `/usuarios/<uuid>/reativar/` | Administrador com view/add/change conforme a ação; alterações de situação por POST com CSRF e autoridade sobre a conta alvo. |
 | Auditoria | `/auditoria/` | Administrador com `view_registroauditoria`; somente consulta. |
-| Calendário da escola | `/calendario/`, `/calendario/intervalo/`, `/calendario/cotas/`, `/calendario/cotas/<tipo>/`, `/calendario/semana/<finalidade>/<dia>/`, `/calendario/excecoes/` | Somente Administrador funcional com `configurar_calendario`. Alterações por POST com CSRF, motivo, revalidação da autorização atual, controle de versão e auditoria transacional. |
+| Configurações da escola | `/calendario/`, `/calendario/intervalo/`, `/calendario/cotas/`, `/calendario/cotas/<tipo>/`, `/calendario/semana/<finalidade>/<dia>/`, `/calendario/excecoes/nova/`, `/calendario/excecoes/<id>/` | Somente Administrador funcional com `configurar_calendario`. Alterações por POST com CSRF, motivo, revalidação da autorização atual, controle de versão e auditoria transacional. |
+| Fechamentos e decisões | `/calendario/fechamentos/novo/`, `/calendario/fechamentos/politica/`, `/calendario/fechamentos/<id>/`, `/calendario/fechamentos/<id>/reabrir/`, `/calendario/fechamentos/reservas/<id>/` | Administrador com `configurar_calendario`; ações de gravação por POST com motivo. Manter entrega exige política habilitada, atendimento excepcional confirmado e prazo original válido; cancelamento não pode alcançar reserva com retirada. |
+| Estado da sessão | `/usuarios/sessao/` | Qualquer conta autenticada; GET passivo que não renova atividade nem dispensa o aceite para acessar as demais áreas. Sessão ausente ou expirada retorna 401. |
 | Reservas próprias | `/reservas/`, `/reservas/nova/`, `/reservas/<id>/cancelar/` | Professor proprietário; view/add/change conforme a ação; cancelamento por POST. |
 | Cancelamento operacional | `/reservas/<id>/cancelamento-operacional/` | Operador com `cancelar_reserva_operacional`; GET de conferência e POST com motivo e confirmação da desistência do Professor. Estado, prazo, ausência de retirada e autorização atual são revalidados no serviço. |
 | Detalhe da reserva | `/reservas/<id>/` | Administrador/Operador com `view_movimentacao`; Professor com `view_reserva`, restrito à própria reserva. Somente GET. |
@@ -83,4 +87,6 @@ As verificações atendem a RF01, RF04 a RF11, RN-07 a RN-18 e RS-01/RS-09/RS-11
 
 O Administrador e o Operador utilizam o escopo global da aplicação. Não há isolamento entre instituições; o Professor permanece restrito aos próprios registros.
 
-O Operador visualiza somente a turma do contexto pedagógico nas reservas e no histórico. A entrega parcial exige confirmação de comunicação ao Professor. O saldo de entrega e as devoluções físicas são apresentados separadamente.
+O Operador visualiza somente a turma do contexto pedagógico nas reservas e no histórico. A entrega parcial exige confirmação de comunicação ao Professor. O saldo de entrega e as devoluções físicas são apresentados separadamente. O início operacional sinaliza patrimônios com devolução anterior vencida, sem liberá-los automaticamente.
+
+A validade da sessão é verificada antes das operações restritas. Os limites padrão são 30 minutos de inatividade e 8 horas desde o login, configuráveis no ambiente; consultas automáticas não renovam o prazo. A expiração não concede permissões nem permite retomar automaticamente um POST após autenticar novamente.

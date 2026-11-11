@@ -92,6 +92,8 @@ O endpoint de consulta prévia devolve:
 - indicação de consulta completa ou indisponível;
 - quantidade de unidades disponíveis para o período.
 
+A resposta de disponibilidade também inclui o limite, os compromissos simultâneos e o saldo da cota do Professor quando aplicável. Esses valores são calculados localmente, sem envio à BrasilAPI. As consultas de feriados e disponibilidade não renovam a atividade da sessão. Sessão ausente ou expirada recebe 401 com orientação para novo login, em vez de uma página HTML que o cliente tentaria interpretar como JSON.
+
 Nenhuma resposta da BrasilAPI é usada para decidir disponibilidade do equipamento, detectar conflito de reservas ou impedir a persistência.
 
 ## Cenários de teste implementados
@@ -108,4 +110,4 @@ Nenhuma resposta da BrasilAPI é usada para decidir disponibilidade do equipamen
 
 ## Referências
 
-O cliente está em `reservas/brasilapi.py`; as views de consulta estão em `reservas/views.py`. `reservas/tests.py` contém os cenários de resposta válida, falhas e contingência. A execução isolada segue o [README](../../README.md#testes). O contrato externo é descrito na [documentação da BrasilAPI](https://brasilapi.com.br/docs).
+O cliente está em `reservas/brasilapi.py`; as views de consulta estão em `reservas/views.py` e `calendario/views.py`. `reservas/tests.py` contém os cenários de resposta válida, falhas e contingência; `calendario/tests.py` verifica a consulta administrativa e `usuarios/test_sessoes.py` verifica a ausência de renovação por consultas passivas. A execução isolada segue o [README](../../README.md#testes). O contrato externo é descrito na [documentação da BrasilAPI](https://brasilapi.com.br/docs).

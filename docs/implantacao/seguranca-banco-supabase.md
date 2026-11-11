@@ -18,6 +18,8 @@ O script [proteger-acesso-banco-supabase.sql](sql/proteger-acesso-banco-supabase
 - verifica privilégios efetivos, incluindo herança, `PUBLIC` e colunas, antes do
   commit; qualquer erro cancela a transação inteira.
 
+**Limitação do catálogo atual:** a lista de prefixos aceita pelo SQL ainda não inclui `calendario_`. Depois de aplicar as migrations do calendário, o script rejeita esses objetos e aborta a transação antes da proteção. É necessário adequar e verificar o catálogo de objetos do próprio script antes de reaplicá-lo a um banco com essas tabelas. Não remover a validação de escopo nem assumir que as novas tabelas já estão protegidas.
+
 Não altera dados, autenticação Django, permissões funcionais, `service_role` ou os
 schemas internos do Supabase. O script exige a role `postgres`. Antes da aplicação, conferir a role usada pelo backend e sua compatibilidade com RLS, inclusive a condição de proprietária ou `BYPASSRLS`.
 
@@ -57,7 +59,7 @@ anteriores e não deve ser aplicada apenas para silenciar um problema não relac
 
 ## Novas migrations e limites
 
-Após migrations que criem tabelas, executar novamente a conferência e o script
+Após migrations que criem tabelas, conferir primeiro se os objetos estão contemplados no catálogo do script; o prefixo `calendario_` permanece uma limitação da versão atual. Depois da adequação e verificação em ambiente isolado, executar novamente a conferência e o script
 controlado para habilitar RLS nos novos objetos. A alteração dos privilégios
 padrão já impede os grants automáticos de tabelas/sequências criadas por
 `postgres`; RLS de novas tabelas não é habilitada automaticamente por este script.
@@ -104,13 +106,27 @@ Quando `0005` e `0006` são aplicadas na mesma transação PostgreSQL, executar 
 
 A mudança não cria tabelas novas. Validar o upgrade em banco isolado com reservas existentes e o fluxo de cancelamento versus entrega antes de publicar. A reversão da migration de campos elimina os metadados; preservar backup e registros antes de qualquer reversão. Reverter código não desfaz cancelamentos nem as novas alocações que a liberação tornou possíveis.
 
-Na aplicação ao banco configurado em 09/11/2026, também estavam pendentes `reservas.0007`, `movimentacoes.0005` e `usuarios.0004`. As cinco migrations foram aplicadas após backup `pg_dump`, na mesma transação da proteção da nova tabela de substituições. Nessa atualização, foi mantido um default SQL `false` em `movimentacoes_movimentacao.professor_informado`: a versão anterior do backend omite essa coluna nos INSERTs. Esse default é uma compatibilidade operacional, ainda não representada por `db_default` no estado Django; mantê-lo enquanto houver código antigo em execução e reavaliá-lo explicitamente após a atualização de todas as instâncias. O recibo local da execução está em `.tmp/ajustes-perfis-migrations-receipt.json`.
+O histórico de implantação registra que, em 09/11/2026, também estavam pendentes `reservas.0007`, `movimentacoes.0005` e `usuarios.0004`, aplicadas junto das duas migrations de cancelamento após backup `pg_dump` e proteção da nova tabela de substituições. Nessa atualização foi mantido um default SQL `false` em `movimentacoes_movimentacao.professor_informado`: a versão anterior do backend omite essa coluna nos INSERTs. Esse default é uma compatibilidade operacional, ainda não representada por `db_default` no estado Django; conferir sua existência e mantê-lo enquanto houver código antigo em execução, reavaliando-o explicitamente após a atualização de todas as instâncias. O relato histórico não comprova o estado atual de outro ambiente.
+
+### Calendário, intervalo, cotas e fechamentos
+
+As migrations `calendario.0001` a `0003` introduzem regras semanais, faixas, exceções, histórico, intervalo e fechamentos com decisões sobre reservas. `usuarios.0006` concede a permissão de configuração ao grupo Administrador sem substituir as demais concessões. `reservas.0009` a `0011` acrescentam o calendário confirmado, o intervalo após o uso e a cota guardada na reserva; `inventario.0006` acrescenta a cota opcional por tipo/modelo.
+
+Aplicar as migrations compatíveis com a nova versão antes de liberar os fluxos que consultam os campos. Reservas anteriores mantêm calendário confirmado vazio, intervalo zero e cota confirmada nula; a atualização não inventa condições nem reescreve compromissos antigos. O calendário inicial permite segunda a sexta durante todo o dia, para uso e atendimento. A margem padrão para novas reservas é de 5 minutos, não há cota adicional inicialmente e a política de manter entregas em fechamento começa desabilitada.
+
+Em PostgreSQL, `calendario.0003` habilita RLS e revoga privilégios de acesso público e das roles de API encontradas nas duas tabelas novas de fechamento e decisão. Isso não substitui a conferência das tabelas anteriores do calendário nem corrige a lista de prefixos do script geral. Conferir todas as tabelas `calendario_*` no procedimento de proteção, observada a limitação indicada acima. Uma reversão de schema pode remover configurações e históricos; reverter o código não desfaz reservas, cancelamentos ou decisões já registrados.
+
+### Limites de sessão e documentos legais
+
+O controle de sessão não acrescenta tabelas nem requer migration própria. A nova versão usa `DJANGO_SESSION_IDLE_TIMEOUT=1800` e `DJANGO_SESSION_ABSOLUTE_TIMEOUT=28800` como padrões; os limites precisam ser positivos. `DJANGO_SESSION_COOKIE_AGE` passa a ter padrão de 28800 segundos para sessões sem prazo específico, e o login define uma expiração absoluta fixa quando o encerramento ao fechar o navegador está desabilitado. A `DJANGO_SECRET_KEY` existente continua em uso; não há token adicional a cadastrar.
+
+Sessões antigas sem os horários de controle exigem novo login. A Política de Privacidade passa à versão 2.2, de 10/11/2026, enquanto os Termos permanecem na versão 2.0. O fluxo de aceite exige ciência da política atualizada e preserva os aceites anteriores. Validar os fluxos autenticados depois de publicar a versão; uma alteração somente no arquivo `.env.example` não configura o ambiente da hospedagem.
 
 ### Configuração da aplicação
 
 `vercel.json` define a região `gru1` e não contém suspensão do deploy da `main` nem comando de migrations. A aplicação usa `DATABASE_URL`; `sslmode=require` exige cifragem, sem equivaler à verificação completa de identidade por `verify-full`. Configurar segredos, hosts, `DEBUG=False` e SMTP no ambiente de destino, sem versionar valores reais. Validar a conexão usada pelo backend, os fluxos autenticados e a recuperação de senha após a publicação.
 
-Após migrations que criam tabelas, repetir a conferência e a proteção de novos objetos. Os comandos de testes locais usam `config.settings_testes`; o runner de testes não utiliza o banco publicado.
+Após migrations que criam tabelas, repetir a conferência e a proteção de novos objetos somente com um script que os contemple. Os comandos de testes locais usam `config.settings_testes`; o runner de testes não utiliza o banco publicado.
 
 ## Testes com PostgreSQL isolado
 
@@ -154,6 +170,8 @@ python manage.py test --settings=config.settings
 ```
 
 O resultado precisa mostrar a execução dos cenários de concorrência, sem descarte por falta de suporte a bloqueio de linha. Ao concluir, feche o terminal dedicado para descartar as variáveis temporárias. Preparar estas instruções não representa execução ou aprovação dos testes em PostgreSQL.
+
+Os testes concorrentes estão disponíveis para verificação adicional. Nesta etapa, a validação executada utilizou SQLite em memória; 26 cenários dependentes de bloqueio de linha ficaram ignorados. Não há resultado de execução desses cenários no PostgreSQL a declarar.
 
 ## Referências
 

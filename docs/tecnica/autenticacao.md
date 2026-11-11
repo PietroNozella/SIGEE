@@ -1,13 +1,13 @@
 # Autenticação, recuperação de senha e autorização
 
-Este documento descreve os controles do `RF01` e do `RS-07`. O fluxo usa `contas.User`, derivado de `AbstractUser`, com chave primária UUID, mantendo os formulários, as views, os tokens, as sessões, os grupos e as permissões nativas do Django.
+Este documento descreve os controles do `RF01`, do `RS-05` e do `RS-07`. O fluxo usa `contas.User`, derivado de `AbstractUser`, com chave primária UUID, mantendo os formulários, as views, os tokens, as sessões, os grupos e as permissões nativas do Django.
 
 ## Fluxo implementado
 
 1. Um acesso anônimo a uma página do inventário redireciona para o login e informa a página original no parâmetro `next`.
 2. O usuário informa nome de usuário e senha.
 3. O Django valida as credenciais e, quando válidas, inicia a sessão.
-4. O usuário retorna à página interna válida indicada por `next`. Sem esse parâmetro, o Administrador autorizado acessa o painel; os demais seguem para a listagem de equipamentos. O aceite vigente dos documentos legais é exigido antes das áreas internas.
+4. O usuário retorna à página interna válida indicada por `next`. Sem esse parâmetro, o Operador autorizado acessa o início operacional, o Administrador autorizado acessa o painel e os demais seguem para a listagem de equipamentos. O aceite vigente dos documentos legais é exigido antes das áreas internas.
 5. O logout aceita somente `POST`, encerra a sessão e redireciona para o login.
 6. Após cinco tentativas inválidas para o mesmo nome de usuário, o acesso fica bloqueado por quinze minutos, inclusive se a senha correta for informada durante esse intervalo.
 
@@ -63,7 +63,7 @@ Por padrão, o backend de e-mail exibe a mensagem no console com `DEBUG=True` e 
 
 - `Administrador`: consulta e administra o inventário, visualiza seu resumo e cadastra contas comuns.
 - `Operador` e `Professor`: consultam equipamentos e executam os fluxos autorizados na [matriz de acesso](matriz-de-acesso.md).
-- Usuários autenticados sem a permissão exigida recebem `403`; usuários anônimos são redirecionados ao login com `next`.
+- Usuários autenticados sem a permissão exigida recebem `403`; usuários anônimos são redirecionados ao login com `next` nas páginas HTML. Consultas JSON e endpoints passivos protegidos recebem 401 quando não há sessão autenticada, inclusive antes do primeiro login.
 - Botões e links são exibidos conforme as permissões, mas a decisão final sempre ocorre na view.
 - O cadastro de usuários exige uma conta não Superuser pertencente somente ao grupo `Administrador` e com `contas.add_user`.
 

@@ -14,7 +14,7 @@ O número de patrimônio deve ser único, e campos obrigatórios, formatos, limi
 
 ### RNF03 - Rastreabilidade
 
-Os históricos de movimentação, manutenção e utilização pedagógica devem ser preservados. Equipamentos com registros relacionados devem ser inativados, em vez de excluídos.
+Os históricos de movimentação, manutenção, utilização pedagógica, alterações do calendário e decisões por fechamento devem ser preservados. Equipamentos com registros relacionados devem ser inativados, em vez de excluídos.
 
 ### RNF04 - Usabilidade e acessibilidade básica
 
@@ -45,7 +45,7 @@ Para RNF04, percorrer os fluxos com o perfil autorizado nos dois navegadores e n
 
 Para RNF05, anotar o banco, a máquina utilizada, as versões dos navegadores, as quantidades de registros e os três tempos de cada consulta. As medições devem usar a mesma base sintética. O limite se refere à requisição HTML principal, sem somar o carregamento de imagens, fontes e demais arquivos estáticos.
 
-Para RNF06, contar uma única vez cada fluxo com os dois cenários automatizados aprovados: `fluxos cobertos / 8 × 100`. Os testes existentes estão nos apps `inventario`, `usuarios`, `reservas`, `movimentacoes`, `manutencoes`, `pedagogico`, `auditoria` e `legal`. Os comandos locais e a execução de concorrência com PostgreSQL estão no [README](../../README.md#testes).
+Para RNF06, contar uma única vez cada fluxo com os dois cenários automatizados aprovados: `fluxos cobertos / 8 × 100`. Os testes existentes estão nos apps `inventario`, `usuarios`, `reservas`, `calendario`, `movimentacoes`, `manutencoes`, `pedagogico`, `auditoria` e `legal`, além das verificações de configuração e migrations. Os comandos locais e a execução de concorrência com PostgreSQL estão no [README](../../README.md#testes).
 
 Esses critérios definem como verificar os requisitos. A execução da suíte automatizada não substitui a conferência manual de interface nem a medição dos tempos.
 
@@ -71,7 +71,7 @@ Os requisitos RS-01 a RS-12 integram o escopo confirmado do SIGEE. A confirmaç�
 
 ### RS-05 - Gerenciamento seguro de sessões
 
-**Critério de aceite:** Sessões expiram e são invalidadas no logout.
+**Critério de aceite:** Sessões nativas do Django expiram no servidor após 30 minutos de inatividade ou 8 horas desde o login, nos valores padrão configuráveis no ambiente, e são invalidadas no logout. Consultas automáticas não renovam a atividade. Uma operação enviada depois da expiração é bloqueada antes da view e não é reenviada automaticamente após novo login. O usuário recebe orientação para autenticar novamente; consultas JSON recebem 401. Os controles e testes estão em [Autenticação](../tecnica/autenticacao.md#duração-da-sessão).
 
 ### RS-06 - Proteção contra tentativas abusivas de autenticação
 
@@ -99,7 +99,7 @@ Os requisitos RS-01 a RS-12 integram o escopo confirmado do SIGEE. A confirmaç�
 
 ### RS-12 - Transparência e informações de privacidade
 
-**Critério de aceite:** Termo de Uso versão 2.0 e Política de Privacidade versão 2.1 são públicos e informam dados, finalidades, fornecedores, retenção, segurança e direitos; após o login, o usuário precisa aceitar os Termos e confirmar a leitura da Política; o sistema registra usuário, versões e data/hora e exige novo aceite quando uma versão muda.
+**Critério de aceite:** Termo de Uso versão 2.0 e Política de Privacidade versão 2.2 são públicos e informam dados, finalidades, fornecedores, retenção, segurança e direitos; após o login, o usuário precisa aceitar os Termos e confirmar a leitura da Política; o sistema registra usuário, versões e data/hora e exige novo aceite quando uma versão muda.
 
 A implementação e o inventário de dados relacionados ao RS-12 estão descritos em [Termos de Uso, privacidade e aceite](../privacidade/privacidade-e-termos.md).
 

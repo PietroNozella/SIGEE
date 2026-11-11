@@ -1,6 +1,6 @@
 # Regras de negócio
 
-Este documento registra as 20 regras de negócio confirmadas para o SIGEE. Elas descrevem o comportamento aplicado pelos modelos, serviços e controles de acesso do código versionado.
+Este documento reúne as 20 regras de negócio representadas na implementação atual do SIGEE. Elas descrevem o comportamento dos modelos, serviços e controles de acesso do código versionado; a revisão conjunta com a dupla permanece pendente e não equivale a validação institucional.
 
 - **RN-01 — Unicidade do número de patrimônio:** cada número de patrimônio identifica um único equipamento.
 - **RN-02 — Disponibilidade para reserva e retirada:** somente equipamento físico ativo, disponível e sem retirada em aberto pode ser reservado ou retirado. A edição cadastral não pode disponibilizar uma unidade antes do registro da devolução física. A consulta da reserva é feita pelo tipo/modelo e pelo local de retirada, e a alocação considera somente unidades físicas desse mesmo tipo e local.

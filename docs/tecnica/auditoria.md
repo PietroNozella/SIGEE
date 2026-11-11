@@ -7,7 +7,7 @@ Este documento descreve a auditoria básica do SIGEE, implementada para atender 
 A auditoria cobre atualmente:
 
 - login bem-sucedido e tentativa de login inválida;
-- logout;
+- logout e expiração de sessão detectada enquanto o usuário ainda está identificado;
 - respostas de acesso negado para usuários autenticados;
 - consulta filtrada do inventário;
 - download do modelo de importação CSV;
@@ -17,7 +17,9 @@ A auditoria cobre atualmente:
 - exclusão definitiva de equipamento sem histórico;
 - inativação de equipamento com histórico preservado;
 - cadastro controlado de contas funcionais;
-- criação, cancelamento e expiração automática de reservas próprias pelo Professor;
+- criação de reservas próprias pelo Professor, cancelamento pelo Professor, pelo Operador ou por decisão administrativa de fechamento, e expiração nos fluxos de sincronização;
+- alterações de calendário, intervalo, cotas e política de fechamento, com histórico vinculado;
+- manutenção excepcional de reserva afetada por fechamento e substituição de patrimônios por manutenção;
 - retirada vinculada à reserva por Operador e rejeição de tentativas inválidas;
 - devolução básica vinculada à retirada por Operador;
 - criação, edição, inativação e reativação dos cadastros compartilhados de Turma, Disciplina e Atividade Pedagógica;
@@ -49,7 +51,9 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `LOGIN_REALIZADO` | Credenciais válidas iniciam uma sessão. | Sucesso |
 | `LOGIN_FALHOU` | A autenticação é recusada. | Falha |
 | `LOGOUT_REALIZADO` | O usuário encerra a sessão. | Sucesso |
+| `SESSAO_EXPIRADA` | O middleware detecta limite de inatividade, duração máxima ou ausência de horários confiáveis em sessão ainda autenticada. | Sucesso |
 | `ACESSO_NEGADO` | Um usuário autenticado recebe resposta `403`. | Acesso negado |
+| `CALENDARIO_ALTERADO` | Administrador altera regras, intervalo, cotas, política de exceção, fechamento ou reabertura; o evento referencia o histórico da alteração. | Sucesso |
 | `INVENTARIO_CONSULTADO` | A listagem é consultada com ao menos um filtro. | Sucesso |
 | `MODELO_CSV_BAIXADO` | O modelo de importação é baixado. | Sucesso |
 | `EQUIPAMENTO_CADASTRADO` | O cadastro individual é aceito ou rejeitado. | Sucesso ou falha |
@@ -59,8 +63,10 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `EQUIPAMENTO_INATIVADO` | Um equipamento com histórico é inativado. | Sucesso |
 | `USUARIO_CADASTRADO` | O cadastro controlado de uma conta é aceito ou rejeitado. | Sucesso ou falha |
 | `RESERVA_CRIADA` | O Professor cria uma reserva própria. | Sucesso |
-| `RESERVA_CANCELADA` | O Professor cancela uma reserva própria. | Sucesso |
+| `RESERVA_CANCELADA` | Professor cancela reserva própria, Operador registra desistência confirmada ou Administrador decide cancelar reserva afetada por fechamento. | Sucesso |
+| `RESERVA_MANTIDA_FECHAMENTO` | Administrador mantém a entrega afetada por fechamento, com política habilitada e atendimento excepcional confirmado. | Sucesso |
 | `RESERVA_EXPIRADA` | O sistema expira uma reserva ativa sem retirada após 30 minutos do início. | Sucesso |
+| `EQUIPAMENTO_RESERVADO_SUBSTITUIDO` | Uma unidade em manutenção é substituída por outra compatível sem conflito, preservando a troca. | Sucesso |
 | `RETIRADA_REGISTRADA` | O Operador registra a entrega da reserva ou o formulário é rejeitado. | Sucesso ou falha |
 | `DEVOLUCAO_REGISTRADA` | O Operador registra uma devolução vinculada à retirada ou a tentativa é rejeitada. | Sucesso ou falha |
 | `CADASTRO_PEDAGOGICO_CRIADO` | Criação de Turma, Disciplina ou Atividade Pedagógica aceita ou rejeitada. | Sucesso ou falha |
@@ -83,6 +89,10 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `DADOS_EXPIRADOS_REMOVIDOS` | Uma limpeza confirmada remove registros segundo datas de corte explícitas. | Sucesso |
 
 Uma tentativa de login inválida é registrada sem vincular o nome de usuário informado a uma conta. Consultas registram que houve uso de filtros, mas não armazenam os termos pesquisados. A importação registra um evento para o lote e não copia o conteúdo do arquivo. No cadastro de contas, a auditoria identifica o Administrador responsável e, em caso de sucesso, o identificador da conta criada, sem copiar nome, e-mail, perfil ou senha.
+
+A expiração detectada pelo middleware usa o sinal nativo de logout e registra `SESSAO_EXPIRADA` em vez de `LOGOUT_REALIZADO`. Uma sessão já expirada no armazenamento nativo não oferece identidade para esse evento. Senhas, cookies, tokens e identificadores de sessão não são copiados para a auditoria.
+
+`AlteracaoCalendario` armazena separadamente Administrador, motivo, versão e valores anterior/novo. `CALENDARIO_ALTERADO` referencia esse registro, sem incluir seu texto no evento genérico. Fechamentos e reaberturas usam esse histórico; decisões sobre reservas registram motivo, responsável e data em `ReservaAfetadaFechamento`. Decisão e evento de sucesso são transacionais. O cancelamento operacional também mantém seus metadados na reserva. A ausência de texto livre em `RegistroAuditoria` não significa ausência desses dados nos históricos específicos.
 
 A designação do Administrador principal referencia a conta afetada. Uma
 substituição registra o anterior e o novo principal em eventos separados na mesma
@@ -136,6 +146,8 @@ Os testes dos arquivos `auditoria/tests.py` e `auditoria/test_consulta.py` verif
 - rejeição de perfis não autorizados e do Superuser técnico;
 - consulta, filtros, intervalo de datas e paginação para o Administrador.
 
+`usuarios/test_sessoes.py` verifica a expiração autenticada e a preservação do logout manual. Os testes de `calendario`, `reservas` e `manutencoes` verificam os históricos de configurações, decisões, cancelamentos e substituições, incluindo rollback quando a auditoria falha.
+
 Para executar os testes de auditoria com banco SQLite e e-mail em memória:
 
 ```powershell
@@ -149,6 +161,8 @@ O [README](../../README.md#testes) descreve a suíte completa. Os testes de cada
 | Requisito ou decisão | Evidência no código |
 |---|---|
 | `RS-09` - registrar eventos relevantes de autenticação | `auditoria/signals.py` |
+| Limites de sessão e identificação da expiração | `usuarios/middleware.py`, `usuarios/sessoes.py` e `usuarios/test_sessoes.py` |
+| Regras da escola e decisões sobre compromissos afetados | `calendario/models.py`, `calendario/services.py` e `calendario/fechamentos.py` |
 | `RS-11` - registrar usuário, ação, data/hora e entidade | `auditoria/models.py` e `auditoria/services.py` |
 | Acessos negados devem ser auditados | `auditoria/middleware.py` |
 | Operações atuais do inventário devem ser auditadas | `inventario/views.py` |

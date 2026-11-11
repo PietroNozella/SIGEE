@@ -15,8 +15,8 @@ O fluxo organiza o empréstimo em Reservas, Em uso e Histórico. A classificaç�
 ## Reserva e entrega
 
 1. O Professor consulta disponibilidade por tipo/modelo, local e período e informa uma quantidade positiva, turma, disciplina e atividade. A observação é opcional.
-2. O servidor valida perfil, período, antecedência de até 15 dias corridos pela data local, referências ativas, disponibilidade e conflitos; aloca unidades físicas compatíveis e grava uma única reserva com seus itens.
-3. O Professor cancela a reserva própria enquanto está ativa, sem retirada e antes de vencer a tolerância. Reservas sem retirada expiram integralmente ao completar 30 minutos do início; a rotina é acionada nos fluxos que sincronizam expiração.
+2. O servidor valida perfil, período, antecedência de até 15 dias corridos pela data local, calendário de uso e atendimento, referências ativas, disponibilidade, intervalo entre usos e cota opcional por professor e tipo; aloca unidades físicas compatíveis e grava uma única reserva com seus itens. O cálculo da cota considera o pico simultâneo em todos os locais, sem incluir a margem de preparação. A reserva preserva o calendário, o intervalo e a cota vigentes na confirmação.
+3. O Professor cancela a reserva própria enquanto está ativa, sem retirada e antes de vencer a tolerância. Reservas sem retirada expiram integralmente ao completar 30 minutos do início; a rotina é acionada nos fluxos que sincronizam expiração. Reservas suspensas aguardando decisão por fechamento emergencial não expiram automaticamente enquanto essa pendência existir. O fim de uma reserva curta já impede entrega, mesmo antes da expiração persistida por tolerância.
 4. O Operador confere as unidades aptas. A conferência tenta substituir patrimônios em manutenção por unidades do mesmo tipo/local livres no período. Sem substituto suficiente, permite entrega parcial após comunicação ao Professor, mantendo o saldo explícito. A primeira entrega exige reserva ativa, contexto completo e equipamentos ativos e disponíveis, a partir do início e antes do menor limite entre o término da reserva e a tolerância.
 5. A transação grava retiradas, situações `EM_USO`, utilizações pedagógicas por unidade e auditoria. A repetição não reentrega uma unidade. O lote passa para Em uso; o saldo não entregue continua acessível em Reservas e pode ser complementado até o fim do período. Após esse prazo, o saldo é apresentado como não atendido e as devoluções físicas permanecem abertas.
 
@@ -32,11 +32,13 @@ Reenviar a mesma confirmação após sucesso consulta somente as retiradas daque
 
 O Operador com `reservas.cancelar_reserva_operacional` acessa um formulário separado da entrega para registrar a desistência comunicada pelo Professor. Exige motivo e confirmação da comunicação. Não atende ausência presumida, disputa por equipamentos ou exceção administrativa ainda não definida.
 
-O serviço recarrega a autorização atual, bloqueia a mesma reserva utilizada na entrega e revalida estado, prazo e ausência de qualquer retirada, inclusive já devolvida. Se a reserva atingir o limite sem retirada, persiste a expiração e recusa o cancelamento. Caso contrário, grava `CANCELADA`, motivo, responsável, data e auditoria na mesma transação. A falha na auditoria desfaz o cancelamento. Não há alteração de equipamentos, exclusão de alocações ou criação de movimentações.
+O serviço recarrega a autorização atual, bloqueia a mesma reserva utilizada na entrega e revalida estado, prazo e ausência de qualquer retirada, inclusive já devolvida. Se a reserva atingir o limite sem retirada nem pendência de decisão por fechamento, persiste a expiração e recusa o cancelamento. Uma pendência de fechamento após a tolerância exige o fluxo administrativo. Dentro do prazo comum, grava `CANCELADA`, motivo, responsável, data e auditoria na mesma transação. A falha na auditoria desfaz o cancelamento. Não há alteração de equipamentos, exclusão de alocações ou criação de movimentações.
 
 O detalhe autorizado mostra os metadados operacionais. O cancelamento próprio do Professor continua no fluxo anterior; registros sem metadados não recebem preenchimento presumido. A exportação assistida inclui os dados da reserva do Professor e as reservas canceladas pelo próprio Operador.
 
 ## Devolução
+
+A tela inicial do Operador sinaliza reservas com patrimônios ainda vinculados a uma retirada anterior vencida. O aviso permanece enquanto houver unidade afetada sem devolução; não libera nem substitui automaticamente a custódia física.
 
 Qualquer Operador autorizado recebe todas ou parte das unidades, mesmo quando outro Operador registra a entrega. A confirmação preserva equipamento, destinatário, reserva, lote e retirada de origem de cada unidade. Seleção vazia, repetida, de outro grupo ou já devolvida é rejeitada sem gravação parcial.
 
@@ -51,6 +53,8 @@ O Administrador e o Operador também abrem manutenção manualmente para unidade
 O ciclo é `PENDENTE` → `EM_ANDAMENTO` → `CONCLUIDA`. A conclusão exige descrição da solução ou da análise e resultado: `REPARADO` atualiza a situação para `DISPONIVEL`, sem desfazer uma inativação independente; somente a unidade ativa volta a ficar disponível para uso. `SEM_REPARO` inativa o equipamento e preserva seu histórico. A situação do equipamento e a intervenção são atualizadas na mesma transação.
 
 ## Contexto e indicadores pedagógicos
+
+O Administrador filtra os indicadores por `inicio` e `fim`, ambos opcionais e inclusivos, usando a data local da movimentação de retirada. Sem datas, a consulta inclui todo o histórico com contexto. Um intervalo invertido ou uma data inválida gera erro de validação e não apresenta totais calculados sobre um período alternativo. Tabelas, ranking e totais usam o mesmo recorte, e a paginação preserva os filtros.
 
 Turma, Disciplina e Atividade Pedagógica são cadastros compartilhados mantidos pelo Administrador, com nome único, situação e data de criação; atividade também possui descrição opcional. Há consulta, criação, edição, inativação e reativação, sem exclusão definitiva. Não há cadastro de alunos. Nomes atuais são exibidos pelos vínculos; não há snapshot dos textos.
 
@@ -72,8 +76,18 @@ Reservas antigas sem contexto precisam ser completadas pelo Professor antes da e
 
 ## Integridade e referências
 
-Os serviços usam transações e bloqueios de linha. Nas reservas vinculadas, a ordem de bloqueio começa pelo tipo de equipamento antes da reserva, das retiradas e dos equipamentos nos fluxos de alocação, entrega e devolução; a criação serializa a reserva com a inativação do Professor. SQLite não comprova esses bloqueios; os testes concorrentes exigem PostgreSQL isolado.
+O middleware de sessão interrompe operações expiradas antes da view. O padrão é de 30 minutos de inatividade e 8 horas desde o login; consultas automáticas de disponibilidade, feriados e estado da sessão não renovam esses prazos. Depois de autenticar novamente, o usuário precisa conferir e reenviar qualquer formulário interrompido.
+
+Os serviços usam transações e bloqueios de linha. Os fluxos que alteram ou dependem da configuração bloqueiam o calendário; a alocação também serializa o tipo e a conta do Professor para validar conflitos e cotas. Entrega, devolução, cancelamento e decisão por fechamento revalidam os registros envolvidos sob bloqueio. SQLite não comprova esses bloqueios; os testes concorrentes exigem PostgreSQL isolado e não foram executados nesse banco nesta etapa.
 
 As regras estão em [Regras de negócio](../requisitos/regras-de-negocio.md), e as permissões em [Matriz de acesso](matriz-de-acesso.md). A implementação está em `reservas/models.py`, `reservas/services.py`, `reservas/consultas.py`, `movimentacoes/services.py`, `manutencoes/services.py` e `pedagogico/services.py`. O [README](../../README.md#testes) reúne os comandos de verificação.
 
 Administrador e Operador consultam o escopo global; não há isolamento por instituição. O Professor permanece restrito aos próprios registros.
+
+## Fechamentos e condições confirmadas
+
+Em **Administração → Configurações → Calendário**, somente o Administrador com `calendario.configurar_calendario` altera horários e exceções. Uso e atendimento têm faixas separadas; exceções por data prevalecem sobre a semana habitual. Alterações ordinárias identificam incompatibilidades sem reescrever as condições confirmadas das reservas.
+
+O fechamento emergencial de dia inteiro impede novos agendamentos e suspende entregas pendentes. As reservas afetadas ficam identificadas para decisão explícita, com responsável, motivo e data. Sem retirada, o Administrador pode cancelar, inclusive depois da tolerância enquanto houver decisão pendente. Manter a entrega exige política habilitada, atendimento excepcional confirmado e prazo original ainda válido; a política começa desabilitada. Havendo retirada, não é permitido cancelar a reserva inteira. Devoluções físicas continuam disponíveis, e a reabertura preserva as decisões no histórico.
+
+O histórico das regras fica em `AlteracaoCalendario`; os vínculos de fechamento e decisão ficam em `FechamentoEscolar` e `ReservaAfetadaFechamento`. A implementação está em `calendario/services.py` e `calendario/fechamentos.py`; os testes de fechamento estão em `calendario/test_fechamentos.py`.

@@ -36,13 +36,13 @@ Inventário, reservas e utilização de equipamentos escolares em um único ambi
 
 </div>
 
-[Visão geral](#visão-geral) · [Funcionalidades](#funcionalidades) · [Perfis](#perfis-de-acesso) · [Arquitetura](#tecnologias-e-arquitetura) · [Execução local](#execução-local) · [Testes](#testes) · [Documentação](#documentação)
+[Visão geral](#visão-geral) · [Funcionalidades](#funcionalidades) · [Perfis](#perfis-de-acesso) · [Arquitetura](#tecnologias-e-arquitetura) · [Configurações da escola](#configurações-da-escola) · [Execução local](#execução-local) · [Testes](#testes) · [Documentação](#documentação)
 
 ## Visão geral
 
 O SIGEE é uma aplicação web para gerenciar equipamentos tecnológicos de instituições de ensino, desde o cadastro patrimonial até a reserva, entrega, devolução e manutenção. O sistema relaciona o uso dos equipamentos a turmas, disciplinas e atividades pedagógicas e reúne consultas operacionais, indicadores e auditoria.
 
-O início do Operador reúne entregas do dia, pendências de entrega e devoluções previstas ou vencidas, com resumo da situação atual dos equipamentos. Equipamentos inativos são apresentados como indisponíveis para uso.
+O início do Operador reúne entregas do dia, pendências de entrega e devoluções previstas ou vencidas, com resumo da situação atual dos equipamentos. Também sinaliza reservas cujo patrimônio continua em uma retirada anterior vencida, até a devolução de todas as unidades afetadas. Equipamentos inativos são apresentados como indisponíveis para uso.
 
 O fluxo de empréstimo é organizado em **Reservas**, **Em uso** e **Histórico**. O Professor agenda os equipamentos e informa o contexto pedagógico; o Operador confirma a entrega e recebe as devoluções; o Administrador mantém os cadastros e acompanha o acervo. Toda nova retirada exige uma reserva válida.
 
@@ -52,16 +52,19 @@ O fluxo de empréstimo é organizado em **Reservas**, **Em uso** e **Histórico*
 |---|---|
 | **Inventário** | Cadastro por unidade física, patrimônio único, tipo/modelo, categoria e local; importação CSV com gravação integral do lote; filtros, edição e exclusão ou inativação conforme o histórico. |
 | **Reservas** | Agendamento próprio em lote por tipo/modelo e local, alocação de patrimônios, contexto pedagógico obrigatório, disponibilidade, prevenção de conflitos, cancelamento e expiração por tolerância de retirada. |
+| **Configurações da escola** | Calendário com horários separados de uso e atendimento, exceções por data, intervalo entre usos e cotas opcionais; fechamento emergencial com decisão sobre reservas afetadas e histórico das alterações. |
 | **Entrega e devolução** | Entrega integral, parcial por manutenção ou complementar, substituição automática com histórico, atualização de situação, devolução total ou parcial e registro de problemas por patrimônio, com transações e rastreabilidade por unidade. |
 | **Manutenção** | Abertura automática na devolução com problema ou manual pelo Administrador ou Operador; acompanhamento e conclusão como reparado ou sem possibilidade de reparo, com preservação do histórico. |
 | **Contexto pedagógico** | Cadastros de turmas, disciplinas e atividades; planejamento na reserva, criação das utilizações na entrega e correção pelo Professor até a devolução integral. |
-| **Consultas e indicadores** | Itens em uso, histórico de reservas e movimentações, painel do inventário e indicadores por turma, disciplina e atividade, com acesso conforme o perfil. |
-| **Identidade e auditoria** | Cadastro controlado de contas, recuperação de senha, desativação reversível, Administrador principal, autorização no servidor e registro das ações relevantes. |
+| **Consultas e indicadores** | Itens em uso, histórico de reservas e movimentações, painel do inventário e indicadores por turma, disciplina e atividade, com filtros de datas e acesso conforme o perfil. |
+| **Identidade e auditoria** | Cadastro controlado de contas, recuperação de senha, desativação reversível, Administrador principal, autorização no servidor, limites de sessão e registro das ações relevantes. |
 | **Privacidade e integração** | Termos e Política de Privacidade com aceite versionado; comandos assistidos de exportação, anonimização e descarte; consulta informativa de feriados pela BrasilAPI. |
 
 Feriados nacionais são informativos e não impedem uma reserva. A indisponibilidade da BrasilAPI também permite continuar o fluxo; as validações locais de período, quantidade e disponibilidade permanecem aplicáveis.
 
 Os registros antigos de retirada sem reserva permanecem disponíveis para devolução e consulta. As regras de compatibilidade estão no [fluxo de reservas, uso e histórico](docs/tecnica/fluxo-reservas-uso-historico.md).
+
+A implementação desta etapa aguarda revisão conjunta com a dupla. Regularização retroativa de entregas sem registro confirmado, tratamento específico de perda ou extravio, autorização para exceder cotas, permissões funcionais configuráveis e reserva de unidades atualmente em uso permanecem fora do escopo implementado. Os testes de concorrência disponíveis no repositório não foram executados no PostgreSQL nesta etapa; essa limitação não deve ser apresentada como validação concluída.
 
 ## Perfis de acesso
 
@@ -69,7 +72,7 @@ O sistema não possui cadastro público. As contas funcionais pertencem a um ún
 
 | Perfil | Responsabilidades |
 |---|---|
-| **Administrador** | Gerencia equipamentos, usuários e cadastros pedagógicos; acompanha reservas, itens em uso, histórico e manutenção; consulta painel, indicadores e auditoria. |
+| **Administrador** | Gerencia equipamentos, usuários, cadastros pedagógicos e configurações da escola; decide sobre reservas afetadas por fechamento; acompanha reservas, itens em uso, histórico e manutenção; consulta painel, indicadores e auditoria. |
 | **Operador** | Acessa início operacional e Meus dados; confere entregas integrais, parciais e complementares; registra devoluções e problemas; abre e consulta manutenção; acompanha pendências e histórico com contexto limitado à turma. |
 | **Professor** | Consulta disponibilidade, cria e cancela reservas próprias quando permitido, informa e corrige o contexto pedagógico e acompanha seus itens em uso e registros históricos. |
 
@@ -94,15 +97,23 @@ O envio por SMTP depende da configuração do ambiente; em desenvolvimento, o ba
 
 Os apps `inventario`, `reservas`, `movimentacoes`, `manutencoes` e `pedagogico` concentram os fluxos de equipamentos. `contas`, `usuarios`, `auditoria` e `legal` oferecem os controles de identidade, acesso, registro e aceite.
 
+O app `calendario` mantém horários, exceções, intervalo e fechamentos, além da gestão das cotas por tipo/modelo. A instalação representa uma escola, com acesso global de Administrador e Operador; não há isolamento entre instituições.
+
 Consulte a [arquitetura do sistema](docs/tecnica/arquitetura-do-sistema.md) para conhecer as decisões técnicas e os relacionamentos entre os módulos.
 
-## Execução local
+## Configurações da escola
 
 O Administrador configura a semana habitual e as exceções por data em **Administração → Configurações → Calendário**. Uso dos equipamentos e atendimento do Operador têm horários separados. Inicialmente, segunda a sexta permanecem liberadas durante todo o dia. Novas reservas seguem as faixas; compromissos já confirmados são preservados e sinalizados quando uma mudança exigir decisão. O seletor de datas de exceção também destaca os feriados nacionais consultados na BrasilAPI.
 
 Na seção **Regras de reserva**, **Configurar intervalo** define a margem após o uso das mesmas unidades, inicialmente 5 minutos, com opção zero para desativá-la. Cada reserva guarda o intervalo vigente; alterações posteriores não reescrevem compromissos e registros anteriores preservam margem zero. A regra é aplicada na consulta, na confirmação e na substituição por manutenção. O horário não libera um equipamento ainda sob custódia. A mudança do parâmetro exige motivo e fica no histórico do calendário.
 
 Em **Regras de reserva → Configurar cotas**, o Administrador define um limite opcional de unidades simultâneas por professor e tipo/modelo. Inicialmente não existe cota adicional; deixar o campo vazio a desativa. O cálculo soma reservas ativas do mesmo professor e tipo em todos os locais, considerando o pico de sobreposição no período solicitado. Consulta e confirmação respeitam o saldo; dividir pedidos não amplia a cota. Mudanças exigem motivo e ficam no histórico, preservando as reservas confirmadas. Pedidos acima da cota são bloqueados, sem fluxo de exceção nesta etapa.
+
+O **fechamento emergencial** abrange um dia inteiro, impede novos agendamentos e suspende entregas pendentes. As reservas afetadas exigem decisão explícita do Administrador: cancelar as que ainda não tiveram retirada, com motivo, ou manter a entrega quando a política de exceção estiver habilitada, o atendimento excepcional for confirmado e o prazo original permitir. A política começa desabilitada. A reabertura preserva o histórico, e as devoluções físicas continuam disponíveis.
+
+As sessões usam o Django e expiram por padrão após 30 minutos sem navegação ou envio de formulários, ou 8 horas desde o login. Consultas automáticas não renovam a atividade. Ao expirar, o servidor bloqueia novas operações e exige autenticação; formulários não são reenviados automaticamente. Os prazos ficam no ambiente, conforme [Autenticação](docs/tecnica/autenticacao.md#duração-da-sessão).
+
+## Execução local
 
 Os comandos abaixo utilizam **PowerShell no Windows** e preparam uma instalação nova.
 
@@ -198,7 +209,7 @@ Para atualizar uma instalação existente, siga o [procedimento de atualização
 
 ## Testes
 
-A suíte inclui cenários de regras de negócio, autenticação, autorização, importação, reservas, movimentações, manutenção, contexto pedagógico, indicadores, auditoria, privacidade e contingência da BrasilAPI.
+A suíte inclui cenários de regras de negócio, autenticação e expiração de sessão, autorização, importação, calendário e fechamentos, intervalo, cotas, reservas, movimentações, manutenção, contexto pedagógico, indicadores, auditoria, privacidade e contingência da BrasilAPI.
 
 Execute as verificações locais com a configuração de testes:
 
@@ -216,6 +227,8 @@ python manage.py test reservas --settings=config.settings_testes
 ```
 
 Os cenários que exigem bloqueio de linha são ignorados no SQLite. A preparação da conexão local e os comandos para executá-los estão em [Testes com PostgreSQL isolado](docs/implantacao/seguranca-banco-supabase.md#testes-com-postgresql-isolado). As instruções acima não representam medição de cobertura, desempenho ou validação do ambiente publicado. Os [critérios dos RNFs](docs/requisitos/requisitos-nao-funcionais.md#verificação-dos-rnf04-a-rnf06) definem a conferência de interface, os tempos de consulta e a cobertura por fluxo.
+
+Na verificação local de 10/11/2026, a suíte apresentou 656 cenários: 630 passaram e 26 foram ignorados por dependerem de bloqueio de linha indisponível no SQLite. Esse resultado não comprova concorrência no PostgreSQL, configuração do ambiente publicado, revisão com a dupla ou aceite institucional.
 
 ## Documentação
 
