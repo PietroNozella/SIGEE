@@ -19,7 +19,7 @@ A auditoria cobre atualmente:
 - cadastro controlado de contas funcionais;
 - criação de reservas próprias pelo Professor, cancelamento pelo Professor, pelo Operador ou por decisão administrativa de fechamento, e expiração nos fluxos de sincronização;
 - alterações de calendário, intervalo, cotas e política de fechamento, com histórico vinculado;
-- manutenção excepcional de reserva afetada por fechamento e substituição de patrimônios por manutenção;
+- manutenção excepcional de reserva afetada por fechamento, encerramento administrativo do saldo não entregue e substituição de patrimônios por manutenção;
 - retirada vinculada à reserva por Operador e rejeição de tentativas inválidas;
 - devolução básica vinculada à retirada por Operador;
 - criação, edição, inativação e reativação dos cadastros compartilhados de Turma, Disciplina e Atividade Pedagógica;
@@ -65,6 +65,7 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `RESERVA_CRIADA` | O Professor cria uma reserva própria. | Sucesso |
 | `RESERVA_CANCELADA` | Professor cancela reserva própria, Operador registra desistência confirmada ou Administrador decide cancelar reserva afetada por fechamento. | Sucesso |
 | `RESERVA_MANTIDA_FECHAMENTO` | Administrador mantém a entrega afetada por fechamento, com política habilitada e atendimento excepcional confirmado. | Sucesso |
+| `SALDO_ENTREGA_ENCERRADO` | Administrador encerra o saldo não entregue de uma reserva com entrega parcial e decisão pendente de fechamento, preservando as retiradas e devoluções; o evento referencia a reserva. | Sucesso |
 | `RESERVA_EXPIRADA` | O sistema expira uma reserva ativa sem retirada após 30 minutos do início. | Sucesso |
 | `EQUIPAMENTO_RESERVADO_SUBSTITUIDO` | Uma unidade em manutenção é substituída por outra compatível sem conflito, preservando a troca. | Sucesso |
 | `RETIRADA_REGISTRADA` | O Operador registra a entrega da reserva ou o formulário é rejeitado. | Sucesso ou falha |

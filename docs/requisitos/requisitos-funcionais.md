@@ -108,7 +108,7 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 - <b>CA-21:</b> Dado um tipo com cota ativa, quando um Professor reservar, então o sistema deve considerar o maior total de unidades simultaneamente comprometidas em suas reservas ativas desse tipo, somando todos os locais e impedindo contornar o limite com solicitações menores. Períodos adjacentes não se sobrepõem; reservas canceladas ou expiradas não consomem cota. O servidor revalida o saldo na confirmação, inclusive em disputas concorrentes e formulários adulterados.
 - <b>CA-22:</b> Dada uma redução ou desativação da cota, quando o sistema consultar ou entregar uma reserva já confirmada, então deve preservar seu compromisso e o limite registrado na confirmação. As reservas existentes continuam contando no cálculo de novas solicitações simultâneas. Não há autorização para exceder a cota neste incremento.
 - <b>CA-23:</b> Dado um fechamento emergencial de dia inteiro, quando for registrado pelo Administrador autorizado com motivo, então novos agendamentos e entregas pendentes da data devem ser bloqueados. As reservas afetadas devem permanecer identificadas para decisão, sem apagamento ou cancelamento automático, e as pendentes de decisão não devem expirar automaticamente por tolerância.
-- <b>CA-24:</b> Dada uma reserva afetada por fechamento, quando o Administrador decidir, então deve registrar motivo, responsável e data. Cancelamento exige ausência de retirada. Manter a entrega exige política habilitada, atendimento excepcional confirmado e prazo original válido. Uma entrega parcial não autoriza cancelar o lote inteiro, e as devoluções físicas devem continuar disponíveis.
+- <b>CA-24:</b> Dada uma reserva afetada por fechamento, quando o Administrador decidir, então deve registrar motivo, responsável e data. Cancelamento exige ausência de retirada. Manter a entrega exige política habilitada, atendimento excepcional confirmado e prazo original válido. Uma entrega parcial não autoriza cancelar o lote inteiro. Enquanto houver decisão pendente de fechamento, o Administrador pode encerrar o saldo não entregue com motivo, responsável, data e auditoria, inclusive após o prazo ou a devolução integral. Esse encerramento impede novos complementos, permanece válido após a reabertura e preserva as retiradas e devoluções físicas.
 - <b>CA-25:</b> Dada a reabertura de um fechamento ativo para hoje ou data futura, quando o Administrador confirmar com motivo, então a suspensão daquele fechamento deve ser retirada e as decisões anteriores preservadas no histórico.
 
 ## RF05 - Registrar retirada e devolução
@@ -117,7 +117,7 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 
 <b>Ator: </b>Operador.
 
-<b>Pré-condições:</b> O Operador deve estar autenticado, ativo e autorizado. A entrega exige reserva ativa, contexto pedagógico completo, patrimônios aptos ainda não entregues e ausência de suspensão por fechamento. A complementação de um saldo por manutenção é permitida até o fim do período reservado. O destinatário é o Professor proprietário ativo, definido pelo servidor. A primeira confirmação ocorre a partir do início e antes do menor limite entre o término da reserva e os 30 minutos de tolerância. Para devolver, deve existir retirada em aberto das unidades selecionadas.
+<b>Pré-condições:</b> O Operador deve estar autenticado, ativo e autorizado. A entrega exige reserva ativa, contexto pedagógico completo, patrimônios aptos ainda não entregues e ausência de suspensão por fechamento. A complementação de um saldo por manutenção é permitida até o fim do período reservado, desde que o saldo não tenha sido encerrado pelo Administrador no fluxo de fechamento. O destinatário é o Professor proprietário ativo, definido pelo servidor. A primeira confirmação ocorre a partir do início e antes do menor limite entre o término da reserva e os 30 minutos de tolerância. Para devolver, deve existir retirada em aberto das unidades selecionadas.
 
 <b>Fluxo principal:</b> O Operador localiza a reserva e confere os patrimônios alocados. O sistema revalida o prazo, o Professor, o contexto e a disponibilidade e tenta substituir unidades em manutenção por outras do mesmo tipo/local sem conflito no período. Sem substituto suficiente, permite entregar as unidades aptas após comunicação ao Professor e confirmação dessa comunicação, mantendo o saldo de entrega. Na mesma transação, grava as retiradas, cria as utilizações pedagógicas por unidade, atualiza os equipamentos para em uso e registra a auditoria. Na devolução, qualquer Operador autorizado confere o lote, seleciona todas ou parte das unidades recebidas e descreve problemas por patrimônio quando necessário. O sistema grava as devoluções, preserva cada retirada de origem e atualiza as situações; unidades com problema geram manutenção na mesma transação.
 
@@ -127,7 +127,7 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 
 <b>Critérios de aceite:</b>
 
-- <b>CA-01:</b> Dada uma reserva elegível no prazo de entrega, quando o Operador confirmar a retirada, então todas as unidades alocadas devem registrar o Professor proprietário, as movimentações, as utilizações pedagógicas, a situação em uso e a auditoria na mesma transação.
+- <b>CA-01:</b> Dada uma reserva elegível no prazo de entrega, quando o Operador confirmar a retirada, então todas as unidades aptas ainda não entregues devem registrar o Professor proprietário, as movimentações, as utilizações pedagógicas, a situação em uso e a auditoria na mesma transação.
 - <b>CA-02:</b> Dadas unidades com retiradas em aberto, quando qualquer Operador autorizado confirmar sua devolução sem problema, então o sistema deve registrar uma devolução por unidade, preservar a origem e devolver à disponibilidade somente os equipamentos ativos sem impedimento.
 - <b>CA-03:</b> Dada uma seleção com unidades normais e com problema descrito, quando o Operador confirmar a devolução, então somente as unidades com problema devem gerar manutenção pendente e permanecer indisponíveis.
 - <b>CA-04:</b> Dada uma unidade sem retirada em aberto ou já devolvida, quando houver tentativa de devolução, então o sistema deve recusá-la sem duplicar registros ou gravar parcialmente as demais unidades selecionadas.
@@ -139,7 +139,7 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 - <b>CA-10:</b> Dada uma falha de gravação em qualquer unidade da entrega ou devolução, quando a transação for encerrada, então nenhuma alteração parcial da confirmação deve permanecer salva.
 
 - <b>CA-11:</b> Dada uma unidade em manutenção, quando houver substituto do mesmo tipo/local livre em todo o período, então o sistema deve atualizar a alocação e preservar o histórico da troca.
-- <b>CA-12:</b> Dada uma falta de substituto, quando o Operador confirmar que informou o Professor, então deve ser possível entregar somente as unidades aptas, manter o saldo e complementá-lo até o fim do período, sem duplicar retiradas nem criar devolução para unidades não entregues.
+- <b>CA-12:</b> Dada uma falta de substituto, quando o Operador confirmar que informou o Professor, então deve ser possível entregar somente as unidades aptas, manter o saldo e complementá-lo até o fim do período, desde que não tenha sido encerrado pelo Administrador no fluxo de fechamento, sem duplicar retiradas nem criar devolução para unidades não entregues.
 - <b>CA-13:</b> Dado um patrimônio com retirada sem devolução, quando houver tentativa de disponibilização cadastral ou nova entrega, então o sistema deve recusá-la, mesmo que a situação armazenada esteja inconsistente.
 - <b>CA-14:</b> Dada uma conferência cuja lista ou dados patrimoniais mudaram antes da confirmação, quando o Operador confirmar, então nenhuma entrega deve ser registrada e uma nova conferência deve ser exigida.
 - <b>CA-15:</b> Dada uma confirmação de entrega já processada, quando ela for reenviada pelo Operador ainda autorizado, então somente a operação original deve ser reconhecida, sem incorporar novos patrimônios ou repetir os efeitos da entrega.
@@ -161,7 +161,7 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 
 <b>Critérios de aceite:</b>
 
-- <b>CA-01:</b> Dado um lote integralmente devolvido, quando o usuário autorizado consultar o Histórico, então a reserva e suas movimentações devem estar disponíveis com tipos, datas, horários, patrimônios e responsáveis.
+- <b>CA-01:</b> Dado um lote integralmente devolvido e sem saldo de entrega vigente, quando o usuário autorizado consultar o Histórico, então a reserva e suas movimentações devem estar disponíveis com tipos, datas, horários, patrimônios e responsáveis.
 - <b>CA-02:</b> Dada uma devolução registrada por Operador diferente daquele que realizou a retirada, quando o histórico for consultado, então cada movimentação deve identificar seu respectivo responsável.
 - <b>CA-03:</b> Dado um usuário sem permissão de consulta ao histórico, quando ele tentar acessá-lo, então o sistema deve impedir o acesso.
 - <b>CA-04:</b> Dado um Professor, quando ele consultar ou filtrar o Histórico, então deve visualizar somente seus registros; reservas e retiradas alheias não devem ser expostas.
@@ -236,13 +236,13 @@ O Operador acessa um início próprio com situação atual dos equipamentos, ent
 
 ## RF10 - Vincular a utilização ao contexto pedagógico
 
-<b>Descrição: </b>O sistema deve exigir turma, disciplina e atividade pedagógica na nova reserva do Professor, com observação opcional, e criar as utilizações por unidade na confirmação da entrega. O Professor pode corrigir o contexto próprio até a devolução integral, preservando a reserva e as movimentações.
+<b>Descrição: </b>O sistema deve exigir turma, disciplina e atividade pedagógica na nova reserva do Professor, com observação opcional, e criar as utilizações por unidade na confirmação da entrega. A correção do contexto próprio preserva a reserva e as movimentações e segue os limites de edição descritos abaixo.
 
 <b>Ator:</b> Professor.
 
-<b>Pré-condições:</b> O Professor deve estar autenticado, ativo e autorizado. Para corrigir o planejamento sem retirada, a reserva própria deve estar ativa e antes do limite de tolerância. Após a retirada, deve existir pelo menos uma unidade pendente. Novas escolhas exigem cadastros pedagógicos ativos; uma referência já vinculada pode ser mantida após inativação.
+<b>Pré-condições:</b> O Professor deve estar autenticado, ativo e autorizado. Para corrigir o planejamento sem retirada, a reserva própria deve estar ativa e antes do limite de tolerância. Após a retirada, deve existir pelo menos uma unidade pendente de devolução para editar pela tela. O serviço também aceita a correção quando todas as unidades entregues foram devolvidas, desde que a reserva esteja ativa e ainda haja saldo de entrega dentro do período, sem encerramento administrativo. A tela atual não exibe o formulário nesse caso. Novas escolhas exigem cadastros pedagógicos ativos; uma referência já vinculada pode ser mantida após inativação.
 
-<b>Fluxo principal:</b> O Professor informa o planejamento ao criar a reserva. Na entrega pelo Operador, o sistema cria uma utilização pedagógica para cada unidade retirada na mesma transação. Uma correção posterior aplica o contexto a todo o lote e sincroniza a reserva, inclusive após devolução parcial. Após a devolução integral, quando não há saldo de entrega dentro do período reservado, o contexto fica somente para consulta. Em retiradas legadas sem reserva, o Professor destinatário pode registrar ou corrigir o contexto do próprio lote enquanto há pendências.
+<b>Fluxo principal:</b> O Professor informa o planejamento ao criar a reserva. Na entrega pelo Operador, o sistema cria uma utilização pedagógica para cada unidade retirada na mesma transação. Uma correção posterior aplica o contexto a todo o lote e sincroniza a reserva, inclusive após devolução parcial. Após a devolução integral, quando não há saldo de entrega vigente em reserva ativa ou esse saldo foi encerrado administrativamente, o serviço recusa novas gravações do contexto. Em retiradas legadas sem reserva, o Professor destinatário pode registrar ou corrigir o contexto do próprio lote enquanto há pendências.
 
 <b>Regras de negócio:</b> O contexto é obrigatório nas novas reservas e sua observação é opcional. Agendamentos não contam como uso realizado; as utilizações são criadas na entrega (RN-15). A compatibilidade sem reserva aplica-se somente às retiradas antigas, sem criar novas retiradas diretas (RN-16). O vínculo pedagógico por retirada é único. Não há exclusão do contexto nem preenchimento automático de utilizações não realizadas.
 
@@ -254,7 +254,7 @@ O Operador acessa um início próprio com situação atual dos equipamentos, ent
 - <b>CA-02:</b> Dada uma retirada legada sem reserva do Professor destinatário, com unidade pendente, quando ele registrar ou corrigir seu contexto, então as informações devem ser associadas ao lote sem criar uma reserva ou nova retirada.
 - <b>CA-03: </b>Dada uma movimentação com contexto pedagógico, quando seus dados forem consultados, então o vínculo pedagógico e os dados da movimentação devem permanecer preservados.
 - <b>CA-04:</b> Dada uma devolução parcial, quando o Professor corrigir o contexto, então a alteração deve abranger todo o lote, incluindo as unidades já devolvidas, e atualizar a reserva vinculada.
-- <b>CA-05:</b> Dado um lote integralmente devolvido, quando houver tentativa de criar ou editar seu contexto, então o sistema deve recusá-la e manter a consulta do histórico.
+- <b>CA-05:</b> Dado um lote integralmente devolvido, sem saldo de entrega vigente em reserva ativa ou com esse saldo encerrado administrativamente, quando houver tentativa de criar ou editar seu contexto, então o sistema deve recusá-la e manter a consulta do histórico.
 - <b>CA-06:</b> Dada uma referência pedagógica inativada após o vínculo, quando o Professor mantiver essa referência, então o sistema deve preservar o vínculo; uma nova escolha inativa deve ser recusada.
 
 ## RF11 - Exibir indicadores de utilização pedagógica
