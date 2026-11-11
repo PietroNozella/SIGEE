@@ -13,14 +13,17 @@ from usuarios.permissoes import e_professor_funcional
 class ReservaQuerySet(models.QuerySet):
     def com_etapa(self):
         from movimentacoes.models import Movimentacao
+        from calendario.models import ReservaAfetadaFechamento
 
         retiradas = Movimentacao.objects.filter(reserva_id=OuterRef("pk"), tipo="RETIRADA")
+        encerramentos = ReservaAfetadaFechamento.objects.filter(reserva_id=OuterRef("pk"), decisao="ENCERRADA")
         return self.annotate(
+            saldo_encerrado=Exists(encerramentos),
             tem_retirada=Exists(retiradas),
             tem_pendentes=Exists(retiradas.filter(devolucoes__isnull=True)),
             quantidade_entregue=Coalesce(Subquery(retiradas.order_by().values("reserva_id").annotate(total=Count("pk")).values("total")), Value(0), output_field=IntegerField()),
         ).annotate(tem_entrega_pendente=Case(
-            When(status="ATIVA", fim__gt=timezone.now(), quantidade__gt=F("quantidade_entregue"), then=Value(True)),
+            When(status="ATIVA", saldo_encerrado=False, fim__gt=timezone.now(), quantidade__gt=F("quantidade_entregue"), then=Value(True)),
             default=Value(False), output_field=BooleanField(),
         )).annotate(etapa=Case(
             When(tem_pendentes=True, then=Value("EM_USO")),

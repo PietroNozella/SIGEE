@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Exists, OuterRef
+from django.utils import timezone
 
 
 class EquipamentoQuerySet(models.QuerySet):
@@ -135,6 +136,12 @@ class Equipamento(models.Model):
     def possui_registros_relacionados(self):
         return self.movimentacoes.exists() or self.itens_reserva.exists() or self.manutencoes.exists()
 
+    def possui_compromisso_vigente(self):
+        return self.pk is not None and (
+            self.itens_reserva.filter(reserva__status="ATIVA", reserva__fim__gt=timezone.now()).exists()
+            or not Equipamento.objects.filter(pk=self.pk).sem_retirada_aberta().exists()
+        )
+
     @property
     def situacao_operacional(self):
         return self.situacao if self.ativo else "INATIVO"
@@ -145,9 +152,11 @@ class Equipamento(models.Model):
 
     def clean(self):
         super().clean()
+        sem_custodia = not self.pk or Equipamento.objects.filter(pk=self.pk).sem_retirada_aberta().exists()
+        if self.situacao == self.Situacao.EM_USO and sem_custodia:
+            raise ValidationError({"situacao": "A situação Em uso exige uma retirada registrada. Confirme a entrega pelo fluxo de reservas."})
         if (
-            self.pk and self.situacao == self.Situacao.DISPONIVEL
-            and not Equipamento.objects.filter(pk=self.pk).sem_retirada_aberta().exists()
+            not sem_custodia and self.situacao != self.Situacao.EM_USO
         ):
             raise ValidationError({"situacao": "Registre a devolução física antes de disponibilizar o equipamento."})
         if (
@@ -155,6 +164,13 @@ class Equipamento(models.Model):
             and self.manutencoes.exclude(estado="CONCLUIDA").exists()
         ):
             raise ValidationError({"situacao": "Conclua a manutenção antes de alterar a situação do equipamento."})
+        if self.pk:
+            original = Equipamento.objects.filter(pk=self.pk).values("tipo_id", "local_id").first()
+            if (
+                original and (original["tipo_id"] != self.tipo_id or original["local_id"] != self.local_id)
+                and self.possui_compromisso_vigente()
+            ):
+                raise ValidationError("Não altere o tipo/modelo ou local de uma unidade com reserva vigente ou retirada em aberto.")
 
     # RN-06: equipamentos com movimentações são inativados para preservar
     # o histórico; somente itens sem registros relacionados são excluídos.

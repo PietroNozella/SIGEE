@@ -42,7 +42,7 @@ class FechamentoEscolarTests(TestCase):
         self.url_entrega = reverse("movimentacoes:retirada_reserva_registrar", args=[self.reserva.pk])
         self.url_reserva = reverse("reservas:reserva_detalhe", args=[self.reserva.pk])
         relogio = patch("django.utils.timezone.now", return_value=self.antes)
-        relogio.start()
+        self.relogio = relogio.start()
         self.addCleanup(relogio.stop)
         self.client.force_login(self.admin)
 
@@ -209,6 +209,108 @@ class FechamentoEscolarTests(TestCase):
         self.assertFalse(AlteracaoCalendario.objects.exists())
         self.assertEqual(self.versao(), 1)
 
+    def preparar_entrega_parcial(self):
+        self.cenario["equipamento"].delete()
+        with patch("django.utils.timezone.now", return_value=self.reserva.inicio):
+            abrir_manutencao(
+                administrador=self.operador, equipamento_id=self.unidades[1].pk, descricao_problema="Não liga",
+            )
+            self.client.force_login(self.operador)
+            token = self.client.get(self.url_entrega).context["form"].initial["conferencia"]
+            self.assertEqual(self.client.post(self.url_entrega, {"conferencia": token, "professor_informado": "on"}).status_code, 302)
+        self.relogio.return_value = self.reserva.inicio + timedelta(minutes=2)
+        return Movimentacao.objects.get(reserva=self.reserva, tipo="RETIRADA"), token
+
+    def test_encerramento_do_saldo_preserva_custodia_reenvio_e_devolucao(self):
+        retirada, token = self.preparar_entrega_parcial()
+        with patch("django.utils.timezone.now", return_value=self.reserva.inicio + timedelta(minutes=2)):
+            self.client.force_login(self.admin)
+            fechamento = self.fechar()
+            impacto = fechamento.reservas_afetadas.get()
+            url = reverse("calendario:decisao_fechamento", args=[impacto.pk])
+            self.assertContains(self.client.get(url), "Encerrar saldo de entrega")
+            self.assertEqual(self.client.post(url, {"decisao": "ENCERRADA", "motivo": "Sem atendimento para o complemento"}).status_code, 302)
+            impacto.refresh_from_db()
+            self.assertEqual(impacto.decisao, "ENCERRADA")
+            self.assertEqual(impacto.decidido_por, self.admin)
+            self.assertEqual(RegistroAuditoria.objects.filter(acao=AcaoAuditoria.SALDO_ENTREGA_ENCERRADO).count(), 1)
+            etapa = Reserva.objects.com_etapa().get(pk=self.reserva.pk)
+            self.assertEqual(etapa.etapa, "EM_USO")
+            self.assertFalse(etapa.tem_entrega_pendente)
+            resumo = resumo_entrega(self.reserva)
+            self.assertEqual((resumo["pendentes"], resumo["nao_atendidas"]), (0, 1))
+
+            self.client.force_login(self.operador)
+            resposta = self.client.get(self.url_entrega)
+            self.assertNotContains(resposta, "Confirmar entrega complementar")
+            self.assertNotContains(resposta, "Pendente de substituição")
+            self.assertContains(resposta, "Não atendido — saldo encerrado")
+            self.assertEqual(self.client.post(self.url_entrega, {"conferencia": token, "professor_informado": "on"}).status_code, 302)
+            self.assertEqual(Movimentacao.objects.filter(reserva=self.reserva, tipo="RETIRADA").count(), 1)
+            self.assertEqual(self.client.post(reverse("movimentacoes:devolucao_registrar", args=[retirada.pk]), {"retiradas": [retirada.pk]}).status_code, 302)
+            self.assertEqual(Reserva.objects.com_etapa().get(pk=self.reserva.pk).etapa, "ENCERRADA")
+            self.client.force_login(self.professor)
+            self.assertContains(self.client.get(self.url_reserva), "Saldo de entrega encerrado")
+            contexto = reverse("pedagogico:utilizacao_reserva", args=[self.reserva.pk])
+            self.assertContains(self.client.post(contexto, {
+                "turma": self.reserva.turma_id, "disciplina": self.reserva.disciplina_id, "atividade": self.reserva.atividade_id,
+            }), "A devolução integral encerrou")
+
+    def test_saldo_pode_ser_encerrado_apos_prazo_e_devolucao_integral(self):
+        retirada, _ = self.preparar_entrega_parcial()
+        self.client.force_login(self.admin)
+        fechamento = self.fechar()
+        impacto = fechamento.reservas_afetadas.get()
+        with patch("django.utils.timezone.now", return_value=self.reserva.fim + timedelta(days=1)):
+            self.client.force_login(self.operador)
+            self.client.post(reverse("movimentacoes:devolucao_registrar", args=[retirada.pk]), {"retiradas": [retirada.pk]})
+            self.client.force_login(self.admin)
+            detalhe = reverse("calendario:fechamento_detalhe", args=[fechamento.pk])
+            self.assertContains(self.client.get(reverse("calendario:calendario_escola")), detalhe)
+            url = reverse("calendario:decisao_fechamento", args=[impacto.pk])
+            self.assertContains(self.client.get(detalhe), url)
+            self.assertEqual(self.client.post(url, {"decisao": "ENCERRADA", "motivo": "Complemento não realizado"}).status_code, 302)
+            self.assertNotContains(self.client.get(detalhe), url)
+        self.assertEqual(Reserva.objects.com_etapa().get(pk=self.reserva.pk).etapa, "ENCERRADA")
+
+    def test_reabertura_nao_restaura_complemento_encerrado_nem_substitui_unidade(self):
+        self.preparar_entrega_parcial()
+        self.client.force_login(self.admin)
+        fechamento = self.fechar()
+        decidir_reserva_afetada(usuario=self.admin, impacto_id=fechamento.reservas_afetadas.get().pk, decisao="ENCERRADA", motivo="Complemento dispensado")
+        self.client.post(reverse("calendario:fechamento_reabrir", args=[fechamento.pk]), {"motivo": "Energia restabelecida", "versao": self.versao()})
+        Equipamento.objects.create(numero_patrimonio="APTO-APOS-ENCERRAMENTO", tipo=self.reserva.tipo_equipamento, local=self.reserva.local)
+        with patch("django.utils.timezone.now", return_value=self.reserva.inicio + timedelta(minutes=5)):
+            self.client.force_login(self.operador)
+            resposta = self.client.get(self.url_entrega)
+            self.assertContains(resposta, "O saldo de entrega foi encerrado")
+            self.assertFalse(self.reserva.substituicoes.exists())
+            token = resposta.context["form"].initial["conferencia"]
+            self.assertContains(self.client.post(self.url_entrega, {"conferencia": token}), "saldo de entrega desta reserva foi encerrado")
+        self.assertEqual(Movimentacao.objects.filter(reserva=self.reserva, tipo="RETIRADA").count(), 1)
+
+    def test_encerramento_resolve_saldo_em_todos_os_fechamentos_pendentes(self):
+        self.reserva.fim += timedelta(days=2)
+        self.reserva.save(update_fields=["fim"])
+        self.preparar_entrega_parcial()
+        self.client.force_login(self.admin)
+        primeiro = self.fechar()
+        segundo = registrar_fechamento(usuario=self.admin, data=self.data + timedelta(days=1), motivo="Fechamento prolongado", versao=self.versao())
+        decidir_reserva_afetada(usuario=self.admin, impacto_id=primeiro.reservas_afetadas.get().pk, decisao="ENCERRADA", motivo="Complemento dispensado")
+        self.assertEqual(ReservaAfetadaFechamento.objects.filter(reserva=self.reserva, decisao="ENCERRADA").count(), 2)
+        with self.assertRaisesMessage(ValidationError, "já foi resolvida"):
+            decidir_reserva_afetada(usuario=self.admin, impacto_id=segundo.reservas_afetadas.get().pk, decisao="MANTIDA", motivo="Tentativa", atendimento_confirmado=True)
+
+    def test_encerramento_exige_entrega_parcial_e_motivo(self):
+        fechamento = self.fechar()
+        impacto = fechamento.reservas_afetadas.get()
+        with self.assertRaisesMessage(ValidationError, "exige uma entrega parcial"):
+            decidir_reserva_afetada(usuario=self.admin, impacto_id=impacto.pk, decisao="ENCERRADA", motivo="Sem retirada")
+        with self.assertRaisesMessage(ValidationError, "Informe o motivo"):
+            decidir_reserva_afetada(usuario=self.admin, impacto_id=impacto.pk, decisao="ENCERRADA", motivo=" ")
+        impacto.refresh_from_db()
+        self.assertEqual(impacto.decisao, "PENDENTE")
+
 
 class ConcorrenciaFechamentoTests(TransactionTestCase):
     def concorrer(self, primeira, segunda):
@@ -284,3 +386,28 @@ class ConcorrenciaFechamentoTests(TransactionTestCase):
         self.assertEqual(reserva.status, Reserva.Status.CANCELADA)
         self.assertFalse(Movimentacao.objects.filter(reserva=reserva).exists())
         self.assertEqual(RegistroAuditoria.objects.filter(acao=AcaoAuditoria.RESERVA_CANCELADA).count(), 1)
+
+    @skipUnlessDBFeature("has_select_for_update")
+    def test_encerramento_e_confirmacao_antiga_preservam_entrega_parcial(self):
+        cenario = criar_cenario()
+        reserva, unidades = criar_reserva_alocada(cenario, quantidade=2)
+        cenario["equipamento"].delete()
+        with patch("django.utils.timezone.now", return_value=reserva.inicio):
+            abrir_manutencao(administrador=cenario["operador"], equipamento_id=unidades[1].pk, descricao_problema="Não liga")
+            registrar_entrega_conferida(operador=cenario["operador"], reserva_id=reserva.pk, professor_informado=True)
+            impacto = registrar_fechamento(
+                usuario=cenario["administrador"], data=timezone.localdate(reserva.inicio), motivo="Fechamento", versao=1,
+            ).reservas_afetadas.get()
+            token = criar_conferencia_retirada(reserva=reserva, operador=cenario["operador"], resumo=resumo_entrega(reserva))
+
+            def encerrar():
+                decidir_reserva_afetada(usuario=cenario["administrador"], impacto_id=impacto.pk, decisao="ENCERRADA", motivo="Sem complemento")
+
+            def complementar():
+                with self.assertRaisesRegex(ValidationError, "suspensa por fechamento|saldo de entrega desta reserva foi encerrado"):
+                    registrar_retirada_reserva(operador=cenario["operador"], reserva_id=reserva.pk, conferencia=token)
+
+            self.concorrer(encerrar, complementar)
+        self.assertEqual(Movimentacao.objects.filter(reserva=reserva, tipo="RETIRADA").count(), 1)
+        self.assertEqual(ReservaAfetadaFechamento.objects.get(pk=impacto.pk).decisao, "ENCERRADA")
+        self.assertEqual(Reserva.objects.com_etapa().get(pk=reserva.pk).etapa, "EM_USO")

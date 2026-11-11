@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError
-from django.db.models import Exists, OuterRef, Prefetch, Q
+from django.db.models import Exists, F, OuterRef, Prefetch, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -17,7 +17,7 @@ from reservas.models import Reserva
 
 from .fechamentos import (
     configurar_excecao_fechamento, decidir_reserva_afetada, pendencias_de_fechamento,
-    reabrir_fechamento, registrar_fechamento,
+    reabrir_fechamento, registrar_fechamento, saldo_entrega_encerrado,
 )
 from .forms import (
     AlteracaoFechamentoForm, CotaProfessorForm, DecisaoFechamentoForm, FaixaHorarioFormSet, FechamentoEscolarForm,
@@ -73,8 +73,8 @@ def calendario_escola(request):
                 "finalidade_nome": regra.get_finalidade_display(), "periodos": descricao["resumo"].split("; ")})
     excecoes.sort(key=lambda e: (e["data"], e["finalidade"]))
     afetadas = reservas_afetadas(regras=regras)
-    reservas_que_exigem_decisao = Reserva.objects.com_etapa().filter(status=Reserva.Status.ATIVA).filter(
-        Q(tem_retirada=False) | Q(tem_entrega_pendente=True),
+    reservas_que_exigem_decisao = Reserva.objects.com_etapa().filter(status=Reserva.Status.ATIVA, saldo_encerrado=False).filter(
+        Q(tem_retirada=False) | Q(quantidade__gt=F("quantidade_entregue")),
     )
     pendencias = pendencias_de_fechamento().filter(
         fechamento_id=OuterRef("pk"), reserva_id__in=reservas_que_exigem_decisao.values("pk"),
@@ -192,15 +192,18 @@ def decisao_fechamento(request, impacto_id):
     pode_decidir = (
         impacto.decisao == ReservaAfetadaFechamento.Decisao.PENDENTE
         and not impacto.fechamento.reabertura_id and reserva.status == Reserva.Status.ATIVA
+        and not saldo_entrega_encerrado(reserva)
     )
     limite = reserva.fim if tem_retirada else min(reserva.fim, reserva.inicio + Reserva.TOLERANCIA_RETIRADA)
     pode_manter = pode_decidir and timezone.now() < limite and CalendarioEscolar.objects.filter(
         pk=1, permite_manter_em_fechamento=True,
     ).exists()
     pode_cancelar = pode_decidir and not tem_retirada
+    pode_encerrar = pode_decidir and tem_retirada and reserva.movimentacoes.filter(tipo="RETIRADA").count() < reserva.quantidade
     voltar = reverse("calendario:fechamento_detalhe", args=[impacto.fechamento_id])
     form = DecisaoFechamentoForm(
         request.POST if request.method == "POST" else None, pode_cancelar=pode_cancelar, pode_manter=pode_manter,
+        pode_encerrar=pode_encerrar,
     )
     if request.method == "POST" and form.is_valid():
         try:
@@ -214,7 +217,7 @@ def decisao_fechamento(request, impacto_id):
         "form": form, "voltar": voltar, "reserva": reserva,
         "titulo": f"Decidir sobre a reserva #{reserva.pk}", "acao": "Registrar decisão",
         "descricao": "A decisão e o motivo aparecem no histórico da reserva.",
-        "acao_indisponivel": not (pode_cancelar or pode_manter),
+        "acao_indisponivel": not (pode_cancelar or pode_manter or pode_encerrar),
     })
 
 

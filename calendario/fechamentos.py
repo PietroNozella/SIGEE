@@ -123,6 +123,12 @@ def pendencias_de_fechamento():
     )
 
 
+def saldo_entrega_encerrado(reserva):
+    return ReservaAfetadaFechamento.objects.filter(
+        reserva=reserva, decisao=ReservaAfetadaFechamento.Decisao.ENCERRADA,
+    ).exists()
+
+
 def historico_fechamentos_reserva(reserva):
     return reserva.impactos_fechamento.select_related(
         "fechamento__abertura", "fechamento__reabertura", "decidido_por",
@@ -130,6 +136,8 @@ def historico_fechamentos_reserva(reserva):
 
 
 def validar_entrega_em_fechamento(reserva):
+    if saldo_entrega_encerrado(reserva):
+        raise ValidationError("O saldo de entrega desta reserva foi encerrado pelo Administrador. As devoluções continuam disponíveis.")
     if pendencias_de_fechamento().filter(reserva=reserva).exists():
         raise ValidationError("A entrega está suspensa por fechamento da escola, aguardando decisão do Administrador.")
 
@@ -143,6 +151,8 @@ def decidir_reserva_afetada(*, usuario, impacto_id, decisao, motivo, atendimento
     opcoes = ReservaAfetadaFechamento.Decisao
     if impacto.fechamento.reabertura_id or impacto.decisao != opcoes.PENDENTE or reserva.status != Reserva.Status.ATIVA:
         raise ValidationError("Esta reserva já foi resolvida ou deixou de ser afetada pelo fechamento.")
+    if saldo_entrega_encerrado(reserva):
+        raise ValidationError("O saldo de entrega desta reserva já foi encerrado.")
     if not motivo.strip():
         raise ValidationError("Informe o motivo da decisão.")
     tem_retirada = _possui_retirada_vinculada(reserva)
@@ -161,6 +171,10 @@ def decidir_reserva_afetada(*, usuario, impacto_id, decisao, motivo, atendimento
         limite = reserva.fim if tem_retirada else min(reserva.fim, reserva.inicio + Reserva.TOLERANCIA_RETIRADA)
         if agora >= limite:
             raise ValidationError("O prazo de entrega da reserva terminou.")
+    elif decisao == opcoes.ENCERRADA:
+        entregues = reserva.movimentacoes.filter(tipo="RETIRADA").count()
+        if not 0 < entregues < reserva.quantidade:
+            raise ValidationError("Encerrar o saldo exige uma entrega parcial, com unidades ainda não entregues.")
     else:
         raise ValidationError("Selecione uma decisão válida.")
 
@@ -169,9 +183,19 @@ def decidir_reserva_afetada(*, usuario, impacto_id, decisao, motivo, atendimento
     impacto.decidido_por = atual
     impacto.decidido_em = agora
     impacto.save(update_fields=["decisao", "motivo", "decidido_por", "decidido_em"])
+    if decisao == opcoes.ENCERRADA:
+        # Um saldo único não pode continuar oferecendo decisões em outros fechamentos.
+        pendencias_de_fechamento().filter(reserva=reserva).update(
+            decisao=decisao, motivo=motivo.strip(), decidido_por=atual, decidido_em=agora,
+        )
+    acoes = {
+        opcoes.CANCELADA: AcaoAuditoria.RESERVA_CANCELADA,
+        opcoes.MANTIDA: AcaoAuditoria.RESERVA_MANTIDA_FECHAMENTO,
+        opcoes.ENCERRADA: AcaoAuditoria.SALDO_ENTREGA_ENCERRADO,
+    }
     registrar_evento(
         usuario=atual,
-        acao=AcaoAuditoria.RESERVA_CANCELADA if decisao == opcoes.CANCELADA else AcaoAuditoria.RESERVA_MANTIDA_FECHAMENTO,
+        acao=acoes[decisao],
         resultado=RegistroAuditoria.Resultado.SUCESSO, entidade="reservas.Reserva", entidade_id=reserva.pk,
     )
     return impacto

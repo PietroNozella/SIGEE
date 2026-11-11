@@ -106,6 +106,7 @@ class ReservaAfetadaFechamento(models.Model):
         PENDENTE = "PENDENTE", "Pendente de decisão"
         MANTIDA = "MANTIDA", "Mantida com atendimento excepcional"
         CANCELADA = "CANCELADA", "Cancelada por fechamento da escola"
+        ENCERRADA = "ENCERRADA", "Saldo de entrega encerrado"
 
     fechamento = models.ForeignKey(FechamentoEscolar, on_delete=models.PROTECT, related_name="reservas_afetadas")
     reserva = models.ForeignKey("reservas.Reserva", on_delete=models.PROTECT, related_name="impactos_fechamento")
@@ -120,7 +121,7 @@ class ReservaAfetadaFechamento(models.Model):
             models.CheckConstraint(
                 condition=(
                     Q(decisao="PENDENTE", motivo="", decidido_por__isnull=True, decidido_em__isnull=True)
-                    | (Q(decisao__in=["MANTIDA", "CANCELADA"], decidido_por__isnull=False, decidido_em__isnull=False) & ~Q(motivo=""))
+                    | (Q(decisao__in=["MANTIDA", "CANCELADA", "ENCERRADA"], decidido_por__isnull=False, decidido_em__isnull=False) & ~Q(motivo=""))
                 ),
                 name="calendario_decisao_fechamento_completa",
             ),

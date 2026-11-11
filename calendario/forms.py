@@ -132,12 +132,14 @@ class DecisaoFechamentoForm(MotivoFechamentoForm):
     )
     field_order = ("decisao", "atendimento_confirmado", "motivo")
 
-    def __init__(self, *args, pode_cancelar, pode_manter, **kwargs):
+    def __init__(self, *args, pode_cancelar, pode_manter, pode_encerrar=False, **kwargs):
         super().__init__(*args, **kwargs)
         opcoes = ReservaAfetadaFechamento.Decisao
         escolhas = [("", "Selecione")]
         if pode_cancelar:
             escolhas.append((opcoes.CANCELADA, "Cancelar por fechamento"))
+        if pode_encerrar:
+            escolhas.append((opcoes.ENCERRADA, "Encerrar saldo de entrega"))
         if pode_manter:
             escolhas.append((opcoes.MANTIDA, "Manter com atendimento excepcional"))
         else:

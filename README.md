@@ -64,7 +64,7 @@ Feriados nacionais são informativos e não impedem uma reserva. A indisponibili
 
 Os registros antigos de retirada sem reserva permanecem disponíveis para devolução e consulta. As regras de compatibilidade estão no [fluxo de reservas, uso e histórico](docs/tecnica/fluxo-reservas-uso-historico.md).
 
-A implementação desta etapa aguarda revisão conjunta com a dupla. Regularização retroativa de entregas sem registro confirmado, tratamento específico de perda ou extravio, autorização para exceder cotas, permissões funcionais configuráveis e reserva de unidades atualmente em uso permanecem fora do escopo implementado. Os testes de concorrência disponíveis no repositório não foram executados no PostgreSQL nesta etapa; essa limitação não deve ser apresentada como validação concluída.
+A implementação desta etapa aguarda revisão conjunta com a dupla. Regularização retroativa de entregas sem registro confirmado, tratamento específico de perda ou extravio, autorização para exceder cotas, permissões funcionais configuráveis e reserva de unidades atualmente em uso permanecem fora do escopo implementado. Na consolidação local de 11/11/2026, a suíte completa executou 670 testes em PostgreSQL 17.6 isolado, sem falhas nem cenários ignorados, incluindo concorrência. Essa evidência não equivale a validação institucional ou do ambiente publicado.
 
 ## Perfis de acesso
 

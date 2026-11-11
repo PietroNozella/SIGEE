@@ -116,6 +116,8 @@ Aplicar as migrations compatíveis com a nova versão antes de liberar os fluxos
 
 Em PostgreSQL, `calendario.0003` habilita RLS e revoga privilégios de acesso público e das roles de API encontradas nas duas tabelas novas de fechamento e decisão. Isso não substitui a conferência das tabelas anteriores do calendário nem corrige a lista de prefixos do script geral. Conferir todas as tabelas `calendario_*` no procedimento de proteção, observada a limitação indicada acima. Uma reversão de schema pode remover configurações e históricos; reverter o código não desfaz reservas, cancelamentos ou decisões já registrados.
 
+`calendario.0004_encerramento_saldo_entrega` acrescenta a decisão de encerramento do saldo à restrição de completude, sem criar tabelas ou alterar decisões existentes. Aplicá-la antes de disponibilizar essa ação. A reversão para `0003` não aceita decisões `ENCERRADA` já registradas; não remapear nem apagar esse histórico automaticamente. Uma recuperação posterior deve avaliar os registros existentes e priorizar correção adiante.
+
 ### Limites de sessão e documentos legais
 
 O controle de sessão não acrescenta tabelas nem requer migration própria. A nova versão usa `DJANGO_SESSION_IDLE_TIMEOUT=1800` e `DJANGO_SESSION_ABSOLUTE_TIMEOUT=28800` como padrões; os limites precisam ser positivos. `DJANGO_SESSION_COOKIE_AGE` passa a ter padrão de 28800 segundos para sessões sem prazo específico, e o login define uma expiração absoluta fixa quando o encerramento ao fechar o navegador está desabilitado. A `DJANGO_SECRET_KEY` existente continua em uso; não há token adicional a cadastrar.
@@ -171,7 +173,7 @@ python manage.py test --settings=config.settings
 
 O resultado precisa mostrar a execução dos cenários de concorrência, sem descarte por falta de suporte a bloqueio de linha. Ao concluir, feche o terminal dedicado para descartar as variáveis temporárias. Preparar estas instruções não representa execução ou aprovação dos testes em PostgreSQL.
 
-Os testes concorrentes estão disponíveis para verificação adicional. Nesta etapa, a validação executada utilizou SQLite em memória; 26 cenários dependentes de bloqueio de linha ficaram ignorados. Não há resultado de execução desses cenários no PostgreSQL a declarar.
+Na consolidação local de 11/11/2026, a suíte completa executou 670 testes em PostgreSQL 17.6 descartável, acessível somente por `127.0.0.1`, com banco e credenciais próprios e e-mail em memória. Todos passaram, sem cenários ignorados. A execução incluiu os cenários de concorrência antes ignorados no SQLite e as disputas entre edição cadastral e entrega e entre encerramento do saldo e complemento. Depois de um ajuste apenas no aviso da conferência, os 14 testes de fechamento passaram novamente no mesmo ambiente isolado. Esses resultados não validam o banco publicado, desempenho, cobertura por linhas ou uso institucional.
 
 ## Referências
 

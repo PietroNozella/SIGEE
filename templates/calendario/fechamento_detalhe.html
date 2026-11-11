@@ -22,13 +22,14 @@
                     {% if impacto.decisao != 'PENDENTE' %}
                     <p class="calendar-impact">{{ impacto.get_decisao_display }} · {{ impacto.decidido_por.get_full_name|default:impacto.decidido_por.username }} · {{ impacto.decidido_em|date:"d/m/Y H:i" }}</p>
                     <p>{{ impacto.motivo|linebreaksbr }}</p>
+                    {% elif reserva.saldo_encerrado %}<p>Saldo de entrega encerrado em outra decisão desta reserva.</p>
                     {% elif fechamento.reabertura_id %}<p>Suspensão retirada com a reabertura.</p>
                     {% elif reserva.status != 'ATIVA' %}<p>{{ reserva.get_status_display }}</p>
                     {% elif reserva.tem_retirada %}<p class="calendar-impact">Entrega complementar suspensa. {{ reserva.quantidade_entregue }} unidade(s) já entregue(s).</p>
                     {% else %}<p class="calendar-impact">Aguardando decisão do Administrador.</p>{% endif %}
                 </div>
-                {% if impacto.decisao == 'PENDENTE' and not fechamento.reabertura_id and reserva.status == 'ATIVA' %}
-                    {% if not reserva.tem_retirada or reserva.fim > agora %}
+                {% if impacto.decisao == 'PENDENTE' and not fechamento.reabertura_id and reserva.status == 'ATIVA' and not reserva.saldo_encerrado %}
+                    {% if not reserva.tem_retirada or reserva.quantidade_entregue < reserva.quantidade %}
                     <a class="btn btn-secondary-sigee" href="{% url 'calendario:decisao_fechamento' impacto.pk %}">Decidir reserva</a>
                     {% endif %}
                 {% endif %}

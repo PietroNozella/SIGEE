@@ -19,9 +19,12 @@ from .cotas import cota_no_periodo
 def _substituir_unidades_bloqueadas(reserva, usuario):
     """Exige bloqueios do tipo e da reserva, nesta ordem, na transação chamadora."""
     from movimentacoes.models import Movimentacao
+    from calendario.fechamentos import saldo_entrega_encerrado
 
     agora = timezone.now()
     if reserva.status != Reserva.Status.ATIVA or reserva.fim <= agora:
+        return 0
+    if saldo_entrega_encerrado(reserva):
         return 0
     if reserva.inicio + Reserva.TOLERANCIA_RETIRADA <= agora and not _possui_retirada_vinculada(reserva):
         return 0
@@ -81,7 +84,9 @@ def substituir_reservas_do_equipamento(equipamento, usuario):
 
 def resumo_entrega(reserva):
     from movimentacoes.models import Movimentacao
+    from calendario.fechamentos import saldo_entrega_encerrado
 
+    saldo_encerrado = saldo_entrega_encerrado(reserva)
     retiradas = Movimentacao.objects.filter(reserva=reserva, tipo="RETIRADA")
     ids_entregues = set(retiradas.values_list("equipamento_id", flat=True))
     unidades = list(reserva.itens.select_related("equipamento__tipo", "equipamento__local").order_by("equipamento__numero_patrimonio"))
@@ -93,7 +98,7 @@ def resumo_entrega(reserva):
         equipamento = item.equipamento
         item.ja_entregue = equipamento.pk in ids_entregues
         item.apta_para_entrega = (
-            not item.ja_entregue and equipamento.ativo
+            not saldo_encerrado and not item.ja_entregue and equipamento.ativo
             and equipamento.pk in sem_custodia
             and equipamento.situacao == Equipamento.Situacao.DISPONIVEL
             and equipamento.tipo_id == reserva.tipo_equipamento_id and equipamento.local_id == reserva.local_id
@@ -103,8 +108,9 @@ def resumo_entrega(reserva):
     encerrado = reserva.fim <= timezone.now()
     return {
         "unidades": unidades, "entregues": len(ids_entregues), "aptas": aptas,
-        "saldo": saldo, "pendentes": 0 if encerrado else saldo,
-        "nao_atendidas": saldo if encerrado else 0, "prazo_encerrado": encerrado,
+        "saldo": saldo, "pendentes": 0 if encerrado or saldo_encerrado else saldo,
+        "nao_atendidas": saldo if encerrado or saldo_encerrado else 0, "prazo_encerrado": encerrado,
+        "saldo_encerrado": saldo_encerrado,
         "devolucoes_pendentes": retiradas.filter(devolucoes__isnull=True).count(),
         "entrega_parcial": aptas > 0 and aptas < saldo,
         "tem_indisponiveis": aptas < saldo,

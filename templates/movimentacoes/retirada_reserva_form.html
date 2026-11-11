@@ -30,6 +30,7 @@
                     <td>{{ item.equipamento.tipo.nome }}<span class="table-metadata">{{ item.equipamento.local.nome }}</span></td>
                     <td>
                         {% if item.ja_entregue %}<span class="table-metadata">Entrega já registrada</span>
+                        {% elif resumo.saldo_encerrado %}<span class="table-metadata">Não atendido — saldo encerrado</span>
                         {% elif item.equipamento_id in patrimonios_atrasados %}<span class="table-metadata">Aguardando devolução anterior vencida</span>
                         {% elif item.apta_para_entrega %}<span class="status-badge status-disponivel">Apto para entrega</span>
                         {% else %}
@@ -44,6 +45,7 @@
         </div>
         {% include "reservas/_substituicoes.html" %}
         {% if reserva.status != 'ATIVA' %}<p class="operator-notice" role="status">Reservas canceladas ou expiradas não podem ser retiradas.</p>
+        {% elif resumo.saldo_encerrado %}<p role="status">O saldo de entrega foi encerrado pelo Administrador.</p>
         {% elif resumo.prazo_encerrado %}<p role="status">O prazo para entrega desta reserva terminou.</p>
         {% elif not resumo.saldo %}<p role="status">Todos os equipamentos desta reserva já foram entregues.</p>
         {% elif entrega_suspensa %}<p>Confira novamente a reserva após a decisão do Administrador.</p>

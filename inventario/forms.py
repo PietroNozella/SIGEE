@@ -25,7 +25,8 @@ class EquipamentoForm(forms.ModelForm):
         self.fields["local"].empty_label = "Selecione um local"
         self.fields["situacao"].choices = [
             ("", "Selecione uma situação"),
-            *Equipamento.Situacao.choices,
+            *((valor, rotulo) for valor, rotulo in Equipamento.Situacao.choices
+              if valor != Equipamento.Situacao.EM_USO or self.instance.situacao == valor),
         ]
 
         field_configuration = {
@@ -77,6 +78,15 @@ class EquipamentoForm(forms.ModelForm):
 
     def clean_nome(self):
         return self.cleaned_data["nome"].strip()
+
+    def clean(self):
+        dados = super().clean()
+        if self.instance.pk and dados.get("nome") and dados.get("categoria"):
+            tipo = self.instance.tipo
+            tipo_alterado = dados["nome"] != tipo.nome or dados["categoria"].pk != tipo.categoria_id
+            if tipo_alterado and self.instance.possui_compromisso_vigente():
+                raise forms.ValidationError("Não altere o tipo/modelo ou local de uma unidade com reserva vigente ou retirada em aberto.")
+        return dados
 
     def save(self, commit=True):
         equipamento = super().save(commit=False)

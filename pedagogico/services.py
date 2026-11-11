@@ -167,7 +167,12 @@ def _salvar_contexto(*, professor, retiradas, origem, turma, disciplina, ativida
             devolvidas = Movimentacao.objects.filter(
                 tipo=Movimentacao.Tipo.DEVOLUCAO, retirada_origem__in=retiradas,
             ).count()
-            saldo_entrega = isinstance(origem, Reserva) and origem.status == Reserva.Status.ATIVA and origem.fim > timezone.now() and len(retiradas) < origem.quantidade
+            from calendario.fechamentos import saldo_entrega_encerrado
+            saldo_entrega = (
+                isinstance(origem, Reserva) and origem.status == Reserva.Status.ATIVA
+                and origem.fim > timezone.now() and len(retiradas) < origem.quantidade
+                and not saldo_entrega_encerrado(origem)
+            )
             if devolvidas == len(retiradas) and not saldo_entrega:
                 raise ValidationError("A devolução integral encerrou o registro e a edição do contexto pedagógico.")
             if existentes and len(existentes) != len(retiradas):
