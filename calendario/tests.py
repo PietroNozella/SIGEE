@@ -135,6 +135,7 @@ class CalendarioTests(TestCase):
         conferencia = self.client.get(url).context["form"].initial["conferencia"]
 
         with patch("django.utils.timezone.now", return_value=self.inicio + Reserva.TOLERANCIA_RETIRADA):
+            self.client.force_login(self.cenario["operador"])
             resposta = self.client.post(url, {"conferencia": conferencia})
 
         self.assertContains(resposta, "expirou após os 30 minutos")
@@ -341,7 +342,7 @@ class CalendarioTests(TestCase):
         self.client.force_login(self.admin)
         self.assertEqual(self.client.get(url, {"ano": "2026"}).status_code, 403)
         self.client.logout()
-        self.assertEqual(self.client.get(url, {"ano": "2026"}).status_code, 302)
+        self.assertEqual(self.client.get(url, {"ano": "2026"}).status_code, 401)
         consultar.assert_not_called()
 
     def test_seletor_de_excecao_reutiliza_calendario_com_feriados(self):

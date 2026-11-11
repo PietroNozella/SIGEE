@@ -42,7 +42,11 @@ CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_AGE = int(os.getenv("DJANGO_SESSION_COOKIE_AGE", "1209600"))
+SESSION_COOKIE_AGE = int(os.getenv("DJANGO_SESSION_COOKIE_AGE", "28800"))
+SESSION_IDLE_TIMEOUT = int(os.getenv("DJANGO_SESSION_IDLE_TIMEOUT", "1800"))
+SESSION_ABSOLUTE_TIMEOUT = int(os.getenv("DJANGO_SESSION_ABSOLUTE_TIMEOUT", "28800"))
+if SESSION_IDLE_TIMEOUT <= 0 or SESSION_ABSOLUTE_TIMEOUT <= 0:
+    raise ImproperlyConfigured("Os limites de sessão devem ser positivos, em segundos.")
 SESSION_EXPIRE_AT_BROWSER_CLOSE = (
     os.getenv("DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE", "False").lower() == "true"
 )
@@ -87,6 +91,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'usuarios.middleware.LimiteSessaoMiddleware',
     'legal.middleware.ExigirAceiteDocumentosLegaisMiddleware',
     'auditoria.middleware.AuditoriaAcessoNegadoMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -216,8 +221,8 @@ DEFAULT_FROM_EMAIL = os.getenv(
 
 TERMOS_USO_VERSAO = "2.0"
 TERMOS_USO_DATA_VIGENCIA = "21/09/2026"
-POLITICA_PRIVACIDADE_VERSAO = "2.1"
-POLITICA_PRIVACIDADE_DATA_VIGENCIA = "01/11/2026"
+POLITICA_PRIVACIDADE_VERSAO = "2.2"
+POLITICA_PRIVACIDADE_DATA_VIGENCIA = "10/11/2026"
 CONTATO_PRIVACIDADE = os.getenv(
     "SIGEE_CONTATO_PRIVACIDADE",
     "suporte.sigee@gmail.com",

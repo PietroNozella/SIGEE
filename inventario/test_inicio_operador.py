@@ -44,10 +44,12 @@ class InicioOperadorTests(TestCase):
         )
         operador = self.cenario["operador"]
         with patch("django.utils.timezone.now", return_value=anterior.inicio):
+            self.client.force_login(operador)
             retiradas = registrar_entrega_conferida(operador=operador, reserva_id=anterior.pk)
             self.assertEqual(self.client.get(self.url).context["total_pendencias"], 0)
 
         with patch("django.utils.timezone.now", return_value=self.reserva.inicio):
+            self.client.force_login(operador)
             resposta = self.client.get(self.url)
             self.assertEqual(list(resposta.context["pendencias"]), [self.reserva])
             self.assertEqual(resposta.context["total_pendencias"], 1)

@@ -69,6 +69,13 @@
                     <p>Entre com suas credenciais para continuar.</p>
                 </header>
 
+                {% if sessao_expirada %}
+                    <div class="login-error" role="status">
+                        Sua sessão terminou. Entre novamente para continuar.
+                        Se você estava enviando um formulário, confira os dados e envie novamente após entrar.
+                    </div>
+                {% endif %}
+
                 {% if form.errors %}
                     <div class="login-error" id="login-error" role="alert">
                         Nome de usuário ou senha inválidos.

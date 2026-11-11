@@ -28,6 +28,10 @@ def registrar_login_falhou(sender, credentials, request, **kwargs):
 def registrar_logout_realizado(sender, request, user, **kwargs):
     registrar_evento(
         usuario=user,
-        acao=AcaoAuditoria.LOGOUT_REALIZADO,
+        acao=(
+            AcaoAuditoria.SESSAO_EXPIRADA
+            if getattr(request, "sessao_expirada", False)
+            else AcaoAuditoria.LOGOUT_REALIZADO
+        ),
         resultado=RegistroAuditoria.Resultado.SUCESSO,
     )

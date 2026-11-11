@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const params = new URLSearchParams({tipo_equipamento: type.value});
         if (locationId) params.set("local", locationId);
         try {
-            const response = await fetch(form.dataset.availabilityUrl + "?" + params, {
+            const response = await window.sigeeFetch(form.dataset.availabilityUrl + "?" + params, {
                 signal: controller.signal, headers: {Accept: "application/json"},
             });
             const payload = await response.json();

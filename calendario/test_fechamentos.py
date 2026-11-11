@@ -41,10 +41,10 @@ class FechamentoEscolarTests(TestCase):
         self.url_fechamento = reverse("calendario:fechamento_novo")
         self.url_entrega = reverse("movimentacoes:retirada_reserva_registrar", args=[self.reserva.pk])
         self.url_reserva = reverse("reservas:reserva_detalhe", args=[self.reserva.pk])
-        self.client.force_login(self.admin)
         relogio = patch("django.utils.timezone.now", return_value=self.antes)
         relogio.start()
         self.addCleanup(relogio.stop)
+        self.client.force_login(self.admin)
 
     def versao(self):
         return CalendarioEscolar.objects.values_list("versao", flat=True).first() or 1
@@ -90,6 +90,7 @@ class FechamentoEscolarTests(TestCase):
         dados = {"decisao": "CANCELADA", "motivo": "Escola sem atendimento"}
         apos = self.reserva.inicio + Reserva.TOLERANCIA_RETIRADA
         with patch("django.utils.timezone.now", return_value=apos):
+            self.client.force_login(self.admin)
             self.assertEqual(expirar_reservas_vencidas(), 0)
             self.assertEqual(self.client.post(url, dados).status_code, 302)
             self.assertEqual(self.client.post(url, dados).status_code, 200)
@@ -154,6 +155,7 @@ class FechamentoEscolarTests(TestCase):
             numero_patrimonio="SUBSTITUTO-FECHAMENTO", tipo=self.reserva.tipo_equipamento, local=self.reserva.local,
         )
         with patch("django.utils.timezone.now", return_value=agora + timedelta(days=1)):
+            self.client.force_login(self.admin)
             detalhe = reverse("calendario:fechamento_detalhe", args=[fechamento.pk])
             self.assertContains(self.client.get(reverse("calendario:calendario_escola")), detalhe)
             with self.assertRaisesMessage(ValidationError, "tem retirada registrada"):

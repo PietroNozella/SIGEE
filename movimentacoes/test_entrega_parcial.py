@@ -27,10 +27,10 @@ class EntregaParcialTests(TestCase):
 
     def setUp(self):
         self.operador = self.cenario["operador"]
-        self.client.force_login(self.operador)
         self.relogio = patch("movimentacoes.services.timezone.now", return_value=self.reserva.inicio + timedelta(minutes=5))
         self.agora = self.relogio.start()
         self.addCleanup(self.relogio.stop)
+        self.client.force_login(self.operador)
         self.manutencao = abrir_manutencao(administrador=self.operador, equipamento_id=self.unidades[0].pk, descricao_problema="Não liga")
 
     def entregar(self, **dados):
@@ -94,8 +94,8 @@ class EntregaParcialTests(TestCase):
             operador=self.operador, retirada_id=entregas[0].pk,
             retiradas_ids=[entrega.pk for entrega in entregas],
         )
-        self.client.force_login(self.cenario["administrador"])
         with patch("movimentacoes.services.timezone.now", return_value=self.reserva.inicio + timedelta(minutes=45)):
+            self.client.force_login(self.cenario["administrador"])
             resposta = self.client.get(reverse("inventario:painel"))
         etapas = {item["chave"]: item["total"] for item in resposta.context["etapas_reservas"]}
         self.assertEqual(etapas["AGUARDANDO"], 1)

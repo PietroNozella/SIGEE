@@ -443,7 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const url = new URL(reservationCalendar.dataset.holidaysUrl, window.location.origin);
         url.searchParams.set("ano", String(ano));
-        const requisicao = fetch(url, { headers: { Accept: "application/json" } })
+        const requisicao = window.sigeeFetch(url, { headers: { Accept: "application/json" } })
             .then(async (response) => {
                 const payload = await response.json();
                 if (!response.ok) throw new Error(payload.erro || "Não foi possível consultar os feriados.");
@@ -820,7 +820,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         try {
-            const response = await fetch(`${reservationForm.dataset.availabilityUrl}?${params}`, {
+            const response = await window.sigeeFetch(`${reservationForm.dataset.availabilityUrl}?${params}`, {
                 headers: { Accept: "application/json" },
             });
             const payload = await response.json();

@@ -8,6 +8,7 @@ from .services import usuario_possui_aceite_vigente
 
 
 ROTAS_ISENTAS = {
+    "usuarios:sessao_status",
     "login",
     "logout",
     "password_reset",

@@ -430,7 +430,7 @@ class IndicadoresPedagogicosTests(TestCase):
         administrador.save(update_fields=["is_active"])
         self.assertFalse(pode_consultar_indicadores_pedagogicos(administrador))
         self.client.force_login(administrador)
-        self.assertRedirects(self.client.get(self.url), f"{reverse('login')}?next={self.url}")
+        self.assertRedirects(self.client.get(self.url), f"{reverse('login')}?sessao=expirada&next={self.url}")
 
     def test_consulta_nao_altera_registros_e_menu_destaca_apenas_indicadores(self):
         self.salvar()

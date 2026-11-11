@@ -13,6 +13,41 @@ Este documento descreve os controles do `RF01` e do `RS-07`. O fluxo usa `contas
 
 A mensagem para credenciais inválidas é neutra e não informa se o nome de usuário existe. Não há cadastro público.
 
+## Duração da sessão
+
+A proposta do PDF de consolidação (páginas 5–6) foi adotada nesta etapa com 30 minutos de
+inatividade e 8 horas desde o login, usando as sessões nativas do Django. Os limites
+em segundos são configurados por `DJANGO_SESSION_IDLE_TIMEOUT` e
+`DJANGO_SESSION_ABSOLUTE_TIMEOUT`; ambos devem ser positivos.
+
+O middleware valida os dois limites antes de executar as views. Navegação e
+formulários com resposta inferior a 400 atualizam a atividade. Consultas JSON,
+disponibilidade, feriados e a verificação periódica de sessão não atualizam esse
+horário. Requisições identificadas pelo navegador como fetch também não renovam.
+Digitar em um formulário sem enviar nenhuma requisição não renova a sessão.
+Uma data fixa de expiração impede que gravações na sessão estendam o limite de
+8 horas. A opção de encerrar ao fechar o navegador continua disponível, sem
+substituir a validação dos dois prazos no servidor.
+
+Ao expirar, a sessão é invalidada no servidor e o usuário recebe um aviso no login.
+Expirações detectadas pelo middleware com usuário ainda identificado geram
+`SESSAO_EXPIRADA` na auditoria; sessões já expiradas pelo armazenamento nativo
+não possuem identidade disponível para esse registro. Requisições JSON recebem 401 com o código
+`sessao_expirada`. O navegador consulta o estado a cada 30 segundos e ao voltar à
+aba, sem renovar o prazo, para encaminhar ao login mesmo com uma tela aberta.
+Respostas autenticadas e de expiração não devem ser armazenadas em cache.
+
+Operações POST expiradas são interrompidas antes da view e não são retomadas
+automaticamente após novo login: o usuário deve conferir e reenviar o formulário.
+Sessões abertas antes da implantação, sem os horários de controle, exigem novo
+login para estabelecer um início confiável. Não há mudança de schema ou migration.
+A Política de Privacidade passa à versão 2.2 para refletir os prazos atuais;
+aceites anteriores permanecem no histórico e o fluxo nativo solicita ciência da
+versão atualizada.
+
+Os cenários de limites, consultas passivas, reautenticação, auditoria e bloqueio
+de gravações estão em `usuarios/test_sessoes.py`.
+
 ## Recuperação de senha implementada
 
 1. O usuário abre `Esqueceu a senha?` e informa o e-mail único cadastrado.

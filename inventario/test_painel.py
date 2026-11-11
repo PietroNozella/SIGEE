@@ -151,7 +151,7 @@ class PainelTests(TestCase):
         self.admin.save(update_fields=["is_active"])
         self.assertFalse(pode_consultar_painel(self.admin))
         self.client.force_login(self.admin)
-        self.assertRedirects(self.client.get(self.url), f"{reverse('login')}?next={self.url}")
+        self.assertRedirects(self.client.get(self.url), f"{reverse('login')}?sessao=expirada&next={self.url}")
 
     def test_menu_destaca_somente_painel_e_respeita_permissao_do_historico(self):
         grupo = Group.objects.get(name="Administrador")
@@ -221,6 +221,7 @@ class PainelTests(TestCase):
     def test_retiradas_periodo_local_limites_e_dias_sem_registros(self, agora):
         # Em UTC já é dia 15; em São Paulo ainda é dia 14.
         agora.return_value = datetime(2026, 10, 15, 1, 30, tzinfo=datetime_timezone.utc)
+        self.client.force_login(self.admin)
         fuso = timezone.get_default_timezone()
         hoje = timezone.localdate(timezone=fuso)
         inicio = timezone.make_aware(datetime.combine(hoje - timedelta(days=29), time.min), fuso)
@@ -383,6 +384,7 @@ class PainelTests(TestCase):
     @patch("inventario.views.timezone.now")
     def test_periodos_comparam_janelas_locais_sem_sobreposicao(self, agora):
         agora.return_value = datetime(2026, 11, 2, 15, tzinfo=datetime_timezone.utc)
+        self.client.force_login(self.admin)
         fuso = timezone.get_default_timezone()
         unidade = self.equipamento("PERIODO", ativo=False)
         inicio = timezone.make_aware(datetime(2026, 10, 27), fuso)
@@ -445,6 +447,7 @@ class PainelTests(TestCase):
     @patch("inventario.views.timezone.now")
     def test_etapas_reservas_usam_tolerancia_e_devolucoes_sem_gravar(self, agora):
         agora.return_value = datetime(2026, 11, 2, 15, tzinfo=datetime_timezone.utc)
+        self.client.force_login(self.admin)
         instante = agora.return_value
         self.reserva(inicio=instante - timedelta(minutes=29))
         expirada = self.reserva(inicio=instante - Reserva.TOLERANCIA_RETIRADA)
@@ -473,6 +476,7 @@ class PainelTests(TestCase):
     @patch("inventario.views.timezone.now")
     def test_pendencias_atuais_independem_do_periodo_e_excluem_devolvidas(self, agora):
         agora.return_value = datetime(2026, 11, 2, 15, tzinfo=datetime_timezone.utc)
+        self.client.force_login(self.admin)
         instante = agora.return_value
         antigas = []
         for indice in range(7):

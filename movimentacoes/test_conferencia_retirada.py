@@ -31,11 +31,11 @@ class ConferenciaRetiradaTests(TestCase):
 
     def setUp(self):
         self.operador = self.cenario["operador"]
-        self.client.force_login(self.operador)
         self.url = reverse("movimentacoes:retirada_reserva_registrar", args=[self.reserva.pk])
         relogio = patch("django.utils.timezone.now", return_value=self.reserva.inicio + timedelta(minutes=5))
         relogio.start()
         self.addCleanup(relogio.stop)
+        self.client.force_login(self.operador)
 
     def conferir(self):
         return self.client.get(self.url).context["form"].initial["conferencia"]
@@ -139,6 +139,7 @@ class ConferenciaRetiradaTests(TestCase):
         )
         antes = list(Movimentacao.objects.order_by("pk").values())
         with patch("django.utils.timezone.now", return_value=self.reserva.fim + timedelta(hours=1)):
+            self.client.force_login(self.operador)
             resposta = self.client.post(self.url, {"conferencia": token}, follow=True)
         self.assertContains(resposta, "já registrada")
         self.assertEqual(list(Movimentacao.objects.order_by("pk").values()), antes)

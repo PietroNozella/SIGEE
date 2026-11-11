@@ -205,7 +205,10 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="{% static 'inventario/js/sigee.js' %}?v=20261110.5"></script>
+    {% if user.is_authenticated %}
+        <script src="{% static 'inventario/js/sessao.js' %}?v=20261110.1" data-session-status-url="{% url 'usuarios:sessao_status' %}"></script>
+    {% endif %}
+    <script src="{% static 'inventario/js/sigee.js' %}?v=20261110.6"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

@@ -54,7 +54,7 @@
 
     <section>
         <h2>4. Cookies necessários</h2>
-        <p>O SIGEE utiliza somente cookies técnicos do Django: o cookie de sessão mantém a autenticação e o cookie CSRF protege formulários contra requisições forjadas. A configuração atual permite sessão por até 14 dias e o cookie CSRF por até um ano, sujeitos à revisão no plano de retenção. Eles não são utilizados para publicidade, análise comportamental ou personalização comercial.</p>
+        <p>O SIGEE utiliza somente cookies técnicos do Django: o cookie de sessão mantém a autenticação e o cookie CSRF protege formulários contra requisições forjadas. Na configuração atual, a sessão termina após 30 minutos sem navegação ou envio de formulários, ou ao completar 8 horas desde o login, mesmo com atividade. Consultas automáticas de disponibilidade, feriados e estado da sessão não renovam esses prazos. Os limites são configuráveis pela manutenção técnica. O cookie CSRF permanece por até um ano. Esses cookies não são utilizados para publicidade, análise comportamental ou personalização comercial.</p>
     </section>
 
     <section>

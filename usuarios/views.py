@@ -7,8 +7,10 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
 from auditoria.eventos import AcaoAuditoria
@@ -26,15 +28,31 @@ from .permissoes import (
     usuarios_funcionais,
 )
 from .services import alterar_situacao_usuario
+from .sessoes import segundos_restantes
 
 
 class EntrarView(LoginView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["sessao_expirada"] = (
+            getattr(self.request, "sessao_expirada", False)
+            or self.request.GET.get("sessao") == "expirada"
+        )
+        return context
+
     def get_default_redirect_url(self):
         if pode_consultar_inicio_operador(self.request.user):
             return reverse("inventario:inicio_operador")
         if pode_consultar_painel(self.request.user):
             return reverse("inventario:painel")
         return super().get_default_redirect_url()
+
+
+@never_cache
+@login_required
+@require_GET
+def sessao_status(request):
+    return JsonResponse({"segundos_restantes": segundos_restantes(request.session)})
 
 
 @login_required

@@ -12,7 +12,7 @@ O SIGEE não presume uma base legal única para todos os tratamentos. A institui
 
 O inventário completo, incluindo conta, sessão, proteção contra abuso, recuperação de senha, reservas e planejamento pedagógico, movimentações, manutenção, utilizações pedagógicas, auditoria, aceite, campos livres, infraestrutura e fornecedores, está em [Governança e inventário de dados pessoais](governanca-dados-pessoais.md). A Política apresentada na aplicação descreve esses dados e finalidades. Campos livres não devem ser usados para registrar dados pessoais excessivos ou sensíveis sem necessidade e autorização institucional.
 
-Os Termos de Uso permanecem na versão 2.0, de 21/09/2026. A Política de Privacidade está na versão 2.1, de 01/11/2026, com a descrição de manutenção, contexto pedagógico e envio por SMTP configurável. As versões e datas são definidas em `config/settings.py`; após a publicação desta revisão, contas com aceite da Política anterior precisam confirmar a versão vigente, preservando os registros anteriores.
+Os Termos de Uso permanecem na versão 2.0, de 21/09/2026. A Política de Privacidade está na versão 2.2, de 10/11/2026, com os limites de sessão de 30 minutos de inatividade e 8 horas desde o login. Ela preserva a descrição de manutenção, contexto pedagógico e envio por SMTP configurável da versão anterior. As versões e datas são definidas em `config/settings.py`; após a publicação desta revisão, contas com aceite da Política anterior precisam confirmar a versão vigente, preservando os registros anteriores.
 
 ## Fluxo implementado
 

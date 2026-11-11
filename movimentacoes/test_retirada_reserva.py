@@ -57,11 +57,11 @@ class RetiradaReservaTests(TestCase):
         self.operador = self.cenario["operador"]
         self.url = reverse("movimentacoes:retirada_reserva_registrar", args=[self.reserva.pk])
         self.lista = reverse("movimentacoes:retirada_reserva_lista")
-        self.client.force_login(self.operador)
         self.agora = self.reserva.inicio + timedelta(minutes=10)
         self.relogio = patch("movimentacoes.services.timezone.now", return_value=self.agora)
         self.relogio.start()
         self.addCleanup(self.relogio.stop)
+        self.client.force_login(self.operador)
 
     def retirar(self, **alteracoes):
         return registrar_entrega_conferida(**{

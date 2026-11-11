@@ -38,7 +38,9 @@ class FluxoReservaTests(TestCase):
             url = reverse("movimentacoes:retirada_reserva_registrar", args=[self.reserva.pk])
             conferencia = self.client.get(url).context["form"].initial["conferencia"]
             resposta = self.client.post(url, {"conferencia": conferencia})
-        self.assertRedirects(resposta, reverse("movimentacoes:devolucao_lista"))
+            self.assertRedirects(resposta, reverse("movimentacoes:devolucao_lista"))
+        # O cenário volta ao relógio atual após a entrega simulada.
+        self.client.force_login(self.cenario["operador"])
         return list(Movimentacao.objects.filter(reserva=self.reserva, tipo="RETIRADA").order_by("pk"))
 
     def devolver(self, retiradas):
