@@ -6,8 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <title>Entrar | SIGEE</title>
+    {% include "includes/favicon.html" %}
     <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261112.1">
     <script src="{% static 'inventario/js/login.js' %}" defer></script>
 </head>
 <body class="login-page">
@@ -16,7 +17,7 @@
             <div class="login-brand-content">
                 <div class="login-brand" aria-label="SIGEE">
                     <span class="login-brand-symbol" aria-hidden="true">
-                        <img src="{% static 'inventario/icons/login-brand.svg' %}" alt="">
+                        <img src="{% static 'inventario/brand/sigee-icon.svg' %}" width="40" height="40" alt="">
                     </span>
                     <strong>SIGEE</strong>
                 </div>

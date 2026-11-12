@@ -5,8 +5,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}SIGEE{% endblock %}</title>
+    {% include "includes/favicon.html" %}
     <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261106.1">
+    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261112.1">
     {% block extra_styles %}{% endblock %}
 </head>
 <body>
@@ -18,7 +19,7 @@
         </button>
         <div class="sidebar-brand">
             <span class="brand-symbol" aria-hidden="true">
-                <img src="{% static 'inventario/icons/logo.svg' %}" alt="">
+                <img src="{% static 'inventario/brand/sigee-icon.svg' %}" width="40" height="40" alt="">
             </span>
             <span class="sidebar-brand-text">
                 <strong>SIGEE</strong>

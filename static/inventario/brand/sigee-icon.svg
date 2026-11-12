@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <rect x="4" y="4" width="248" height="248" rx="55" fill="#2040BF"/>
+  <!-- Escola: capelo simplificado -->
+  <path d="M128 44 L200 79 L128 114 L56 79 Z" fill="#FFFFFF"/>
+  <path d="M79 99 V113 C92 125 109 132 128 132 C147 132 164 125 177 113 V99 L128 123 Z" fill="#EDF0FF"/>
+  <!-- Equipamentos: notebook com informações de inventário -->
+  <rect x="74" y="134" width="108" height="62" rx="8" fill="none" stroke="#FFFFFF" stroke-width="10"/>
+  <circle cx="104" cy="164" r="6" fill="#FFFFFF"/>
+  <path d="M122 162 H156" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+  <path d="M122 178 H146" stroke="#EDF0FF" stroke-width="6" stroke-linecap="round"/>
+  <path d="M64 203 H192 L208 218 Q210 222 204 225 H52 Q46 222 48 218 Z" fill="#FFFFFF"/>
+  <path d="M116 214 H140" stroke="#2040BF" stroke-width="5" stroke-linecap="round"/>
+</svg>

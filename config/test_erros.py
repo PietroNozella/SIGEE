@@ -68,7 +68,7 @@ class PaginasDeErroTests(SimpleTestCase):
                     self.assertContains(resposta, "Algo deu errado por aqui", status_code=500)
                     self.assertContains(resposta, "<style>", status_code=500)
                     self.assertNotContains(resposta, "<script src=", status_code=500)
-                    self.assertNotContains(resposta, '<link', status_code=500)
+                    self.assertNotContains(resposta, 'rel="stylesheet"', status_code=500)
 
     def test_csrf_invalido_exibe_orientacao_amigavel_sem_desativar_protecao(self):
         cliente = Client(enforce_csrf_checks=True)

@@ -127,13 +127,12 @@ summary:focus-visible,
     flex: 0 0 40px;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    background: var(--sigee-primary);
 }
 
 .brand-symbol img {
-    width: 20px;
-    height: 16px;
+    display: block;
+    width: 40px;
+    height: 40px;
 }
 
 .sidebar-brand strong {
@@ -570,13 +569,12 @@ summary:focus-visible,
     flex: 0 0 40px;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    background: #fff;
 }
 
 .login-brand-symbol img {
-    width: 18px;
-    height: 18px;
+    display: block;
+    width: 40px;
+    height: 40px;
 }
 
 .login-brand strong {

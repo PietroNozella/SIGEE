@@ -6,8 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <title>{% block title %}SIGEE{% endblock %}</title>
+    {% include "includes/favicon.html" %}
     <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}">
+    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261112.1">
 </head>
 <body class="legal-page">
     <a class="skip-link" href="#conteudo-principal">Ir para o conteúdo principal</a>
@@ -15,7 +16,7 @@
     <header class="legal-topbar">
         <a class="legal-brand" href="{% url 'login' %}" aria-label="SIGEE — Gestão de Equipamentos">
             <span class="brand-symbol" aria-hidden="true">
-                <img src="{% static 'inventario/icons/logo.svg' %}" alt="">
+                <img src="{% static 'inventario/brand/sigee-icon.svg' %}" width="40" height="40" alt="">
             </span>
             <span>
                 <strong>SIGEE</strong>
