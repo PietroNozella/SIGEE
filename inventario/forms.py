@@ -1,7 +1,8 @@
 from django import forms
 from django.core.validators import FileExtensionValidator
+from django.db.models import Q
 
-from .models import Categoria, Equipamento, TipoEquipamento
+from .models import Categoria, Equipamento, Local, TipoEquipamento
 
 
 class EquipamentoForm(forms.ModelForm):
@@ -17,6 +18,13 @@ class EquipamentoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.fields["categoria"].queryset = Categoria.objects.filter(
+            Q(ativo=True) | Q(pk=self.instance.tipo.categoria_id if self.instance.pk else None)
+        ).order_by("nome")
+        self.fields["local"].queryset = Local.objects.filter(
+            Q(ativo=True) | Q(pk=self.instance.local_id if self.instance.pk else None)
+        ).order_by("nome")
+
         self.fields["numero_patrimonio"].label = "Número de patrimônio"
         self.fields["descricao"].label = "Descrição"
         self.fields["local"].label = "Local"
@@ -26,8 +34,12 @@ class EquipamentoForm(forms.ModelForm):
         self.fields["situacao"].choices = [
             ("", "Selecione uma situação"),
             *((valor, rotulo) for valor, rotulo in Equipamento.Situacao.choices
-              if valor != Equipamento.Situacao.EM_USO or self.instance.situacao == valor),
+              if valor == Equipamento.Situacao.DISPONIVEL or self.instance.pk and self.instance.situacao == valor),
         ]
+        self.fields["situacao"].help_text = (
+            "Entrega e devolução atualizam a situação pelo fluxo de reservas. "
+            "Para registrar um problema, use Manutenções → Abrir manutenção."
+        )
 
         field_configuration = {
             "numero_patrimonio": {
@@ -134,3 +146,19 @@ class ImportacaoEquipamentosCSVForm(forms.Form):
             )
 
         return arquivo
+
+
+class CategoriaForm(forms.ModelForm):
+    class Meta:
+        model = Categoria
+        fields = ("nome", "descricao")
+        labels = {"nome": "Nome", "descricao": "Descrição"}
+        widgets = {
+            "nome": forms.TextInput(attrs={"class": "form-control"}),
+            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+        }
+
+
+class LocalForm(CategoriaForm):
+    class Meta(CategoriaForm.Meta):
+        model = Local

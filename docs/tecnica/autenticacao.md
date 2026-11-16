@@ -90,6 +90,9 @@ pelo fluxo funcional. Administradores comuns continuam gerenciando Professores e
 Operadores. Contas sem um único perfil funcional, incluindo as anonimizadas,
 não podem ser alteradas por esse fluxo. Reservas ativas sem retirada bloqueiam a
 desativação até serem canceladas pelo Professor ou expiradas pelo fluxo de reservas.
+A mensagem do bloqueio oferece um vínculo à consulta administrativa de reservas,
+que sincroniza expirações; depois, o Administrador retorna a Usuários para tentar
+novamente. Pendências por fechamento continuam exigindo decisão.
 Reservas com retirada e equipamentos em uso permanecem no histórico e podem ser
 devolvidos pelo Operador mesmo após a desativação do destinatário.
 

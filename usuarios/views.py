@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils.html import format_html
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
@@ -25,6 +26,7 @@ from .permissoes import (
     pode_consultar_inicio_operador,
     pode_consultar_meus_dados,
     pode_gerenciar_usuarios,
+    pode_consultar_reservas_administrativas,
     usuarios_funcionais,
 )
 from .services import alterar_situacao_usuario
@@ -182,6 +184,13 @@ def usuario_situacao(request, usuario_id, ativo):
         mensagem = " ".join(erro.messages) if isinstance(erro, ValidationError) else (
             "Não foi possível alterar a conta. Nenhuma alteração foi gravada."
         )
+        if (
+            isinstance(erro, ValidationError) and getattr(erro, "code", None) == "reservas_pendentes"
+            and pode_consultar_reservas_administrativas(request.user)
+        ):
+            mensagem = format_html(
+                '{} <a href="{}">Consultar reservas</a>.', mensagem, reverse("reservas:reserva_consulta"),
+            )
         messages.error(request, mensagem)
     else:
         messages.success(request, "Usuário reativado." if ativo else "Usuário desativado. Os dados foram preservados.")

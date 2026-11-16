@@ -35,7 +35,7 @@
                 <template data-time-template>{% include "calendario/_faixa.html" with faixa=formset.empty_form %}</template>
             </section>
             <fieldset class="calendar-form-section calendar-reason"><legend>Registro da alteração</legend><p class="calendar-section-description">O motivo e o responsável ficam no histórico do calendário.</p>{% include "calendario/_campo.html" with campo=form.motivo %}</fieldset>
-            <p class="calendar-save-note">Reservas confirmadas serão preservadas. Após salvar, confira se alguma precisa de decisão.</p>
+            <p class="calendar-save-note">Reservas confirmadas serão preservadas. Após salvar, confira eventuais incompatibilidades com o calendário atual.</p>
             <div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'calendario:calendario_escola' %}">Cancelar</a><button class="btn btn-primary-sigee" type="submit">Salvar configuração</button></div>
         </form>
     </section>

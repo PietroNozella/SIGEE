@@ -52,6 +52,8 @@ class RegistroAuditoria(models.Model):
         return {
             "calendario.AlteracaoCalendario": "Calendário da escola",
             "inventario.Equipamento": "Equipamento",
+            "inventario.Categoria": "Categoria de equipamento",
+            "inventario.Local": "Local de equipamento",
             "reservas.Reserva": "Reserva",
             "movimentacoes.Movimentacao": "Movimentação",
             "manutencoes.Manutencao": "Manutenção",

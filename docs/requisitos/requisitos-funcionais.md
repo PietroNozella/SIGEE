@@ -28,11 +28,11 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 
 ## RF02 - Cadastrar e gerenciar equipamentos do inventário
 
-<b>Descrição:</b> O sistema deve permitir ao Administrador cadastrar equipamentos individualmente ou por importação de arquivo CSV, além de alterar seus dados e excluir ou inativar registros conforme a existência de histórico relacionado. Cada unidade física deve possuir número de patrimônio único, tipo/modelo, categoria, local e situação.
+<b>Descrição:</b> O sistema deve permitir ao Administrador cadastrar equipamentos individualmente ou por importação de arquivo CSV, alterar seus dados, excluir ou inativar registros conforme o histórico e reativar unidades elegíveis com confirmação. O Administrador também mantém categorias e locais, com criação, edição, inativação e reativação, sem exclusão definitiva. Cada unidade física deve possuir número de patrimônio único, tipo/modelo, categoria, local e situação.
 
 <b>Ator: </b>Administrador.
 
-<b>Pré-condições:</b> O Administrador deve estar autenticado e autorizado. As categorias e os locais utilizados no cadastro devem estar disponíveis para seleção. O tipo/modelo é informado pelo nome; o sistema cria ou reutiliza o registro correspondente à categoria e ao nome informados.
+<b>Pré-condições:</b> O Administrador deve estar autenticado e autorizado. Categorias e locais usados em novos cadastros devem estar ativos. Uma referência inativa já vinculada pode ser mantida ao editar um equipamento. O tipo/modelo é informado pelo nome; o sistema cria ou reutiliza o registro correspondente à categoria e ao nome informados.
 
 <b>Fluxo principal:</b> O Administrador escolhe o cadastro individual ou a importação por CSV, informa os dados dos equipamentos e confirma a operação. O sistema valida os campos e os números de patrimônio antes de gravar os registros. Posteriormente, o Administrador pode alterar os dados de um equipamento. Ao solicitar sua remoção, o sistema verifica se existem registros relacionados para decidir entre exclusão e inativação.
 
@@ -47,6 +47,10 @@ Os requisitos funcionais descrevem as operações definidas para o SIGEE. Para c
 - <b>CA-03:</b> Dado um arquivo CSV com ao menos uma linha inválida, quando o Administrador solicitar a importação, então nenhum equipamento do lote deve ser gravado.
 - <b>CA-04:</b> Dado um equipamento com registros relacionados, quando o Administrador solicitar sua remoção, então o sistema deve inativá-lo e preservar o histórico.
 - <b>CA-05:</b> Dado um usuário sem permissão de gerenciamento do inventário, quando ele tentar realizar essas operações, então o sistema deve impedi-las.
+
+- <b>CA-06:</b> Dada uma unidade inativa e disponível, com tipo/modelo, categoria e local ativos, sem retirada pendente, manutenção aberta ou último laudo sem reparo, quando o Administrador confirmar a reativação, então somente a ativação deve mudar, preservando o histórico e registrando uma única auditoria por transição.
+- <b>CA-07:</b> Dados categoria ou local inativos, quando houver novo cadastro ou reserva, então o sistema deve recusar sua seleção; vínculos e compromissos já confirmados devem ser preservados. O Administrador deve conseguir editar e reativar esses cadastros pela interface.
+- <b>CA-08:</b> Dado um cadastro, edição ou CSV, quando houver tentativa de atribuir uma nova situação de manutenção, então o sistema deve recusar e orientar o uso do módulo de manutenção. Registros que já estão em manutenção podem manter sua situação.
 
 ## RF03 - Consultar e filtrar equipamentos
 

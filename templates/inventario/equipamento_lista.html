@@ -59,7 +59,7 @@
     <section class="inventory-card" aria-labelledby="inventory-heading">
         <h2 class="visually-hidden" id="inventory-heading">{% if lista_tipos %}Tipos/modelos de equipamentos{% else %}Lista de equipamentos{% endif %}</h2>
 
-        <form class="filter-toolbar" method="get" role="search">
+        <form class="filter-toolbar{% if not e_professor %} inventory-filter-toolbar{% endif %}" method="get" role="search">
             <div class="filter-search">
                 <label class="visually-hidden" for="busca">{% if e_professor %}Buscar por equipamento{% else %}Buscar por patrimônio ou nome{% endif %}</label>
                 <img src="{% static 'inventario/icons/search.svg' %}" alt="" aria-hidden="true">
@@ -96,6 +96,9 @@
                 </select>
             </div>
 
+            {% if not e_professor %}
+            <div><label class="visually-hidden" for="atividade">Ativação</label><select class="form-select" id="atividade" name="atividade"><option value="">Ativos e inativos</option><option value="ativos"{% if filtros.atividade == 'ativos' %} selected{% endif %}>Somente ativos</option><option value="inativos"{% if filtros.atividade == 'inativos' %} selected{% endif %}>Somente inativos</option></select></div>
+            {% endif %}
             <div class="filter-actions">
                 <button class="btn btn-primary-sigee" type="submit">Filtrar</button>
                 {% if ha_filtros %}
@@ -172,6 +175,7 @@
                                             <div class="d-flex gap-2 flex-wrap">
                                                 {% if perms.inventario.change_equipamento %}
                                                     <a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_editar' equipamento.pk %}">Editar</a>
+                                                    {% if pode_reativar_equipamento and not equipamento.ativo %}<a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_reativar' equipamento.pk %}">Reativar</a>{% endif %}
                                                 {% endif %}
                                                 {% if perms.inventario.delete_equipamento and equipamento.ativo %}
                                                     <form method="post" action="{% url 'inventario:equipamento_excluir' equipamento.pk %}">

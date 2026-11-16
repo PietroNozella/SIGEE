@@ -2,7 +2,7 @@ from datetime import datetime, time, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
@@ -11,7 +11,7 @@ from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
@@ -23,12 +23,20 @@ from usuarios.permissoes import (
     e_operador_funcional, e_professor_funcional, pode_consultar_painel,
     pode_gerenciar_manutencao, pode_consultar_reservas_administrativas,
     pode_consultar_inicio_operador,
+    pode_gerenciar_cadastro_inventario, pode_reativar_equipamento,
 )
 
 from .consultas import resumo_situacao_equipamentos
-from .forms import EquipamentoForm, ImportacaoEquipamentosCSVForm
+from .forms import CategoriaForm, EquipamentoForm, ImportacaoEquipamentosCSVForm, LocalForm
 from .importacao_csv import CABECALHOS_CSV, validar_equipamentos_csv
 from .models import Categoria, Equipamento, Local
+from .services import reativar_equipamento
+
+
+CADASTROS_INVENTARIO = {
+    "categorias": {"modelo": Categoria, "formulario": CategoriaForm, "titulo": "Categorias", "singular": "categoria"},
+    "locais": {"modelo": Local, "formulario": LocalForm, "titulo": "Locais", "singular": "local"},
+}
 
 
 @login_required
@@ -246,6 +254,9 @@ def equipamento_lista(request):
     categoria = request.GET.get("categoria", "").strip()
     local = request.GET.get("local", "").strip()
     situacao = request.GET.get("situacao", "").strip()
+    atividade = request.GET.get("atividade", "").strip()
+    if atividade in ("ativos", "inativos"):
+        equipamentos = equipamentos.filter(ativo=atividade == "ativos")
 
     if busca:
         equipamentos = equipamentos.filter(
@@ -265,10 +276,11 @@ def equipamento_lista(request):
         equipamentos = equipamentos.filter(
             ativo=True,
             tipo__ativo=True,
+            tipo__categoria__ativo=True,
             local__ativo=True,
         )
 
-    ha_filtros = any((busca, categoria, local, situacao))
+    ha_filtros = any((busca, categoria, local, situacao, atividade))
 
     if request.user.is_authenticated and ha_filtros:
         registrar_evento(
@@ -329,6 +341,7 @@ def equipamento_lista(request):
             "categoria": categoria,
             "local": local,
             "situacao": situacao,
+            "atividade": atividade,
         },
         "parametros_paginacao": parametros.urlencode(),
         "ha_filtros": ha_filtros,
@@ -531,3 +544,113 @@ def equipamento_excluir(request, equipamento_id):
         messages.success(request, "Equipamento excluído com sucesso.")
 
     return redirect("inventario:equipamento_lista")
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def equipamento_reativar(request, equipamento_id):
+    if not pode_reativar_equipamento(request.user):
+        raise PermissionDenied
+    equipamento = get_object_or_404(Equipamento.objects.select_related("tipo", "local"), pk=equipamento_id)
+    if request.method == "POST":
+        try:
+            reativar_equipamento(administrador=request.user, equipamento_id=equipamento.pk)
+        except ValidationError as erro:
+            messages.error(request, " ".join(erro.messages))
+        else:
+            messages.success(request, "Equipamento reativado. O histórico foi preservado.")
+        return redirect("inventario:equipamento_lista")
+    return render(request, "inventario/equipamento_reativar.html", {"equipamento": equipamento})
+
+
+def _contexto_cadastro_inventario(cadastro, usuario):
+    configuracao = CADASTROS_INVENTARIO[cadastro]
+    modelo = configuracao["modelo"]
+    return {
+        "cadastro": cadastro, "titulo": configuracao["titulo"], "singular": configuracao["singular"],
+        "url_lista": reverse(f"inventario:{cadastro}_lista"),
+        "url_novo": reverse(f"inventario:{cadastro}_novo"),
+        "rota_editar": f"inventario:{cadastro}_editar",
+        "rota_inativar": f"inventario:{cadastro}_inativar",
+        "rota_reativar": f"inventario:{cadastro}_reativar",
+        "pode_criar": pode_gerenciar_cadastro_inventario(usuario, modelo._meta.model_name, "add"),
+        "pode_alterar": pode_gerenciar_cadastro_inventario(usuario, modelo._meta.model_name, "change"),
+    }
+
+
+def _exigir_cadastro_inventario(usuario, modelo, acao):
+    if not pode_gerenciar_cadastro_inventario(usuario, modelo._meta.model_name, acao):
+        raise PermissionDenied
+
+
+@login_required
+@require_GET
+def cadastro_lista(request, cadastro):
+    modelo = CADASTROS_INVENTARIO[cadastro]["modelo"]
+    _exigir_cadastro_inventario(request.user, modelo, "view")
+    registros = modelo.objects.all()
+    busca = request.GET.get("busca", "").strip()
+    situacao = request.GET.get("situacao", "")
+    if busca:
+        registros = registros.filter(nome__icontains=busca)
+    if situacao in ("ativos", "inativos"):
+        registros = registros.filter(ativo=situacao == "ativos")
+    else:
+        situacao = ""
+    parametros = request.GET.copy()
+    parametros.pop("pagina", None)
+    return render(request, "inventario/cadastro_lista.html", {
+        **_contexto_cadastro_inventario(cadastro, request.user),
+        "pagina": Paginator(registros, 10).get_page(request.GET.get("pagina")),
+        "busca": busca, "situacao": situacao, "parametros_paginacao": parametros.urlencode(),
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+@transaction.atomic
+def cadastro_form(request, cadastro, registro_id=None):
+    configuracao = CADASTROS_INVENTARIO[cadastro]
+    modelo = configuracao["modelo"]
+    editando = registro_id is not None
+    _exigir_cadastro_inventario(request.user, modelo, "change" if editando else "add")
+    registros = modelo.objects.select_for_update() if request.method == "POST" else modelo.objects.all()
+    registro = get_object_or_404(registros, pk=registro_id) if editando else None
+    form = configuracao["formulario"](request.POST if request.method == "POST" else None, instance=registro)
+    if request.method == "POST" and form.is_valid():
+        try:
+            with transaction.atomic():
+                registro = form.save()
+                registrar_evento(
+                    usuario=request.user,
+                    acao=AcaoAuditoria.CADASTRO_INVENTARIO_EDITADO if editando else AcaoAuditoria.CADASTRO_INVENTARIO_CRIADO,
+                    resultado=RegistroAuditoria.Resultado.SUCESSO,
+                    entidade=modelo._meta.label, entidade_id=registro.pk,
+                )
+        except IntegrityError:
+            form.add_error("nome", "Já existe um cadastro com este nome.")
+        else:
+            messages.success(request, "Cadastro atualizado." if editando else "Cadastro criado.")
+            return redirect(f"inventario:{cadastro}_lista")
+    return render(request, "inventario/cadastro_form.html", {
+        **_contexto_cadastro_inventario(cadastro, request.user), "form": form, "editando": editando,
+    })
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def cadastro_situacao(request, cadastro, registro_id, ativo):
+    modelo = CADASTROS_INVENTARIO[cadastro]["modelo"]
+    _exigir_cadastro_inventario(request.user, modelo, "change")
+    registro = get_object_or_404(modelo.objects.select_for_update(), pk=registro_id)
+    if registro.ativo != ativo:
+        registro.ativo = ativo
+        registro.save(update_fields=("ativo",))
+        registrar_evento(
+            usuario=request.user, acao=AcaoAuditoria.CADASTRO_INVENTARIO_SITUACAO_ALTERADA,
+            resultado=RegistroAuditoria.Resultado.SUCESSO,
+            entidade=modelo._meta.label, entidade_id=registro.pk,
+        )
+    messages.success(request, "Cadastro reativado." if ativo else "Cadastro inativado. Os vínculos e o histórico foram preservados.")
+    return redirect(f"inventario:{cadastro}_lista")

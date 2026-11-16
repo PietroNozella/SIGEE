@@ -99,7 +99,7 @@ class IntegridadeCadastroEquipamentoTests(TestCase):
             self.client.post(url_entrega, {"conferencia": conferencia})
             self.client.force_login(self.cenario["administrador"])
             self.equipamento.refresh_from_db()
-            resposta = self.client.post(self.url, {**self.dados(), "situacao": "MANUTENCAO"})
+            resposta = self.client.post(self.url, {**self.dados(), "situacao": "DISPONIVEL"})
             self.assertContains(resposta, "Registre a devolução física")
             resposta = self.client.post(self.url, {**self.dados(), "descricao": "Conferido"})
             self.assertEqual(resposta.status_code, 302)
