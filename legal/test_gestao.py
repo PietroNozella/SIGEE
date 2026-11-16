@@ -106,6 +106,21 @@ class GestaoDocumentosLegaisTests(TestCase):
                         self.assertEqual(self.client.post(rota, self.dados_rascunho()).status_code, 403)
         self.assertEqual(DocumentoLegal.objects.get(pk=self.tipo).revisao_rascunho, 1)
 
+    def test_link_de_gestao_aparece_apenas_nas_configuracoes_do_principal(self):
+        configuracoes = reverse("calendario:calendario_escola")
+        lista = reverse("legal:documentos_legais")
+        registrar_aceite_vigente(self.principal)
+
+        painel = self.client.get(reverse("inventario:painel"))
+        self.assertContains(painel, f'href="{configuracoes}"')
+        self.assertNotContains(painel, f'href="{lista}"')
+        self.assertContains(self.client.get(configuracoes), f'href="{lista}"', count=1)
+        self.assertContains(self.client.get(lista), f'href="{configuracoes}" aria-current="location"')
+
+        registrar_aceite_vigente(self.administrador)
+        self.client.force_login(self.administrador)
+        self.assertNotContains(self.client.get(configuracoes), f'href="{lista}"')
+
     def test_permissao_e_revalidada_na_gravacao(self):
         get_user_model().objects.filter(pk=self.principal.pk).update(is_administrador_principal=False)
         with self.assertRaises(PermissionDenied):
