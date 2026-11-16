@@ -77,6 +77,14 @@ def e_administrador_funcional(user):
     return grupos_do_usuario == {GRUPO_ADMINISTRADOR}
 
 
+def pode_gerenciar_documentos_legais(user):
+    return (
+        getattr(user, "is_administrador_principal", False)
+        and not user.is_staff
+        and e_administrador_funcional(user)
+    )
+
+
 def e_professor_funcional(user):
     if not user.is_authenticated or not user.is_active or user.is_superuser:
         return False

@@ -1,0 +1,16 @@
+{% for secao in secoes %}
+    <section{% if forloop.first and secao.titulo == 'Responsabilidades no tratamento' %} class="legal-notice"{% endif %}>
+        <h2>{{ secao.titulo }}</h2>
+        {% for bloco in secao.blocos %}
+            {% if bloco.itens %}
+                <ul>
+                    {% for item in bloco.itens %}
+                        <li>{% include "legal/_texto_com_contato.html" with partes=item %}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>{% include "legal/_texto_com_contato.html" with partes=bloco.partes %}</p>
+            {% endif %}
+        {% endfor %}
+    </section>
+{% endfor %}

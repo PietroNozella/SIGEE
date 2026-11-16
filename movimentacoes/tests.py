@@ -9,6 +9,7 @@ from django.urls import reverse
 
 from inventario.models import Categoria, Equipamento, Local, TipoEquipamento
 from legal.services import registrar_aceite_vigente
+from legal.test_fixtures import garantir_documentos_legais
 from usuarios.permissoes import GRUPOS_FUNCIONAIS
 
 from .models import Movimentacao
@@ -16,6 +17,7 @@ from .services import registrar_retirada_sem_reserva
 
 
 def criar_cenario():
+    garantir_documentos_legais()
     call_command("configurar_perfis", stdout=StringIO())
     usuarios = {}
     for nome in GRUPOS_FUNCIONAIS:

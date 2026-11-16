@@ -36,7 +36,7 @@ Os registros de incidentes com dados pessoais devem observar o prazo regulatóri
 
 ## Contatos e fornecedores
 
-- canal de privacidade: valor configurado em `SIGEE_CONTATO_PRIVACIDADE`;
+- canal de privacidade informado na Política de Privacidade vigente;
 - Vercel: suporte e painel do projeto;
 - Supabase: suporte, logs e painel do banco;
 - provedor de e-mail configurado: segurança da conta SMTP; Gmail é o exemplo apresentado em `.env.example`;

@@ -4,17 +4,19 @@ from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from usuarios.permissoes import GRUPO_ADMINISTRADOR
 
-from .models import AceiteDocumentosLegais
+from .models import AceiteDocumentosLegais, DocumentoLegal
 from .admin import AceiteDocumentosLegaisAdmin
 from .services import (
     registrar_aceite_vigente,
+    publicar_rascunho,
+    salvar_rascunho,
     usuario_possui_aceite_vigente,
     versoes_atuais,
 )
@@ -173,13 +175,25 @@ class DocumentosLegaisTests(TestCase):
 
         self.assertEqual(resposta.status_code, 200)
 
-    @override_settings(TERMOS_USO_VERSAO="3.0")
-    def test_nova_versao_exige_novo_aceite(self):
-        AceiteDocumentosLegais.objects.create(
-            usuario=self.usuario,
-            versao_termos="1.0",
-            versao_privacidade="1.0",
+    def publicar_termos(self):
+        principal = get_user_model().objects.create_user(
+            username="principal-aceite", is_administrador_principal=True,
         )
+        principal.groups.add(Group.objects.get(name=GRUPO_ADMINISTRADOR))
+        documento = DocumentoLegal.objects.get(pk=DocumentoLegal.Tipo.TERMOS)
+        salvar_rascunho(
+            usuario=principal, tipo=documento.tipo, revisao=documento.revisao_rascunho,
+            conteudo="## Atualização\n\nNovas regras de uso.", contato=documento.rascunho_contato,
+            resumo="Atualização das regras de uso.",
+        )
+        documento.refresh_from_db()
+        return publicar_rascunho(
+            usuario=principal, tipo=documento.tipo, revisao=documento.revisao_rascunho,
+        )
+
+    def test_nova_versao_exige_novo_aceite(self):
+        anterior, _ = registrar_aceite_vigente(self.usuario)
+        self.publicar_termos()
 
         resposta = self.client.get(reverse("inventario:equipamento_lista"))
 
@@ -191,23 +205,21 @@ class DocumentosLegaisTests(TestCase):
             ),
             fetch_redirect_response=False,
         )
+        self.assertTrue(AceiteDocumentosLegais.objects.filter(pk=anterior.pk).exists())
 
     def test_nao_registra_aceite_quando_a_versao_muda_apos_exibir_formulario(self):
         formulario_exibido = self.client.get(reverse("legal:aceite_documentos"))
         self.assertEqual(formulario_exibido.context["versao_termos"], "2.0")
 
-        with self.settings(TERMOS_USO_VERSAO="3.0"):
-            resposta = self.client.post(
-                reverse("legal:aceite_documentos"),
-                self.dados_aceite(
-                    versao_termos="2.0",
-                    versao_privacidade="2.1",
-                ),
-            )
+        dados = self.dados_aceite()
+        nova = self.publicar_termos()
+        resposta = self.client.post(reverse("legal:aceite_documentos"), dados)
 
         self.assertEqual(resposta.status_code, 200)
         self.assertContains(resposta, "Os documentos foram atualizados")
-        self.assertEqual(resposta.context["versao_termos"], "3.0")
+        self.assertEqual(resposta.context["form"]["versao_termos"].value(), nova.numero)
+        self.assertFalse(resposta.context["form"]["aceitou_termos"].value())
+        self.assertFalse(resposta.context["form"]["confirmou_ciencia_privacidade"].value())
         self.assertFalse(AceiteDocumentosLegais.objects.exists())
         self.assertFalse(
             RegistroAuditoria.objects.filter(

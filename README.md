@@ -160,7 +160,7 @@ Para usar PostgreSQL, preencha `DATABASE_URL` com uma conexão válida. Na confi
 
 | Variável | Finalidade | Padrão |
 |---|---|---|
-| `SIGEE_CONTATO_PRIVACIDADE` | Canal exibido nos documentos de privacidade. | `suporte.sigee@gmail.com` |
+| `SIGEE_CONTATO_PRIVACIDADE` | Canal usado na migração inicial dos documentos legais. Atualizações são publicadas no painel. | `suporte.sigee@gmail.com` |
 | `DJANGO_SESSION_COOKIE_AGE` | Retenção nativa de sessões sem prazo específico, em segundos. | `28800` (8 horas) |
 | `DJANGO_SESSION_IDLE_TIMEOUT` | Limite de inatividade; consultas automáticas não renovam o prazo. | `1800` (30 minutos) |
 | `DJANGO_SESSION_ABSOLUTE_TIMEOUT` | Duração máxima desde o login, mesmo com atividade. | `28800` (8 horas) |

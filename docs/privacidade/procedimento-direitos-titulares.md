@@ -1,6 +1,6 @@
 # Procedimento para direitos dos titulares
 
-O canal inicial do SIGEE é o endereço configurado em `SIGEE_CONTATO_PRIVACIDADE`. A instituição controladora deve confirmar que o canal é monitorado e indicar responsáveis e substitutos antes do uso de dados reais.
+O canal do SIGEE é o endereço informado na Política de Privacidade vigente. A migração inicial usa `SIGEE_CONTATO_PRIVACIDADE` e as atualizações são publicadas pelo Administrador principal. A instituição controladora deve confirmar que o canal é monitorado e indicar responsáveis e substitutos antes do uso de dados reais.
 
 ## Fluxo de atendimento
 

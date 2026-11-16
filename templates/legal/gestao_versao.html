@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ documento.get_tipo_display }} | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">
+        <a href="{% url 'legal:documentos_legais' %}">Documentos legais</a><span aria-hidden="true">/</span>
+        <a href="{% url 'legal:editar_documento' documento.tipo %}">{{ documento.get_tipo_display }}</a><span aria-hidden="true">/</span>
+        <span aria-current="page">{% if versao %}Versão {{ versao.numero }}{% else %}Prévia{% endif %}</span>
+    </nav>
+    <header class="page-header">
+        <div>
+            <h1>{{ documento.get_tipo_display }} · {% if versao %}versão {{ versao.numero }}{% else %}prévia{% endif %}</h1>
+            {% if versao %}
+                <p>Vigência iniciada em {{ versao.vigente_desde|date:"d/m/Y" }}{% if versao.publicado_por %} · Publicado por {{ versao.publicado_por.get_username }}{% endif %}</p>
+            {% endif %}
+        </div>
+    </header>
+
+    <article class="form-card legal-document mb-4" aria-label="Conteúdo do documento">
+        {% if resumo %}
+            <section class="legal-notice">
+                <h2>Resumo das mudanças</h2>
+                {{ resumo|linebreaks }}
+            </section>
+        {% endif %}
+        {% include "legal/_conteudo_documento.html" %}
+        <section><h2>Contato</h2><p><a href="mailto:{{ contato_privacidade }}">{{ contato_privacidade }}</a></p></section>
+    </article>
+
+    <section class="form-card" aria-label="Ações do documento">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.revisao }}
+            {% if versao %}
+                {% if versao.pk != documento.versao_vigente_id %}
+                    <p>Copiar esta versão substitui o rascunho atual. Você pode revisar e publicar a cópia com um novo número.</p>
+                {% endif %}
+            {% elif resumo %}
+                <p>Ao publicar, esta versão fica pública imediatamente e os usuários precisam confirmar os documentos novamente.</p>
+            {% else %}
+                <p>Volte ao rascunho e informe o resumo das mudanças para poder publicar.</p>
+            {% endif %}
+            <div class="form-actions">
+                <a class="btn btn-secondary-sigee" href="{% url 'legal:editar_documento' documento.tipo %}">Voltar ao rascunho</a>
+                {% if versao and versao.pk != documento.versao_vigente_id %}
+                    <button class="btn btn-primary-sigee" type="submit">Copiar para o rascunho</button>
+                {% elif not versao and resumo %}
+                    <button class="btn btn-primary-sigee" type="submit">Publicar nova versão</button>
+                {% endif %}
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

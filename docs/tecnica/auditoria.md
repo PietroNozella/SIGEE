@@ -78,6 +78,7 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `RECUPERACAO_SENHA_SOLICITADA` | Solicitação de recuperação aceita com resposta pública neutra. | Sucesso |
 | `SENHA_REDEFINIDA` | Senha alterada por token válido. | Sucesso |
 | `DOCUMENTOS_LEGAIS_ACEITOS` | Versões vigentes dos documentos confirmadas. | Sucesso |
+| `DOCUMENTO_LEGAL_PUBLICADO` | Nova versão dos Termos de Uso ou da Política de Privacidade publicada pelo Administrador principal. | Sucesso |
 | `MANUTENCAO_ABERTA` | Abertura manual ou automática aceita ou rejeitada. | Sucesso ou falha |
 | `MANUTENCAO_INICIADA` | Início de intervenção aceito ou rejeitado. | Sucesso ou falha |
 | `MANUTENCAO_CONCLUIDA` | Conclusão de intervenção aceita ou rejeitada. | Sucesso ou falha |

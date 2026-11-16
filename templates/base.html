@@ -107,6 +107,12 @@
             {% endif %}
 
             <span class="sidebar-section-title">Administração</span>
+            {% if pode_gerenciar_documentos_legais %}
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'legal' %} is-active{% endif %}" title="Documentos legais" href="{% url 'legal:documentos_legais' %}"{% if request.resolver_match.namespace == 'legal' %} aria-current="page"{% endif %}>
+                    <img src="{% static 'inventario/icons/settings.svg' %}" alt="" aria-hidden="true">
+                    <span class="side-nav-label">Documentos legais</span>
+                </a>
+            {% endif %}
             {% if pode_configurar_calendario %}
             <a class="side-nav-item{% if request.resolver_match.namespace == 'calendario' %} is-active{% endif %}" title="Configurações da escola" href="{% url 'calendario:calendario_escola' %}"{% if request.resolver_match.namespace == 'calendario' %} aria-current="page"{% endif %}>
                 <img src="{% static 'inventario/icons/settings.svg' %}" alt="" aria-hidden="true">

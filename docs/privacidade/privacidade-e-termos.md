@@ -12,7 +12,7 @@ O SIGEE não presume uma base legal única para todos os tratamentos. A institui
 
 O inventário completo, incluindo conta, sessão, proteção contra abuso, recuperação de senha, reservas e planejamento pedagógico, movimentações, manutenção, utilizações pedagógicas, auditoria, aceite, campos livres, infraestrutura e fornecedores, está em [Governança e inventário de dados pessoais](governanca-dados-pessoais.md). A Política apresentada na aplicação descreve esses dados e finalidades. Campos livres não devem ser usados para registrar dados pessoais excessivos ou sensíveis sem necessidade e autorização institucional.
 
-Os Termos de Uso permanecem na versão 2.0, de 21/09/2026. A Política de Privacidade está na versão 2.2, de 10/11/2026, com os limites de sessão de 30 minutos de inatividade e 8 horas desde o login. Ela preserva a descrição de manutenção, contexto pedagógico e envio por SMTP configurável da versão anterior. As versões e datas são definidas em `config/settings.py`; após a publicação desta revisão, contas com aceite da Política anterior precisam confirmar a versão vigente, preservando os registros anteriores.
+A migração inicial copia os Termos de Uso 2.0, de 21/09/2026, e a Política de Privacidade 2.2, de 10/11/2026, para o banco com o contato configurado no ambiente. Os aceites desse par continuam vigentes até a próxima publicação. O histórico guarda o texto completo desde essas duas versões e preserva os registros de confirmação mais antigos.
 
 ## Fluxo implementado
 
@@ -22,8 +22,14 @@ Os Termos de Uso permanecem na versão 2.0, de 21/09/2026. A Política de Privac
 4. O usuário precisa aceitar os Termos e confirmar a leitura da Política.
 5. Antes de registrar o aceite, o servidor compara as versões enviadas pelo formulário com as versões vigentes. Se houver mudança, exige nova leitura e confirmação; caso contrário, armazena a conta, as duas versões e a data e hora em um registro protegido contra alteração e exclusão pela interface administrativa.
 6. O aceite gera o evento `DOCUMENTOS_LEGAIS_ACEITOS` na auditoria.
-7. Uma alteração da versão configurada exige nova confirmação.
+7. Uma publicação exige nova confirmação e seu resumo é apresentado na tela de aceite.
 8. As áreas autenticadas mantêm links permanentes para os documentos.
+
+## Publicação pelo Administrador principal
+
+Em **Administração → Documentos legais**, escolha os Termos de Uso ou a Política de Privacidade. Edite o rascunho, informe um resumo público das mudanças e confira a prévia antes de publicar. O SIGEE atribui o número da versão e a vigência, registra o autor e grava o evento `DOCUMENTO_LEGAL_PUBLICADO`. O e-mail exibido faz parte do documento publicado.
+
+Para corrigir uma publicação, abra uma versão anterior no histórico, copie seu conteúdo para o rascunho e publique a correção com um novo resumo. O principal pode acessar essa área mesmo quando a confirmação estiver pendente. Se a publicação já tiver ocorrido, a recuperação é feita por nova versão e preserva as confirmações registradas.
 
 ## Aceite dos documentos e consentimento
 
@@ -65,6 +71,7 @@ Os testes de `legal/tests.py` e `usuarios/test_privacidade.py` verificam:
 - ausência de duplicidade para a mesma combinação de versões;
 - registro do evento de auditoria;
 - proteção do aceite e bloqueio de alterações no Django Admin;
+- restrição da gestão ao Administrador principal, rascunhos privados, restauração por nova publicação e bloqueio concorrente entre publicação e aceite;
 - transparência sobre fornecedores, retenção e direitos;
 - ausência de Google Fonts e jsDelivr nas páginas públicas;
 - bloqueio de tentativas repetidas sem persistir IP ou senha;
