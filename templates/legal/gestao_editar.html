@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ documento.get_tipo_display }} | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">
+        <a href="{% url 'legal:documentos_legais' %}">Documentos legais</a><span aria-hidden="true">/</span>
+        <span aria-current="page">{{ documento.get_tipo_display }}</span>
+    </nav>
+    <header class="page-header">
+        <div><h1>{{ documento.get_tipo_display }}</h1><p>Versão {{ documento.versao_vigente.numero }} · vigente desde {{ documento.versao_vigente.vigente_desde|date:"d/m/Y" }}</p></div>
+    </header>
+
+    <section class="form-card mb-4" aria-labelledby="rascunho-titulo">
+        <div class="form-card-header">
+            <h2 id="rascunho-titulo">Rascunho</h2>
+            <p>O público continua vendo a versão vigente até você publicar.</p>
+        </div>
+        {% if form.errors %}
+            <div class="validation-summary" id="form-errors" role="alert" tabindex="-1" data-focus-on-load>
+                <h3>Revise o rascunho</h3>
+                <ul>
+                    {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                    {% for error in form.revisao.errors %}<li>{{ error }}</li>{% endfor %}
+                    {% for campo in form.visible_fields %}
+                        {% for error in campo.errors %}<li><a href="#{{ campo.id_for_label }}">{{ campo.label }}: {{ error }}</a></li>{% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            {{ form.revisao }}
+            {% for campo in form.visible_fields %}
+                <div class="form-field mb-3">
+                    <label class="form-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                    {{ campo }}
+                    {% if campo.help_text %}<p class="form-help" id="{{ campo.id_for_label }}_helptext">{{ campo.help_text }}</p>{% endif %}
+                </div>
+            {% endfor %}
+            <div class="form-actions">
+                <a class="btn btn-secondary-sigee" href="{% url 'legal:previa_documento' documento.tipo %}">Ver prévia salva</a>
+                <button class="btn btn-primary-sigee" type="submit">Salvar e ver prévia</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="form-card" aria-labelledby="historico-titulo">
+        <h2 class="h5" id="historico-titulo">Histórico de versões</h2>
+        <ul class="list-group list-group-flush">
+            {% for versao in historico %}
+                <li class="list-group-item px-0">
+                    <a href="{% url 'legal:historico_documento' documento.tipo versao.numero %}">Versão {{ versao.numero }}</a>
+                    · {{ versao.vigente_desde|date:"d/m/Y" }}
+                    {% if versao.pk == documento.versao_vigente_id %}· Vigente{% endif %}
+                    {% if versao.publicado_por %}· {{ versao.publicado_por.get_username }}{% else %}· Versão inicial migrada{% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>
+{% endblock %}

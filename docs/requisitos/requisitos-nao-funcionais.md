@@ -99,7 +99,7 @@ Os requisitos RS-01 a RS-12 integram o escopo confirmado do SIGEE. A confirmaç�
 
 ### RS-12 - Transparência e informações de privacidade
 
-**Critério de aceite:** Termo de Uso versão 2.0 e Política de Privacidade versão 2.2 são públicos e informam dados, finalidades, fornecedores, retenção, segurança e direitos; após o login, o usuário precisa aceitar os Termos e confirmar a leitura da Política; o sistema registra usuário, versões e data/hora e exige novo aceite quando uma versão muda.
+**Critério de aceite:** As versões vigentes dos Termos de Uso e da Política de Privacidade são públicas e informam dados, finalidades, fornecedores, retenção, segurança e direitos. Somente o Administrador principal gerencia e publica novas versões, com resumo e auditoria. O usuário aceita os Termos e confirma a leitura da Política antes das áreas internas. O sistema registra usuário, versões e data/hora, preserva o histórico e exige nova confirmação quando uma versão muda. O principal pode acessar a gestão de documentos com confirmação pendente para corrigir publicações.
 
 A implementação e o inventário de dados relacionados ao RS-12 estão descritos em [Termos de Uso, privacidade e aceite](../privacidade/privacidade-e-termos.md).
 

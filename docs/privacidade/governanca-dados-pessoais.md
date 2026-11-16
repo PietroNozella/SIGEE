@@ -1,6 +1,6 @@
 # Governança e inventário de dados pessoais
 
-Este documento consolida o inventário das operações de tratamento do SIGEE, o fluxo dos dados e os fornecedores externos. Ele descreve os dados e acessos representados no código; as versões dos documentos apresentados ao usuário são definidas em `config/settings.py` e consultadas por `legal/services.py`.
+Este documento consolida o inventário das operações de tratamento do SIGEE, o fluxo dos dados e os fornecedores externos. As versões dos documentos apresentados ao usuário são mantidas no banco e publicadas pelo Administrador principal.
 
 As hipóteses legais e os prazos marcados como **proposta para validação** não estão aprovados para uma implantação real. A equipe e a instituição controladora devem validá-los antes de utilizar dados pessoais reais.
 

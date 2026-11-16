@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Documentos legais | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content">
+    <header class="page-header"><div><h1>Documentos legais</h1></div></header>
+    <div class="row g-3">
+        {% for documento in documentos %}
+            <div class="col-12 col-lg-6">
+                <section class="form-card h-100">
+                    <h2 class="h5">{{ documento.get_tipo_display }}</h2>
+                    <p>Versão {{ documento.versao_vigente.numero }} · vigente desde {{ documento.versao_vigente.vigente_desde|date:"d/m/Y" }}</p>
+                    <a class="btn btn-secondary-sigee" href="{% url 'legal:editar_documento' documento.tipo %}">Editar e ver histórico</a>
+                </section>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

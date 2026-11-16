@@ -1,0 +1,35 @@
+{% extends "legal/base_publica.html" %}
+
+{% block title %}{{ titulo }} | SIGEE{% endblock %}
+
+{% block content %}
+<article class="legal-document" aria-labelledby="legal-title">
+    <header class="legal-document-header">
+        {% if not desatualizado %}
+            <span class="legal-eyebrow">Versão {{ versao.numero }} — vigente desde {{ versao.vigente_desde|date:"d/m/Y" }}</span>
+        {% endif %}
+        <h1 id="legal-title">{{ titulo }}</h1>
+        {% if not desatualizado %}
+            {% if tipo == 'termos' %}
+                <p>Regras aplicáveis ao acesso e ao uso do SIGEE.</p>
+            {% else %}
+                <p>Como os dados pessoais são tratados durante o uso do SIGEE.</p>
+            {% endif %}
+        {% endif %}
+    </header>
+    {% if desatualizado %}
+        <section class="legal-notice">
+            <h2>Este documento foi atualizado</h2>
+            <p><a href="{{ url_vigente }}">Abra a versão vigente</a>. Se você estava confirmando os documentos, volte à tela de aceite e atualize a página.</p>
+        </section>
+    {% else %}
+        {% if versao.resumo %}
+            <section class="legal-notice">
+                <h2>O que mudou nesta versão</h2>
+                {{ versao.resumo|linebreaks }}
+            </section>
+        {% endif %}
+        {% include "legal/_conteudo_documento.html" %}
+    {% endif %}
+</article>
+{% endblock %}

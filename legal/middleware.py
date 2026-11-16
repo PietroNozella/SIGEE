@@ -18,6 +18,10 @@ ROTAS_ISENTAS = {
     "legal:aceite_documentos",
     "legal:termos_de_uso",
     "legal:politica_privacidade",
+    "legal:documentos_legais",
+    "legal:editar_documento",
+    "legal:previa_documento",
+    "legal:historico_documento",
 }
 
 
