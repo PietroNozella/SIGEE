@@ -27,7 +27,7 @@ A migração inicial copia os Termos de Uso 2.0, de 21/09/2026, e a Política de
 
 ## Publicação pelo Administrador principal
 
-Em **Administração → Documentos legais**, escolha os Termos de Uso ou a Política de Privacidade. Edite o rascunho, informe um resumo público das mudanças e confira a prévia antes de publicar. O SIGEE atribui o número da versão e a vigência, registra o autor e grava o evento `DOCUMENTO_LEGAL_PUBLICADO`. O e-mail exibido faz parte do documento publicado.
+Em **Configurações → Documentos legais**, escolha os Termos de Uso ou a Política de Privacidade. Edite o rascunho, informe um resumo público das mudanças e confira a prévia antes de publicar. O SIGEE atribui o número da versão e a vigência, registra o autor e grava o evento `DOCUMENTO_LEGAL_PUBLICADO`. O e-mail exibido faz parte do documento publicado.
 
 Para corrigir uma publicação, abra uma versão anterior no histórico, copie seu conteúdo para o rascunho e publique a correção com um novo resumo. O principal pode acessar essa área mesmo quando a confirmação estiver pendente. Se a publicação já tiver ocorrido, a recuperação é feita por nova versão e preserva as confirmações registradas.
 

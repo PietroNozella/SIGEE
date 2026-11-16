@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Configurações da escola | SIGEE{% endblock %}
-{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261110.6">{% endblock %}
+{% block extra_styles %}<link rel="stylesheet" href="{% static 'calendario/calendario.css' %}?v=20261116.1">{% endblock %}
 {% block content %}
 <div class="page-content school-calendar">
     <header class="page-header calendar-page-header">
@@ -14,11 +14,16 @@
         <a href="{% if secao != 'calendario' %}?secao=calendario{% endif %}#afetadas-heading">Conferir reservas <span aria-hidden="true">→</span></a>
     </div>
     {% endif %}
-    <nav class="school-settings-nav" aria-label="Seções das configurações">
-        <a href="?secao=calendario"{% if secao == 'calendario' %} aria-current="page"{% endif %}>Calendário</a>
-        <a href="?secao=reservas"{% if secao == 'reservas' %} aria-current="page"{% endif %}>Regras de reserva</a>
-        <a href="?secao=historico"{% if secao == 'historico' %} aria-current="page"{% endif %}>Histórico</a>
-    </nav>
+    <div class="school-settings-toolbar">
+        <nav class="school-settings-nav" aria-label="Seções das configurações">
+            <a href="?secao=calendario"{% if secao == 'calendario' %} aria-current="page"{% endif %}>Calendário</a>
+            <a href="?secao=reservas"{% if secao == 'reservas' %} aria-current="page"{% endif %}>Regras de reserva</a>
+            <a href="?secao=historico"{% if secao == 'historico' %} aria-current="page"{% endif %}>Histórico</a>
+        </nav>
+        {% if pode_gerenciar_documentos_legais %}
+            <a class="school-settings-secondary-link" href="{% url 'legal:documentos_legais' %}">Documentos legais</a>
+        {% endif %}
+    </div>
     {% if secao == 'calendario' %}
     <section class="inventory-card calendar-affected" aria-labelledby="fechamentos-heading">
         <header class="calendar-section-heading">

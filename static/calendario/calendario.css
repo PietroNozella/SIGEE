@@ -9,11 +9,15 @@
 .school-calendar :is(th, td, dt, strong, legend) { font-weight: 600; }
 .school-calendar :is(summary, [id]) { scroll-margin-top: 96px; }
 .calendar-page-header > .btn { flex-shrink: 0; }
-.school-settings-nav { display: flex; align-items: stretch; gap: 24px; border-bottom: 1px solid var(--sigee-border); }
+.school-settings-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 16px; border-bottom: 1px solid var(--sigee-border); }
+.school-settings-nav { display: flex; align-items: stretch; gap: 24px; }
 .school-settings-nav a { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 4px; color: var(--sigee-muted); font-size: 14px; font-weight: 500; line-height: 1.5; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .school-settings-nav a:hover { color: var(--sigee-primary); background: var(--sigee-primary-soft); }
 .school-settings-nav a[aria-current="page"] { color: var(--sigee-primary); border-bottom-color: currentColor; font-weight: 600; }
 .school-settings-nav a:focus-visible { outline: 2px solid var(--sigee-primary); outline-offset: 3px; }
+.school-settings-secondary-link { display: inline-flex; align-items: center; justify-self: end; min-height: 44px; padding-inline: 4px; color: var(--sigee-muted); font-size: 13px; text-underline-offset: 3px; }
+.school-settings-secondary-link:hover { color: var(--sigee-primary); }
+.school-settings-secondary-link:focus-visible { outline: 2px solid var(--sigee-primary); outline-offset: 2px; }
 .school-settings-rules { padding: 0; margin: 0; list-style: none; }
 .school-settings-rules > li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, .45fr) auto; align-items: center; gap: 24px; padding: 24px; border-top: 1px solid var(--sigee-border); }
 .school-settings-rules h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
@@ -136,7 +140,8 @@
 }
 @media (max-width: 767px) {
     .calendar-quota-list > li { align-items: start; flex-direction: column; gap: 12px; padding: 20px 16px; }
-    .school-settings-nav { gap: 0; }
+    .school-settings-toolbar { grid-template-columns: minmax(0, 1fr); border-bottom: 0; }
+    .school-settings-nav { gap: 0; border-bottom: 1px solid var(--sigee-border); }
     .school-settings-nav a { flex: 1; min-width: 0; padding: 12px 8px; text-align: center; }
     .school-settings-rules > li { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 20px 16px; }
     .school-settings-rules .btn { justify-self: start; }

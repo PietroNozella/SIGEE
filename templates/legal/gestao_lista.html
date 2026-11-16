@@ -3,6 +3,12 @@
 {% block title %}Documentos legais | SIGEE{% endblock %}
 {% block content %}
 <div class="page-content">
+    {% if pode_configurar_calendario %}
+        <nav class="breadcrumb-navigation" aria-label="Navegação estrutural">
+            <a href="{% url 'calendario:calendario_escola' %}">Configurações</a><span aria-hidden="true">/</span>
+            <span aria-current="page">Documentos legais</span>
+        </nav>
+    {% endif %}
     <header class="page-header"><div><h1>Documentos legais</h1></div></header>
     <div class="row g-3">
         {% for documento in documentos %}
