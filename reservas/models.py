@@ -153,12 +153,15 @@ class Reserva(models.Model):
                 "Somente um usuário com perfil Professor pode criar uma reserva."
             )
 
-        if self.tipo_equipamento_id and not self.tipo_equipamento.ativo:
+        if self.tipo_equipamento_id and (
+            not self.tipo_equipamento.ativo
+            or self._state.adding and not self.tipo_equipamento.categoria.ativo
+        ):
             erros["tipo_equipamento"] = (
                 "Somente um tipo de equipamento ativo pode ser reservado."
             )
 
-        if self.local_id and not self.local.ativo:
+        if self.local_id and self._state.adding and not self.local.ativo:
             erros["local"] = "Somente um local ativo pode ser selecionado para a reserva."
 
         if self.quantidade is not None and self.quantidade < 1:

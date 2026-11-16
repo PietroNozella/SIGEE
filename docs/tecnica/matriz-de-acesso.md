@@ -18,6 +18,8 @@ O SIGEE aplica autenticação por sessão e autorização por grupos e permissõ
 | Consultar os próprios dados da conta, sem edição | Sim | Sim | Sim |
 | Consultar equipamentos | Sim | Sim | Sim |
 | Cadastrar, importar, editar, excluir ou inativar equipamentos | Sim | Não | Não |
+| Reativar equipamentos elegíveis, com confirmação | Sim | Não | Não |
+| Criar, editar, inativar e reativar categorias e locais | Sim | Não | Não |
 | Cadastrar e consultar contas funcionais | Sim | Não | Não |
 | Desativar/reativar Professores e Operadores | Sim | Não | Não |
 | Desativar/reativar administradores comuns | Somente o principal | Não | Não |
@@ -48,11 +50,11 @@ A matriz descreve os acessos concedidos pela configuração oficial de perfis. A
 
 ## Configuração executável
 
-`python manage.py configurar_perfis` cria os grupos ausentes e substitui suas permissões pela definição de `PERMISSOES_POR_GRUPO` em [usuarios/permissoes.py](../../usuarios/permissoes.py). Execute depois de `migrate`; o comando é idempotente.
+`python manage.py configurar_perfis` cria os grupos ausentes e substitui suas permissões pela definição de `PERMISSOES_POR_GRUPO` em [usuarios/permissoes.py](../../usuarios/permissoes.py). Execute depois de `migrate`; o comando é idempotente. Nas instalações existentes, reaplique-o para liberar a gestão de categorias e locais ao Administrador. Esta atualização não exige nova migration de schema.
 
 | Grupo | Permissões |
 |---|---|
-| Administrador | `inventario`: view/add/change/delete de equipamento e `view_resumo_inventario`; `contas`: add/view/change de user; `auditoria.view_registroauditoria`; `movimentacoes.view_movimentacao`; `reservas.view_reserva`; `calendario.configurar_calendario`; `manutencoes`: view/add/change de manutencao; `pedagogico`: view/add/change de turma, disciplina e atividadepedagogica, e view de utilizacaopedagogica. |
+| Administrador | `inventario`: view/add/change/delete de equipamento, `view_resumo_inventario` e view/add/change de categoria e local; `contas`: add/view/change de user; `auditoria.view_registroauditoria`; `movimentacoes.view_movimentacao`; `reservas.view_reserva`; `calendario.configurar_calendario`; `manutencoes`: view/add/change de manutencao; `pedagogico`: view/add/change de turma, disciplina e atividadepedagogica, e view de utilizacaopedagogica. |
 | Operador | `inventario.view_equipamento`; `movimentacoes.add_movimentacao` e `movimentacoes.view_movimentacao`; `reservas.cancelar_reserva_operacional`; `manutencoes.view_manutencao` e `manutencoes.add_manutencao`. |
 | Professor | `inventario.view_equipamento`; `reservas.add_reserva`, `view_reserva`, `change_reserva`; `pedagogico.view_utilizacaopedagogica`, `add_utilizacaopedagogica`, `change_utilizacaopedagogica`. |
 
@@ -62,6 +64,8 @@ Nenhum grupo recebe exclusão de usuários, movimentações, manutenção ou uti
 
 | Área | Rotas principais | Controle |
 |---|---|---|
+| Cadastros do inventário | `/equipamentos/categorias/`, `/equipamentos/locais/` e ações de novo, editar, inativar e reativar | Administrador funcional com view/add/change do modelo. Situação por POST com CSRF; sem exclusão. Inativação impede novas seleções e reservas, preservando compromissos existentes. |
+| Reativação de equipamento | `/equipamentos/<id>/reativar/` | Administrador funcional com `change_equipamento`; GET de conferência e POST com CSRF. Serviço revalida autorização, bloqueia a unidade e preserva situação e histórico. |
 | Usuários | `/usuarios/`, `/usuarios/novo/`, `/usuarios/<uuid>/desativar/`, `/usuarios/<uuid>/reativar/` | Administrador com view/add/change conforme a ação; alterações de situação por POST com CSRF e autoridade sobre a conta alvo. |
 | Auditoria | `/auditoria/` | Administrador com `view_registroauditoria`; somente consulta. |
 | Documentos legais | `/documentos-legais/` | Somente o Administrador principal pode salvar rascunhos, pré-visualizar, consultar o histórico ou publicar, inclusive com confirmação pendente. Gravações por POST com CSRF. |

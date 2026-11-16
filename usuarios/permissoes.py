@@ -27,6 +27,12 @@ PERMISSOES_POR_GRUPO = {
         "inventario.change_equipamento",
         "inventario.delete_equipamento",
         "inventario.view_resumo_inventario",
+        "inventario.view_categoria",
+        "inventario.add_categoria",
+        "inventario.change_categoria",
+        "inventario.view_local",
+        "inventario.add_local",
+        "inventario.change_local",
         PERMISSAO_CADASTRAR_USUARIO,
         "contas.view_user",
         "contas.change_user",
@@ -211,6 +217,17 @@ def pode_gerenciar_cadastro_pedagogico(user, modelo, acao="view"):
         and e_administrador_funcional(user)
         and user.has_perm(f"pedagogico.{acao}_{modelo}")
     )
+
+
+def pode_gerenciar_cadastro_inventario(user, modelo, acao="view"):
+    return (
+        e_administrador_funcional(user)
+        and user.has_perm(f"inventario.{acao}_{modelo}")
+    )
+
+
+def pode_reativar_equipamento(user):
+    return e_administrador_funcional(user) and user.has_perm("inventario.change_equipamento")
 
 
 def pode_gerenciar_manutencao(user, acao="view"):

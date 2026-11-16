@@ -155,7 +155,7 @@ class EquipamentoRN01Tests(TestCase):
             "descricao": "Equipamento atualizado",
             "categoria": nova_categoria.pk,
             "local": novo_local.pk,
-            "situacao": Equipamento.Situacao.MANUTENCAO,
+            "situacao": Equipamento.Situacao.DISPONIVEL,
         }
 
         resposta = self.client.post(

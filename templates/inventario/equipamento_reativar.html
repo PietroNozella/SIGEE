@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Reativar equipamento | SIGEE{% endblock %}
+{% block content %}
+<div class="page-content form-page">
+    <nav class="breadcrumb-navigation" aria-label="Navegação estrutural"><a href="{% url 'inventario:equipamento_lista' %}">Equipamentos</a><span aria-hidden="true">/</span><span aria-current="page">Reativar equipamento</span></nav>
+    <header class="page-header"><div><h1>Reativar equipamento</h1><p>Confira a unidade antes de devolvê-la ao acervo ativo.</p></div></header>
+    <section class="form-card" aria-labelledby="reativacao-heading">
+        <div class="form-card-header"><h2 id="reativacao-heading">{{ equipamento.numero_patrimonio }} — {{ equipamento.tipo.nome }}</h2><p>Local: {{ equipamento.local.nome }}. Situação registrada: {{ equipamento.get_situacao_display }}.</p></div>
+        <p>A reativação preserva a situação, as reservas e o histórico. Uma unidade com retirada pendente, manutenção aberta ou laudo sem possibilidade de reparo não pode ser reativada por esta ação.</p>
+        <form method="post">{% csrf_token %}<div class="form-actions"><a class="btn btn-secondary-sigee" href="{% url 'inventario:equipamento_lista' %}">Cancelar</a><button class="btn btn-primary-sigee" type="submit">Confirmar reativação</button></div></form>
+    </section>
+</div>
+{% endblock %}

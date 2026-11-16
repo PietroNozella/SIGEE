@@ -65,7 +65,11 @@ def alterar_situacao_usuario(*, administrador, usuario_id, ativo):
         if usuario.reservas.filter(
             status=Reserva.Status.ATIVA,
         ).exclude(movimentacoes__tipo="RETIRADA").exists():
-            raise ValidationError("O usuário possui reservas ativas sem retirada. Cancele ou aguarde a expiração antes de desativar a conta.")
+            raise ValidationError(
+                "O usuário possui reservas ativas sem retirada. Abra a consulta de reservas para atualizar "
+                "as expirações e conferir as pendências antes de tentar novamente.",
+                code="reservas_pendentes",
+            )
 
     if usuario.is_active == ativo:
         return usuario

@@ -92,7 +92,7 @@ class ReservaForm(PeriodoReservaForm, UtilizacaoPedagogicaForm):
 
         self.fields["tipo_equipamento"].queryset = (
             TipoEquipamento.objects.select_related("categoria")
-            .filter(ativo=True, equipamentos__ativo=True)
+            .filter(ativo=True, categoria__ativo=True, equipamentos__ativo=True)
             .distinct()
             .order_by("categoria__nome", "nome")
         )
@@ -104,6 +104,7 @@ class ReservaForm(PeriodoReservaForm, UtilizacaoPedagogicaForm):
                 ativo=True,
                 equipamento__ativo=True,
                 equipamento__tipo__ativo=True,
+                equipamento__tipo__categoria__ativo=True,
             )
             .distinct()
             .order_by("nome")
@@ -149,7 +150,7 @@ class DisponibilidadeReservaForm(PeriodoReservaForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["tipo_equipamento"].queryset = TipoEquipamento.objects.filter(
-            ativo=True
+            ativo=True, categoria__ativo=True,
         )
         self.fields["local"].queryset = Local.objects.filter(ativo=True)
         self.order_fields(

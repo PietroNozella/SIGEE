@@ -7,7 +7,7 @@
     <title>{% block title %}SIGEE{% endblock %}</title>
     {% include "includes/favicon.html" %}
     <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261112.1">
+    <link rel="stylesheet" href="{% static 'inventario/css/sigee.css' %}?v=20261116.1">
     {% block extra_styles %}{% endblock %}
 </head>
 <body>
@@ -51,7 +51,7 @@
                 </a>
             {% endif %}
             {% if perms.inventario.view_equipamento %}
-                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' and request.resolver_match.url_name != 'painel' %} is-active{% endif %}" title="Equipamentos" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' and request.resolver_match.url_name != 'painel' %} aria-current="page"{% endif %}>
+                <a class="side-nav-item{% if request.resolver_match.namespace == 'inventario' and request.resolver_match.url_name != 'painel' and not request.resolver_match.kwargs.cadastro %} is-active{% endif %}" title="Equipamentos" href="{% url 'inventario:equipamento_lista' %}"{% if request.resolver_match.namespace == 'inventario' and request.resolver_match.url_name != 'painel' and not request.resolver_match.kwargs.cadastro %} aria-current="page"{% endif %}>
                     <img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true">
                     <span class="side-nav-label">Equipamentos</span>
                 </a>
@@ -107,6 +107,8 @@
             {% endif %}
 
             <span class="sidebar-section-title">Administração</span>
+            {% if pode_consultar_categorias %}<a class="side-nav-item{% if request.resolver_match.kwargs.cadastro == 'categorias' %} is-active{% endif %}" href="{% url 'inventario:categorias_lista' %}"{% if request.resolver_match.kwargs.cadastro == 'categorias' %} aria-current="page"{% endif %} title="Categorias"><img src="{% static 'inventario/icons/equipment.svg' %}" alt="" aria-hidden="true"><span class="side-nav-label">Categorias</span></a>{% endif %}
+            {% if pode_consultar_locais %}<a class="side-nav-item{% if request.resolver_match.kwargs.cadastro == 'locais' %} is-active{% endif %}" href="{% url 'inventario:locais_lista' %}"{% if request.resolver_match.kwargs.cadastro == 'locais' %} aria-current="page"{% endif %} title="Locais"><img src="{% static 'inventario/icons/classes.svg' %}" alt="" aria-hidden="true"><span class="side-nav-label">Locais</span></a>{% endif %}
             {% if pode_configurar_calendario %}
             {% with secao_atual=request.resolver_match.namespace %}
             <a class="side-nav-item{% if secao_atual == 'calendario' or secao_atual == 'legal' %} is-active{% endif %}" title="Configurações da escola" href="{% url 'calendario:calendario_escola' %}"{% if secao_atual == 'calendario' %} aria-current="page"{% elif secao_atual == 'legal' %} aria-current="location"{% endif %}>

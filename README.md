@@ -50,7 +50,7 @@ O fluxo de empréstimo é organizado em **Reservas**, **Em uso** e **Histórico*
 
 | Área | Recursos |
 |---|---|
-| **Inventário** | Cadastro por unidade física, patrimônio único, tipo/modelo, categoria e local; importação CSV com gravação integral do lote; filtros, edição e exclusão ou inativação conforme o histórico. |
+| **Inventário** | Cadastro por unidade física, patrimônio único, tipo/modelo, categoria e local; importação CSV integral; filtros, edição, exclusão ou inativação conforme o histórico, reativação confirmada de unidades elegíveis e gestão de categorias e locais. |
 | **Reservas** | Agendamento próprio em lote por tipo/modelo e local, alocação de patrimônios, contexto pedagógico obrigatório, disponibilidade, prevenção de conflitos, cancelamento e expiração por tolerância de retirada. |
 | **Configurações da escola** | Calendário com horários separados de uso e atendimento, exceções por data, intervalo entre usos e cotas opcionais; fechamento emergencial com decisão sobre reservas afetadas e histórico das alterações. |
 | **Entrega e devolução** | Entrega integral, parcial por manutenção ou complementar, substituição automática com histórico, atualização de situação, devolução total ou parcial e registro de problemas por patrimônio, com transações e rastreabilidade por unidade. |
@@ -184,7 +184,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-`configurar_perfis` é idempotente e aplica as permissões definidas no código. Execute-o depois das migrations.
+`configurar_perfis` é idempotente e aplica as permissões definidas no código. Execute-o depois das migrations. Nas instalações existentes, reaplique o comando para liberar a gestão de categorias e locais ao Administrador; esta atualização não exige alteração do schema.
 
 ### Páginas de erro
 

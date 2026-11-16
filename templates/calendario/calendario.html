@@ -10,7 +10,7 @@
     </header>
     {% if total_afetadas %}
     <div class="calendar-attention" role="status">
-        <div><strong>{{ total_afetadas }} reserva{{ total_afetadas|pluralize:"s" }} precisa{{ total_afetadas|pluralize:"m" }} de decisão</strong><p>O calendário mudou. Os compromissos existentes foram preservados.</p></div>
+        <div><strong>{{ total_afetadas }} reserva{{ total_afetadas|pluralize:"s" }} {% if total_afetadas == 1 %}incompatível{% else %}incompatíveis{% endif %} com o calendário atual</strong><p>O calendário mudou. Os compromissos existentes foram preservados.</p></div>
         <a href="{% if secao != 'calendario' %}?secao=calendario{% endif %}#afetadas-heading">Conferir reservas <span aria-hidden="true">→</span></a>
     </div>
     {% endif %}
@@ -82,14 +82,14 @@
     </div>
     {% if total_afetadas %}
     <section class="inventory-card calendar-affected" aria-labelledby="afetadas-heading">
-        <header class="calendar-section-heading"><h2 id="afetadas-heading" tabindex="-1">Reservas que precisam de decisão <span class="calendar-count">{{ total_afetadas }}</span></h2><p>Confira os compromissos que ficaram fora do calendário atual. Não houve cancelamento ou remarcação automática.</p></header>
+        <header class="calendar-section-heading"><h2 id="afetadas-heading" tabindex="-1">Reservas incompatíveis com o calendário atual <span class="calendar-count">{{ total_afetadas }}</span></h2><p>Estas reservas mantêm as condições confirmadas. Alterações comuns de horário não geram decisões de fechamento nem cancelamento ou remarcação automática.</p></header>
         <ul class="calendar-affected-list">{% for reserva in afetadas %}<li>
             <div><strong>Reserva #{{ reserva.pk }} · {{ reserva.professor.get_full_name|default:reserva.professor.username }}</strong><p>{{ reserva.inicio|date:"d/m/Y H:i" }} até {{ reserva.fim|date:"d/m/Y H:i" }} · {{ reserva.quantidade }} × {{ reserva.tipo_equipamento.nome }}</p><p class="calendar-impact">{{ reserva.impacto_calendario }}</p></div>
             <a class="btn btn-secondary-sigee" href="{% url 'reservas:reserva_detalhe' reserva.pk %}">Consultar reserva</a>
         </li>{% endfor %}</ul>
         {% if afetadas.has_other_pages %}<nav class="calendar-pagination" aria-label="Paginação das reservas afetadas">{% if afetadas.has_previous %}<a href="?pagina={{ afetadas.previous_page_number }}#afetadas-heading">Anterior</a>{% endif %}<span>{{ afetadas.number }} de {{ afetadas.paginator.num_pages }}</span>{% if afetadas.has_next %}<a href="?pagina={{ afetadas.next_page_number }}#afetadas-heading">Próxima</a>{% endif %}</nav>{% endif %}
     </section>
-    {% else %}<p class="calendar-no-impact">Nenhuma reserva futura precisa de decisão pelo calendário atual.</p>{% endif %}
+    {% else %}<p class="calendar-no-impact">Nenhuma reserva futura incompatível com o calendário atual.</p>{% endif %}
     <p class="calendar-footnote">Reservas confirmadas mantêm as condições acordadas. Devoluções físicas continuam permitidas fora da agenda.</p>
     {% elif secao == 'reservas' %}
     <section class="inventory-card" aria-labelledby="regras-heading">
@@ -103,9 +103,10 @@
     </section>
     {% else %}
     <section class="calendar-history inventory-card" aria-labelledby="historico-heading">
-        <header class="calendar-section-heading"><h2 id="historico-heading">Últimas alterações</h2><p>Consulte responsáveis, motivos e os valores anteriores e novos do calendário, do intervalo e das cotas.</p></header>
+        <header class="calendar-section-heading"><h2 id="historico-heading">Histórico de alterações</h2><p>Consulte responsáveis, motivos e os valores anteriores e novos do calendário, do intervalo e das cotas.</p></header>
         <div class="calendar-history-content">
         {% for alteracao in alteracoes %}<details class="calendar-change"><summary><span>{{ alteracao.novo.titulo }}</span><small>{{ alteracao.data_hora|date:"d/m/Y H:i" }} · {{ alteracao.usuario.get_full_name|default:alteracao.usuario.username }}</small></summary><dl><div><dt>Motivo</dt><dd>{{ alteracao.motivo|linebreaksbr }}</dd></div><div><dt>Antes</dt><dd>{{ alteracao.anterior.resumo }}</dd></div><div><dt>Depois</dt><dd>{{ alteracao.novo.resumo }}</dd></div></dl>{% if alteracao.fechamento_registrado %}<p><a href="{% url 'calendario:fechamento_detalhe' alteracao.fechamento_registrado.pk %}">Conferir reservas e decisões</a></p>{% endif %}</details>{% empty %}<p class="calendar-empty-note">Nenhuma alteração registrada.</p>{% endfor %}
+        {% if alteracoes.has_other_pages %}<nav class="calendar-pagination" aria-label="Paginação do histórico de configurações">{% if alteracoes.has_previous %}<a href="?secao=historico&amp;pagina_historico={{ alteracoes.previous_page_number }}#historico-heading">Anterior</a>{% endif %}<span>{{ alteracoes.number }} de {{ alteracoes.paginator.num_pages }}</span>{% if alteracoes.has_next %}<a href="?secao=historico&amp;pagina_historico={{ alteracoes.next_page_number }}#historico-heading">Próxima</a>{% endif %}</nav>{% endif %}
         </div>
     </section>
     {% endif %}

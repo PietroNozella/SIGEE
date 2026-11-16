@@ -25,6 +25,8 @@
         <div class="form-card-header">
             <h2 id="form-section-title">Dados do equipamento</h2>
             <p>Os campos marcados com asterisco são obrigatórios.</p>
+            {% if pode_consultar_categorias or pode_consultar_locais %}<p>{% if pode_consultar_categorias %}<a href="{% url 'inventario:categorias_lista' %}">Gerenciar categorias</a>{% endif %}{% if pode_consultar_categorias and pode_consultar_locais %} · {% endif %}{% if pode_consultar_locais %}<a href="{% url 'inventario:locais_lista' %}">Gerenciar locais</a>{% endif %}</p>{% endif %}
+            {% if editando and not equipamento.ativo %}<p>Este equipamento está inativo. Editar sua situação não o reativa.{% if pode_reativar_equipamento %} <a href="{% url 'inventario:equipamento_reativar' equipamento.pk %}">Conferir reativação</a>.{% endif %}</p>{% endif %}
         </div>
 
         {% if form.errors %}

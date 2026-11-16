@@ -9,7 +9,7 @@ from django.utils import timezone
 from auditoria.eventos import AcaoAuditoria
 from auditoria.models import RegistroAuditoria
 from auditoria.services import registrar_evento
-from inventario.models import Equipamento, Local, TipoEquipamento
+from inventario.models import Categoria, Equipamento, Local, TipoEquipamento
 from usuarios.permissoes import e_professor_funcional
 
 from .models import Reserva, ReservaEquipamento, SubstituicaoReserva
@@ -325,6 +325,14 @@ def criar_reserva(
                     )
                 }
             ) from erro
+
+        try:
+            categoria_bloqueada = Categoria.objects.select_for_update(no_key=True).get(
+                pk=tipo_bloqueado.categoria_id, ativo=True,
+            )
+        except Categoria.DoesNotExist as erro:
+            raise ValidationError({"tipo_equipamento": "A categoria selecionada não está disponível."}) from erro
+        tipo_bloqueado.categoria = categoria_bloqueada
 
         try:
             local_bloqueado = Local.objects.select_for_update().get(

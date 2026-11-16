@@ -88,7 +88,9 @@ def calendario_escola(request):
         "total_cotas": TipoEquipamento.objects.filter(ativo=True, cota_por_professor__isnull=False).count(),
         "afetadas": Paginator(afetadas, 10).get_page(request.GET.get("pagina")),
         "total_afetadas": len(afetadas),
-        "alteracoes": AlteracaoCalendario.objects.select_related("usuario", "fechamento_registrado")[:15],
+        "alteracoes": Paginator(
+            AlteracaoCalendario.objects.select_related("usuario", "fechamento_registrado"), 15,
+        ).get_page(request.GET.get("pagina_historico")),
         "fechamentos": fechamentos,
     })
 
@@ -302,7 +304,7 @@ def regra_form(request, finalidade=None, dia=None, regra_id=None):
                 except (ValidationError, IntegrityError) as erro:
                     form.add_error(None, "Não foi possível salvar a configuração. Nenhuma alteração foi gravada." if isinstance(erro, IntegrityError) else " ".join(erro.messages))
                 else:
-                    messages.success(request, "Calendário atualizado. Confira as reservas que precisam de decisão.")
+                    messages.success(request, "Calendário atualizado. Confira as reservas incompatíveis com o calendário atual; as condições confirmadas foram preservadas.")
                     return redirect("calendario:calendario_escola")
     return render(request, "calendario/regra_form.html", {"form": form, "formset": formset, "regra": regra, "semanal": semanal})
 

@@ -1334,6 +1334,10 @@ summary:focus-visible,
     position: relative;
 }
 
+.inventory-filter-toolbar {
+    grid-template-columns: minmax(200px, 2fr) repeat(4, minmax(110px, 1fr)) auto;
+}
+
 .filter-search img {
     position: absolute;
     z-index: 1;

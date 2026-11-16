@@ -15,6 +15,8 @@ from .permissoes import (
     pode_consultar_reservas_administrativas,
     pode_consultar_indicadores_pedagogicos,
     pode_gerenciar_cadastro_pedagogico,
+    pode_gerenciar_cadastro_inventario,
+    pode_reativar_equipamento,
     pode_gerenciar_manutencao,
     pode_gerenciar_utilizacao_pedagogica,
 )
@@ -42,6 +44,9 @@ def permissoes_funcionais(request):
         "pode_abrir_manutencao": pode_gerenciar_manutencao(request.user, "add"),
         "pode_alterar_manutencao": pode_gerenciar_manutencao(request.user, "change"),
         "pode_consultar_turmas": pode_gerenciar_cadastro_pedagogico(request.user, "turma"),
+        "pode_consultar_categorias": pode_gerenciar_cadastro_inventario(request.user, "categoria"),
+        "pode_consultar_locais": pode_gerenciar_cadastro_inventario(request.user, "local"),
+        "pode_reativar_equipamento": pode_reativar_equipamento(request.user),
         "pode_consultar_disciplinas": pode_gerenciar_cadastro_pedagogico(request.user, "disciplina"),
         "pode_consultar_atividades": pode_gerenciar_cadastro_pedagogico(request.user, "atividadepedagogica"),
     }
