@@ -48,6 +48,7 @@ Quando a instituição adotar o consentimento como hipótese legal para uma fina
 - redirecionamento para HTTPS quando `DEBUG=False`;
 - validação de entradas no servidor;
 - minimização dos registros de auditoria, sem senha, hash, token, conteúdo de formulário ou termos pesquisados;
+- e-mails ocultos na lista funcional de usuários, com revelação individual autorizada e auditada antes da entrega do endereço (`RS-10` e `RS-11`); a busca considera somente nome e nome de usuário;
 - proteção das referências de auditoria e aceite com `PROTECT`;
 - bloqueio de inclusão, edição e exclusão de aceites pelo Django Admin;
 - controle de versão dos documentos e nova confirmação após atualização;
@@ -55,6 +56,13 @@ Quando a instituição adotar o consentimento como hipótese legal para uma fina
 - comandos controlados para exportação, anonimização e descarte, com simulação antes das ações destrutivas.
 
 Essas medidas reduzem riscos, mas não substituem a configuração segura da infraestrutura e as decisões institucionais. As rotinas propostas estão em [Retenção e descarte](plano-retencao-descarte.md), [Direitos dos titulares](procedimento-direitos-titulares.md) e [Resposta a incidentes](plano-resposta-incidentes.md).
+
+Na lista funcional, o olho alterna mostrar/ocultar e somente um e-mail permanece
+visível por página. Abrir outro endereço ou navegar oculta o anterior; cada nova
+revelação gera um evento, sem copiar o e-mail para a auditoria. Contas sem e-mail
+não oferecem o botão. O Django Admin técnico, o cadastro e a consulta dos próprios
+dados mantêm seus fluxos. Ocultar novamente não revoga um endereço já recebido,
+e a auditoria não comprova isoladamente a autoria de um vazamento.
 
 ## Testes automatizados
 

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Usuários | SIGEE{% endblock %}
 {% block content %}
 <div class="page-content">
@@ -6,10 +7,13 @@
         <div><h1>Usuários</h1><p>Desativar bloqueia o acesso e preserva os dados e o histórico.</p></div>
         {% if pode_cadastrar_usuario %}<a class="btn btn-primary-sigee" href="{% url 'usuarios:usuario_novo' %}">Cadastrar usuário</a>{% endif %}
     </header>
-    <section class="inventory-card" aria-labelledby="usuarios-heading">
+    <section class="inventory-card" aria-labelledby="usuarios-heading" data-user-emails>
+        {% csrf_token %}
+        <p class="px-3 pt-3 mb-0">Os e-mails ficam ocultos. Cada revelação é registrada na auditoria.</p>
+        <p class="px-3 mb-0" role="status" data-email-status></p>
         <h2 id="usuarios-heading" class="visually-hidden">Lista de usuários</h2>
         <form class="reservation-filter-toolbar" method="get" role="search">
-            <div class="reservation-filter-field"><label for="busca">Nome, usuário ou e-mail</label><input class="form-control" type="search" id="busca" name="busca" value="{{ busca }}"></div>
+            <div class="reservation-filter-field"><label for="busca">Nome ou usuário</label><input class="form-control" type="search" id="busca" name="busca" value="{{ busca }}"></div>
             <div class="reservation-filter-field"><label for="situacao">Situação</label>
                 <select class="form-select" id="situacao" name="situacao">
                     <option value=""{% if not situacao %} selected{% endif %}>Todas</option>
@@ -26,7 +30,12 @@
                 <thead><tr><th scope="col">Nome</th><th scope="col">E-mail</th><th scope="col">Perfil</th><th scope="col">Situação</th><th scope="col">Ações</th></tr></thead>
                 <tbody>{% for usuario in pagina %}<tr>
                     <td><strong>{{ usuario.get_full_name|default:usuario.username }}</strong><br>{{ usuario.username }}</td>
-                    <td>{{ usuario.email|default:"—" }}</td>
+                    <td>{% if usuario.email %}
+                        <span data-email-value>E-mail oculto</span>
+                        <button class="btn btn-secondary-sigee p-2" type="button" data-email-reveal="{% url 'usuarios:usuario_revelar_email' usuario.pk %}" aria-label="Revelar e-mail de {{ usuario.get_full_name|default:usuario.username }}" aria-pressed="false">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    {% else %}Não informado{% endif %}</td>
                     <td>{% if usuario.is_administrador_principal %}Administrador principal{% else %}{% for grupo in usuario.groups.all %}{{ grupo.name }}{% endfor %}{% endif %}</td>
                     <td>{% if usuario.is_active %}Ativo{% else %}Inativo{% endif %}</td>
                     <td>{% if usuario.pk == request.user.pk %}Sua conta{% elif usuario.is_administrador_principal %}Conta protegida{% elif usuario.pode_alterar_situacao %}
@@ -49,3 +58,4 @@
     </section>
 </div>
 {% endblock %}
+{% block extra_scripts %}<script src="{% static 'inventario/js/usuarios.js' %}?v=20261119.1"></script>{% endblock %}

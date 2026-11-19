@@ -126,7 +126,7 @@ class SoftDeleteUsuarioTests(TestCase):
         tecnico = get_user_model().objects.create_user(username="tecnico", is_staff=True)
         tecnico.groups.add(Group.objects.get(name="Professor"))
         get_user_model().objects.create_user(username="anonimizado-exemplo", is_active=False)
-        resposta = self.client.get(self.lista, {"busca": "MARIA@EXAMPLE.COM", "situacao": "inativos"})
+        resposta = self.client.get(self.lista, {"busca": "MARIA", "situacao": "inativos"})
         self.assertQuerySetEqual(resposta.context["pagina"].object_list, [self.professor])
         self.assertContains(resposta, "Maria Silva")
         self.assertContains(resposta, reverse("usuarios:usuario_reativar", args=[self.professor.pk]))

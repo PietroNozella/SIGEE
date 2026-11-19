@@ -62,6 +62,7 @@ A relação com o usuário utiliza `PROTECT`. Assim, uma conta associada a regis
 | `EQUIPAMENTO_EXCLUIDO` | Um equipamento sem histórico é excluído. | Sucesso |
 | `EQUIPAMENTO_INATIVADO` | Um equipamento com histórico é inativado. | Sucesso |
 | `USUARIO_CADASTRADO` | O cadastro controlado de uma conta é aceito ou rejeitado. | Sucesso ou falha |
+| `USUARIO_EMAIL_REVELADO` | Administrador solicita a revelação individual de e-mail na lista funcional; o evento identifica a conta consultada, sem copiar o endereço. | Sucesso |
 | `RESERVA_CRIADA` | O Professor cria uma reserva própria. | Sucesso |
 | `RESERVA_CANCELADA` | Professor cancela reserva própria, Operador registra desistência confirmada ou Administrador decide cancelar reserva afetada por fechamento. | Sucesso |
 | `RESERVA_MANTIDA_FECHAMENTO` | Administrador mantém a entrega afetada por fechamento, com política habilitada e atendimento excepcional confirmado. | Sucesso |
@@ -123,6 +124,16 @@ O comando `python manage.py configurar_perfis` atribui essa permissão ao grupo 
 A tela é somente leitura e oferece filtros por usuário, ação, resultado e período, além de paginação em grupos de vinte registros. Não existem rotas funcionais para cadastrar, alterar ou excluir eventos. O Django Admin também bloqueia inclusão, alteração e exclusão por sua interface.
 
 ## Minimização e proteção dos dados
+
+A lista funcional de usuários não envia os e-mails no HTML inicial. O olho solicita
+um endereço por `POST`, com sessão, CSRF e a mesma autorização de consulta da lista.
+O evento `USUARIO_EMAIL_REVELADO` é confirmado antes da resposta; se a gravação
+falhar, o endereço não é entregue. Cada nova revelação gera outro evento. O
+responsável fica em `usuario`, e a conta consultada em `entidade` e `entidade_id`.
+A resposta não permite cache e a aplicação não grava o endereço no armazenamento
+persistente do navegador.
+O log comprova a concessão de acesso, sem provar leitura ou autoria de vazamento.
+Essa proteção não abrange o Django Admin técnico nem revoga endereços já entregues.
 
 O serviço de auditoria aceita apenas códigos de ação em letras maiúsculas, números e sublinhados. Os limites dos campos e os resultados permitidos são validados no serviço e no banco quando aplicável.
 

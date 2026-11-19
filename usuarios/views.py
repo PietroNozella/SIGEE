@@ -5,10 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, PasswordResetConfirmView, PasswordResetView
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db import IntegrityError, transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
 from django.views.decorators.cache import never_cache
@@ -146,7 +146,7 @@ def usuario_lista(request):
     if busca:
         usuarios = usuarios.filter(
             Q(first_name__icontains=busca) | Q(last_name__icontains=busca)
-            | Q(username__icontains=busca) | Q(email__icontains=busca)
+            | Q(username__icontains=busca)
         )
     if situacao in ("ativos", "inativos"):
         usuarios = usuarios.filter(is_active=situacao == "ativos")
@@ -162,6 +162,31 @@ def usuario_lista(request):
         "busca": busca, "situacao": situacao,
         "parametros_paginacao": parametros.urlencode(),
     })
+
+
+@never_cache
+@login_required
+@require_POST
+def usuario_revelar_email(request, usuario_id):
+    if not pode_gerenciar_usuarios(request.user):
+        raise PermissionDenied
+
+    usuario = get_object_or_404(usuarios_funcionais().exclude(email=""), pk=usuario_id)
+    try:
+        with transaction.atomic():
+            registrar_evento(
+                usuario=request.user,
+                acao=AcaoAuditoria.USUARIO_EMAIL_REVELADO,
+                resultado=RegistroAuditoria.Resultado.SUCESSO,
+                entidade=usuario._meta.label,
+                entidade_id=usuario.pk,
+            )
+    except DatabaseError:
+        return JsonResponse(
+            {"erro": "Não foi possível registrar o acesso. Tente novamente."}, status=503,
+        )
+
+    return JsonResponse({"email": usuario.email})
 
 
 @login_required
